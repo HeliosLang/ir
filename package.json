@@ -1,0 +1,49 @@
+{
+    "name": "@helios-lang/ir",
+    "version": "0.1.0",
+    "description": "Helios-lang intermediate representation",
+    "main": "src/index.js",
+    "types": "types/index.d.ts",
+    "type": "module",
+    "scripts": {
+        "build": "npm run prettify && npm run build:types && npm run test:suite",
+        "build:types": "npx tsc -p jsconfig.json --noEmit false --emitDeclarationOnly",
+        "prettify": "npx prettier . --write",
+        "test": "npm run test:pretty && npm run test:types && npm run test:suite",
+        "test:pretty": "npx prettier . --check",
+        "test:suite": "node --test  --experimental-test-coverage",
+        "test:types": "npx tsc -p jsconfig.json --noEmit"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/HeliosLang/ir.git"
+    },
+    "keywords": [
+        "Cardano",
+        "smart",
+        "contracts"
+    ],
+    "author": "Christian Schmitz",
+    "license": "BSD-3-Clause",
+    "bugs": {
+        "url": "https://github.com/HeliosLang/ir/issues"
+    },
+    "homepage": "https://github.com/HeliosLang/ir#readme",
+    "prettier": {
+        "trailingComma": "none",
+        "tabWidth": 4,
+        "semi": false,
+        "singleQuote": false
+    },
+    "devDependencies": {
+        "@types/node": "^20.14.8",
+        "prettier": "^3.3.2",
+        "typescript": "^5.5.2"
+    },
+    "dependencies": {
+        "@helios-lang/codec-utils": "^0.1.30",
+        "@helios-lang/compiler-utils": "^0.1.31",
+        "@helios-lang/type-utils": "^0.1.19",
+        "@helios-lang/uplc": "^0.1.32"
+    }
+}
