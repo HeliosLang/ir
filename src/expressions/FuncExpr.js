@@ -36,23 +36,14 @@ export class FuncExpr {
     body
 
     /**
-     * A unique tag, that distinguishes each IRFuncExpr from each other IRFuncExpr (used for hashing)
-     * @readonly
-     * @type {number}
-     */
-    tag
-
-    /**
      * @param {Site} site
      * @param {Variable[]} args
      * @param {Expr} body
-     * @param {number} tag
      */
-    constructor(site, args, body, tag) {
+    constructor(site, args, body) {
         this.site = site
         this.args = args
         this.body = body
-        this.tag = tag
     }
 
     /**
@@ -73,8 +64,7 @@ export class FuncExpr {
         const newExpr = new FuncExpr(
             this.site,
             args,
-            this.body.copy(notifyCopy, varMap),
-            this.tag
+            this.body.copy(notifyCopy, varMap)
         )
 
         notifyCopy(this, newExpr)

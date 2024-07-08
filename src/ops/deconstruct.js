@@ -10,11 +10,10 @@ import { CallExpr, FuncExpr, Variable } from "../expressions/index.js"
  *   name: Variable
  *   callSite: Site
  *   funcSite: Site
- *   funcTag: number
  *   value: Expr
  *   directDeps: string[]
  *   allDeps: Set<string>
- *   recursiveDeps: string[]
+ *   recursiveDeps: Variable[]
  * }} DeconstructedDef
  */
 
@@ -43,7 +42,6 @@ export function deconstructFuncBody(body) {
             name: expr.func.args[0],
             callSite: expr.site,
             funcSite: expr.func.site,
-            funcTag: expr.func.tag,
             value: expr.args[0],
             directDeps: [],
             allDeps: new Set(),

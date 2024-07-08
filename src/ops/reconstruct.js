@@ -19,17 +19,10 @@ export function reconstructFuncBody(defs, final) {
 
         body = new CallExpr(
             def.callSite,
-            new FuncExpr(def.funcSite, [def.name], body, def.funcTag),
+            new FuncExpr(def.funcSite, [def.name], body),
             [
                 def.recursiveDeps.length > 0
-                    ? new FuncExpr(
-                          def.callSite,
-                          def.recursiveDeps.map(
-                              (dep) => new Variable(new Word(dep, def.callSite))
-                          ),
-                          def.value,
-                          def.funcTag + 0.5
-                      )
+                    ? new FuncExpr(def.callSite, def.recursiveDeps, def.value)
                     : def.value
             ]
         )

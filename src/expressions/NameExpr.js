@@ -118,7 +118,11 @@ export class NameExpr {
         if (this.#variable == null || this.isParam()) {
             ;[this.index, this.#variable] = scope.get(this.#name)
         } else {
-            ;[this.index, this.#variable] = scope.get(this.#variable)
+            try {
+                ;[this.index, this.#variable] = scope.get(this.#variable)
+            } catch (_e) {
+                ;[this.index, this.#variable] = scope.get(this.#name)
+            }
         }
     }
 

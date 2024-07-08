@@ -12,6 +12,7 @@ import { loop } from "./loop.js"
 import { mutate } from "./mutate.js"
 import { reconstructFuncBody } from "./reconstruct.js"
 import { format } from "../format/index.js"
+import { resetVariables } from "./reset.js"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
@@ -46,17 +47,12 @@ export function injectRecursiveDeps(root) {
     /**
      * @type {Expr}
      */
-    let wrapped = new FuncExpr(root.site, [], root, -1)
+    let wrapped = new FuncExpr(root.site, [], root)
     wrapped = mutate(wrapped, {
         funcExpr: (funcExpr) => {
             let body = injectRecursiveDepsInternal(funcExpr.body, dummyVariable)
 
-            return new FuncExpr(
-                funcExpr.site,
-                funcExpr.args,
-                body,
-                funcExpr.tag
-            )
+            return new FuncExpr(funcExpr.site, funcExpr.args, body)
         },
         flattenDefs: true
     })
@@ -67,7 +63,7 @@ export function injectRecursiveDeps(root) {
 
     const result = wrapped.body
 
-    return result
+    return resetVariables(result)
 }
 
 /**
@@ -85,9 +81,11 @@ function injectRecursiveDepsInternal(body, dummyVariable) {
         const groups = groupDefsByDeps(defs)
         const finalDefs = orderDefsByDeps(groups)
 
-        return reconstructFuncBody(
+        const newBody = reconstructFuncBody(
             ...injectMutualDependencies(finalDefs, final, dummyVariable)
         )
+
+        return newBody
     } else {
         return body
     }
@@ -208,16 +206,20 @@ function dumpGroups(groups) {
 
 /**
  * @param {DefGroup} group
- * @returns {string[]}
+ * @param {Site} site
+ * @returns {Variable[]} - unique variables every time this function is called
  */
-function getGroupRecursiveDeps(group) {
+function getGroupRecursiveDeps(group, site) {
     if (
         group.defs.length == 1 &&
         !group.allDeps.has(group.defs[0].name.name.value)
     ) {
         return []
     } else {
-        return group.defs.map((def) => def.name.name.value).sort()
+        return group.defs
+            .map((def) => def.name.name.value)
+            .sort()
+            .map((dep) => new Variable(new Word(dep, site)))
     }
 }
 
@@ -252,7 +254,7 @@ function orderDefsByDeps(groups) {
                 defs = defs.concat(g.defs)
                 g.defs.forEach((def) => {
                     done.add(def.name.name.value)
-                    def.recursiveDeps = getGroupRecursiveDeps(g)
+                    def.recursiveDeps = getGroupRecursiveDeps(g, def.callSite)
                 })
                 doneGroups.add(i)
             }
@@ -283,7 +285,7 @@ function orderDefsByDeps(groups) {
             defs = defs.concat(g.defs)
             g.defs.forEach((def) => {
                 done.add(def.name.name.value)
-                def.recursiveDeps = getGroupRecursiveDeps(g)
+                def.recursiveDeps = getGroupRecursiveDeps(g, def.callSite)
             })
         }
     }
@@ -302,7 +304,7 @@ function injectMutualDependencies(defs, final, dummyVariable) {
 
     /**
      * @param {NameExpr} name
-     * @returns {string[]}
+     * @returns {Variable[]}
      */
     function getDeps(name) {
         const d =
@@ -311,7 +313,9 @@ function injectMutualDependencies(defs, final, dummyVariable) {
                 : defsMap.get(name.variable)
 
         if (!d) {
-            throw new Error(`unexpected: couldn't find dependencies of ${name}`)
+            throw new Error(
+                `unexpected: couldn't find dependencies of ${name.name} in ${defs.map((d) => d.name.name.value)}${name.variable == dummyVariable ? " (is dummy var)" : ""}`
+            )
         }
 
         return d.recursiveDeps
@@ -332,10 +336,27 @@ function injectMutualDependencies(defs, final, dummyVariable) {
                 if (deps.length == 0) {
                     return nameExpr
                 } else {
+                    const ownDep = deps.find(
+                        (d) => d.name.value == nameExpr.name
+                    )
+
+                    if (!ownDep) {
+                        throw new Error("unexpected")
+                    }
+
                     return new CallExpr(
                         site,
-                        nameExpr,
-                        deps.map((dep) => new NameExpr(new Word(dep, site)))
+                        new NameExpr(
+                            new Word(nameExpr.name, nameExpr.site),
+                            ownDep
+                        ),
+                        deps.map(
+                            (dep) =>
+                                new NameExpr(
+                                    new Word(dep.name.value, site),
+                                    dep
+                                )
+                        )
                     )
                 }
             } else {

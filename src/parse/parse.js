@@ -23,7 +23,6 @@ import {
     NameExpr,
     Variable
 } from "../expressions/index.js"
-import { ExprTagger } from "./ExprTagger.js"
 import { SourceMappedString } from "./SourceMappedString.js"
 import {
     UplcBool,
@@ -44,6 +43,7 @@ import {
 /**
  * @typedef {{
  *   builtinsPrefix: string
+ *   errorPrefix: string
  *   safeBuitinSuffix: string
  *   builtins: Record<string, {
  *     id: number
@@ -52,7 +52,6 @@ import {
  *     nArgs: number
  *     sideEffects?: boolean
  *   }>
- *   funcTagger?: ExprTagger
  * }} ParseOptions
  */
 
@@ -61,6 +60,7 @@ import {
  */
 export const DEFAULT_PARSE_OPTIONS = {
     builtinsPrefix: "",
+    errorPrefix: "",
     safeBuitinSuffix: "__safe",
     builtins: Object.fromEntries(
         builtinsV2.map((b, id) => [
@@ -99,9 +99,7 @@ export function parse(ir, options = DEFAULT_PARSE_OPTIONS) {
 
     const reader = new TokenReader(ts, tokenizer.errors)
 
-    const funcTagger = options.funcTagger ?? new ExprTagger()
-
-    const expr = parseInternal(reader, { ...options, funcTagger })
+    const expr = parseInternal(reader, options)
 
     return expr
 }
@@ -117,9 +115,7 @@ function isReserved(w) {
 /**
  *
  * @param {TokenReader} r
- * @param {ParseOptions & {
- *  funcTagger: ExprTagger
- * }} options
+ * @param {ParseOptions} options
  * @returns {Expr}
  */
 function parseInternal(r, options) {
@@ -127,8 +123,6 @@ function parseInternal(r, options) {
      * @type {Option<Expr>}
      */
     let expr = None
-
-    const funcTagger = options.funcTagger
 
     let m
 
@@ -156,12 +150,7 @@ function parseInternal(r, options) {
 
             expr = new CallExpr(
                 equals.site,
-                new FuncExpr(
-                    semicolon.site,
-                    [new Variable(w)],
-                    downstreamExpr,
-                    funcTagger.genTag()
-                ),
+                new FuncExpr(semicolon.site, [new Variable(w)], downstreamExpr),
                 [upstreamExpr]
             )
         } else if (
@@ -194,12 +183,7 @@ function parseInternal(r, options) {
 
             const bodyExpr = parseInternal(braces.fields[0], options)
 
-            expr = new FuncExpr(
-                parens.site,
-                args,
-                bodyExpr,
-                funcTagger.genTag()
-            )
+            expr = new FuncExpr(parens.site, args, bodyExpr)
         } else if ((m = r.matches(group("(")))) {
             if (!expr) {
                 if (m.fields.length == 1) {
@@ -267,7 +251,12 @@ function parseInternal(r, options) {
             }
 
             expr = new LiteralExpr(new UplcString(m.value), m.site)
-        } else if ((m = r.matches(word("error"), group("(", { length: 0 })))) {
+        } else if (
+            (m = r.matches(
+                word(options.errorPrefix + "error"),
+                group("(", { length: 0 })
+            ))
+        ) {
             const [w, parens] = m
 
             if (expr) {

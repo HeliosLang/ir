@@ -1,13 +1,13 @@
 import { strictEqual, throws } from "node:assert"
 import { describe, it } from "node:test"
+import { bytesToHex, equalsBytes, hexToBytes } from "@helios-lang/codec-utils"
 import {
     IntData,
     UplcBool,
     UplcByteArray,
     UplcDataValue,
     UplcInt,
-    UplcUnit,
-    builtinsV2
+    UplcUnit
 } from "@helios-lang/uplc"
 import {
     BuiltinExpr,
@@ -17,10 +17,8 @@ import {
     LiteralExpr,
     NameExpr
 } from "../expressions/index.js"
-import { DEFAULT_PARSE_OPTIONS, parse } from "./parse.js"
+import { parse } from "./parse.js"
 import { $ } from "./SourceMappedString.js"
-import { bytesToHex, equalsBytes, hexToBytes } from "@helios-lang/codec-utils"
-import { ExprTagger } from "./ExprTagger.js"
 
 /**
  * @typedef {import("./parse.js").ParseOptions} ParseOptions
@@ -35,18 +33,6 @@ describe(parse.name, () => {
 
     it("parses SourceMappedString(x) as NameExpr", () => {
         const expr = parse($("x"))
-
-        strictEqual(expr instanceof NameExpr && expr.name == "x", true)
-    })
-
-    it("parses SourceMappedString(x) as NameExpr with custom funcTagger", () => {
-        const funcTagger = new ExprTagger()
-        funcTagger.genTag()
-
-        const expr = parse($("x"), {
-            ...DEFAULT_PARSE_OPTIONS,
-            funcTagger
-        })
 
         strictEqual(expr instanceof NameExpr && expr.name == "x", true)
     })

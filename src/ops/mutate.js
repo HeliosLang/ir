@@ -110,8 +110,7 @@ export function mutate(root, callbacks) {
                             let newExpr = new FuncExpr(
                                 expr.site,
                                 expr.args,
-                                body,
-                                expr.tag
+                                body
                             )
 
                             return callbacks.funcExpr
@@ -133,8 +132,7 @@ export function mutate(root, callbacks) {
                             let newExpr = new FuncExpr(
                                 expr.site,
                                 expr.args,
-                                body,
-                                expr.tag
+                                body
                             )
 
                             return callbacks.funcExpr
