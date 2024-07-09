@@ -19,7 +19,8 @@ const testVector = [
         }`
     },
     {
-        description: "multiplication by literal 0 doesn't 0 if other arg expects an error",
+        description:
+            "multiplication by literal 0 doesn't 0 if other arg expects an error",
         input: `(a, b) -> {
             multiplyInteger(divideInteger(a, b), 0)
         }`,
@@ -28,7 +29,7 @@ const testVector = [
         }`
     },
     {
-        description: "function is inlined and args/calls are flattened", 
+        description: "function is inlined and args/calls are flattened",
         input: `
         (a, b) -> {
             fn = (a, b) -> {
@@ -58,7 +59,8 @@ const testVector = [
         expectedOutput: "addInteger"
     },
     {
-        description: "multiple calls of same function are inlined if small enough",
+        description:
+            "multiple calls of same function are inlined if small enough",
         input: `
         (a, b) -> {
             (fn) -> {
@@ -174,7 +176,8 @@ const testVector = [
         }`
     },
     {
-        description: "doesn't eliminate unused result of unIData because it expects error",
+        description:
+            "doesn't eliminate unused result of unIData because it expects error",
         input: `(arg0) -> {
             iData((a) -> {
               0
@@ -236,7 +239,8 @@ const testVector = [
         }`
     },
     {
-        description: "doesn't factorize a common subexpression in different branches",
+        description:
+            "doesn't factorize a common subexpression in different branches",
         input: `(a, b, c) -> {
             ifThenElse(
                 a,
@@ -287,7 +291,8 @@ const testVector = [
         }`
     },
     {
-        description: "factorizes a common subexpression in the same branch within a callback",
+        description:
+            "factorizes a common subexpression in the same branch within a callback",
         input: `(a) -> {
             ifThenElse(
                 a,
@@ -319,7 +324,8 @@ const testVector = [
         }`
     },
     {
-        description: "factorizes nested common subexpressions in the same branch",
+        description:
+            "factorizes nested common subexpressions in the same branch",
         input: `(a) -> {
             ifThenElse(
                 a,
@@ -359,7 +365,8 @@ const testVector = [
         }`
     },
     {
-        description: "factorizes triple nested common subexpressions in the same branch",
+        description:
+            "factorizes triple nested common subexpressions in the same branch",
         input: `(a) -> {
             ifThenElse(
                 a,
@@ -551,8 +558,8 @@ describe(optimize.name, () => {
 
             const optExpr = optimize(expr, {
                 commonSubExpressionPrefix: "x"
-            })  
-            
+            })
+
             strictEqual(
                 removeWhitespace(format(optExpr)),
                 removeWhitespace(entry.expectedOutput)

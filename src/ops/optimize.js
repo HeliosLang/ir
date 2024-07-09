@@ -304,91 +304,32 @@ export class Optimizer {
         let commonCount = 0
 
         // treat lowest Data id first (which will be nested deeper in case of multiple common subexpressions in the same expression)
-        Array.from(callExprs.entries()).sort((a,b) => a[0] - b[0]).forEach(([key, callExprs]) => {
-            const callExprsArray = Array.from(callExprs)
+        Array.from(callExprs.entries())
+            .sort((a, b) => a[0] - b[0])
+            .forEach(([key, callExprs]) => {
+                const callExprsArray = Array.from(callExprs)
 
-            const dataValues = callExprsArray.map((ce) => {
-                const dv = analysis.getExprValue(ce)
+                const dataValues = callExprsArray.map((ce) => {
+                    const dv = analysis.getExprValue(ce)
 
-                if (dv instanceof DataValue) {
-                    return dv
-                } else if (dv instanceof MultiValue) {
-                    const dvv = dv.values.find(
-                        (dvv) => dvv instanceof DataValue
-                    )
+                    if (dv instanceof DataValue) {
+                        return dv
+                    } else if (dv instanceof MultiValue) {
+                        const dvv = dv.values.find(
+                            (dvv) => dvv instanceof DataValue
+                        )
 
-                    if (dvv instanceof DataValue) {
-                        return dvv
+                        if (dvv instanceof DataValue) {
+                            return dvv
+                        } else {
+                            throw new Error("unexpected")
+                        }
                     } else {
                         throw new Error("unexpected")
                     }
-                } else {
-                    throw new Error("unexpected")
-                }
-            })
-
-            if (dataValues.some((dv) => dv.branches.isEmpty())) {
-                const injectedId = commonCount
-                commonCount++
-
-                const injectedName = new Word(
-                    `${this.options.commonSubExpressionPrefix}${injectedId}`
-                )
-                const injectedVar = new Variable(injectedName)
-                const firstCallExpr = callExprsArray[0] // 
-                const variables = collectVariablesWithDepth(firstCallExpr)
-
-                
-
-                // sort lower Debruijn indices first
-                variables.sort((a, b) => a[0] - b[0])
-
-                const deepest = variables[0][1]
-                const allVars = variables.map((v) => v[1])
-
-                // make sure the other call expressions depend on the same deepest variable
-                if (!callExprsArray.slice(1).every(ce => {
-                    const vs = collectVariables(ce)
-
-                    return vs.has(deepest)
-                })) {
-                    return
-                }
-
-                const prev = injections.get(deepest)
-
-                const entry = {
-                    vars: allVars,
-                    injected: injectedVar,
-                    expr: firstCallExpr // for nested substitions we must also apply all substitutions to this expression
-                }
-
-                if (prev) {
-                    prev.push(entry)
-                } else {
-                    injections.set(deepest, [entry])
-                }
-
-                Array.from(callExprs).forEach((ce, i) => {
-                    substitutions.set(
-                        ce,
-                        new NameExpr(injectedName, injectedVar)
-                    )
                 })
-            } else {
-                // split branches, only handle groups with at least 2 entries
-                const groups = Branches.group(
-                    dataValues.map((dv) => dv.branches)
-                ).filter((g) => g.entries.length > 1)
 
-                groups.forEach((group) => {
-                    const rootBranches = group.root
-                    const lastBranch =
-                        rootBranches.branches[rootBranches.branches.length - 1]
-                    const groupCallExprs = group.entries.map(
-                        (i) => callExprsArray[i]
-                    )
-
+                if (dataValues.some((dv) => dv.branches.isEmpty())) {
                     const injectedId = commonCount
                     commonCount++
 
@@ -396,18 +337,29 @@ export class Optimizer {
                         `${this.options.commonSubExpressionPrefix}${injectedId}`
                     )
                     const injectedVar = new Variable(injectedName)
-                    const firstCallExpr = groupCallExprs[0]
+                    const firstCallExpr = callExprsArray[0] //
                     const variables = collectVariablesWithDepth(firstCallExpr)
 
                     // sort lower Debruijn indices first
                     variables.sort((a, b) => a[0] - b[0])
 
+                    const deepest = variables[0][1]
                     const allVars = variables.map((v) => v[1])
 
-                    const prev = branchInjections.get(lastBranch.expr)
+                    // make sure the other call expressions depend on the same deepest variable
+                    if (
+                        !callExprsArray.slice(1).every((ce) => {
+                            const vs = collectVariables(ce)
+
+                            return vs.has(deepest)
+                        })
+                    ) {
+                        return
+                    }
+
+                    const prev = injections.get(deepest)
 
                     const entry = {
-                        root: rootBranches,
                         vars: allVars,
                         injected: injectedVar,
                         expr: firstCallExpr // for nested substitions we must also apply all substitutions to this expression
@@ -416,18 +368,71 @@ export class Optimizer {
                     if (prev) {
                         prev.push(entry)
                     } else {
-                        branchInjections.set(lastBranch.expr, [entry])
+                        injections.set(deepest, [entry])
                     }
 
-                    Array.from(groupCallExprs).forEach((ce, i) => {
+                    Array.from(callExprs).forEach((ce, i) => {
                         substitutions.set(
                             ce,
                             new NameExpr(injectedName, injectedVar)
                         )
                     })
-                })
-            }
-        })
+                } else {
+                    // split branches, only handle groups with at least 2 entries
+                    const groups = Branches.group(
+                        dataValues.map((dv) => dv.branches)
+                    ).filter((g) => g.entries.length > 1)
+
+                    groups.forEach((group) => {
+                        const rootBranches = group.root
+                        const lastBranch =
+                            rootBranches.branches[
+                                rootBranches.branches.length - 1
+                            ]
+                        const groupCallExprs = group.entries.map(
+                            (i) => callExprsArray[i]
+                        )
+
+                        const injectedId = commonCount
+                        commonCount++
+
+                        const injectedName = new Word(
+                            `${this.options.commonSubExpressionPrefix}${injectedId}`
+                        )
+                        const injectedVar = new Variable(injectedName)
+                        const firstCallExpr = groupCallExprs[0]
+                        const variables =
+                            collectVariablesWithDepth(firstCallExpr)
+
+                        // sort lower Debruijn indices first
+                        variables.sort((a, b) => a[0] - b[0])
+
+                        const allVars = variables.map((v) => v[1])
+
+                        const prev = branchInjections.get(lastBranch.expr)
+
+                        const entry = {
+                            root: rootBranches,
+                            vars: allVars,
+                            injected: injectedVar,
+                            expr: firstCallExpr // for nested substitions we must also apply all substitutions to this expression
+                        }
+
+                        if (prev) {
+                            prev.push(entry)
+                        } else {
+                            branchInjections.set(lastBranch.expr, [entry])
+                        }
+
+                        Array.from(groupCallExprs).forEach((ce, i) => {
+                            substitutions.set(
+                                ce,
+                                new NameExpr(injectedName, injectedVar)
+                            )
+                        })
+                    })
+                }
+            })
 
         /**
          * @param {Expr} expr
@@ -478,61 +483,65 @@ export class Optimizer {
                 const inj = branchInjections.get(callExpr)
 
                 if (inj) {
-                    inj.slice().reverse().forEach((entry) => {
-                        const lastBranch =
-                            entry.root.branches[entry.root.branches.length - 1]
+                    inj.slice()
+                        .reverse()
+                        .forEach((entry) => {
+                            const lastBranch =
+                                entry.root.branches[
+                                    entry.root.branches.length - 1
+                                ]
 
-                        const branchExpr =
-                            callExpr.args[lastBranch.branchId + 1]
+                            const branchExpr =
+                                callExpr.args[lastBranch.branchId + 1]
 
-                        if (branchExpr instanceof FuncExpr) {
-                            let body = branchExpr.body
+                            if (branchExpr instanceof FuncExpr) {
+                                let body = branchExpr.body
 
-                            let foundDeepestVar = false
+                                let foundDeepestVar = false
 
-                            body = mutate(body, {
-                                funcExpr: (funcExpr) => {
-                                    if (
-                                        funcExpr.args.some(
-                                            (a) => a == entry.vars[0]
-                                        )
-                                    ) {
-                                        foundDeepestVar = true
-
-                                        return new FuncExpr(
-                                            funcExpr.site,
-                                            funcExpr.args,
-                                            new CallExpr(
-                                                entry.expr.site,
-                                                new FuncExpr(
-                                                    entry.expr.site,
-                                                    [entry.injected],
-                                                    funcExpr.body
-                                                ),
-                                                [entry.expr]
+                                body = mutate(body, {
+                                    funcExpr: (funcExpr) => {
+                                        if (
+                                            funcExpr.args.some(
+                                                (a) => a == entry.vars[0]
                                             )
-                                        )
-                                    } else {
-                                        return funcExpr
+                                        ) {
+                                            foundDeepestVar = true
+
+                                            return new FuncExpr(
+                                                funcExpr.site,
+                                                funcExpr.args,
+                                                new CallExpr(
+                                                    entry.expr.site,
+                                                    new FuncExpr(
+                                                        entry.expr.site,
+                                                        [entry.injected],
+                                                        funcExpr.body
+                                                    ),
+                                                    [entry.expr]
+                                                )
+                                            )
+                                        } else {
+                                            return funcExpr
+                                        }
                                     }
-                                }
-                            })
+                                })
 
-                            if (!foundDeepestVar) {
-                                body = new CallExpr(
-                                    entry.expr.site,
-                                    new FuncExpr(
+                                if (!foundDeepestVar) {
+                                    body = new CallExpr(
                                         entry.expr.site,
-                                        [entry.injected],
-                                        branchExpr.body
-                                    ),
-                                    [entry.expr]
-                                )
-                            }
+                                        new FuncExpr(
+                                            entry.expr.site,
+                                            [entry.injected],
+                                            branchExpr.body
+                                        ),
+                                        [entry.expr]
+                                    )
+                                }
 
-                            branchExpr.body = body
-                        }
-                    })
+                                branchExpr.body = body
+                            }
+                        })
                 }
             }
         })

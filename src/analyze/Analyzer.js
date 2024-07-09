@@ -481,7 +481,11 @@ export class Analyzer {
 
         const hasError = values.some((v) => v instanceof ErrorValue)
 
-        if (hasError && values.some(v => v instanceof DataValue) && values.length == 2) {
+        if (
+            hasError &&
+            values.some((v) => v instanceof DataValue) &&
+            values.length == 2
+        ) {
             return new MultiValue(values)
         }
 
@@ -490,8 +494,6 @@ export class Analyzer {
                 v instanceof DataValue ||
                 (v instanceof LiteralValue && !(v.value instanceof UplcUnit))
         )
-
-        
 
         const hasAny = values.some(
             (v) =>
@@ -1420,7 +1422,10 @@ export class Analyzer {
     evalSecondPass(main) {
         const definition = main.definition
         const args = definition.args.map((a, i) =>
-            this.#dataValueCache.getMainArgValue(this.getFuncExprTag(definition), i)
+            this.#dataValueCache.getMainArgValue(
+                this.getFuncExprTag(definition),
+                i
+            )
         )
         this.callFunc(definition, main, args)
 
@@ -1449,12 +1454,26 @@ export class Analyzer {
 
         let res = this.evalFirstPass(this.#root)
 
-        while (res instanceof FuncValue || (res instanceof MultiValue && res.values.some(v => v instanceof FuncValue))) {
+        while (
+            res instanceof FuncValue ||
+            (res instanceof MultiValue &&
+                res.values.some((v) => v instanceof FuncValue))
+        ) {
             if (res instanceof FuncValue) {
                 res = this.evalSecondPass(res)
             } else {
-                const fvs = res.values.filter(v => v instanceof FuncValue).map(v => {if (!(v instanceof FuncValue)) {throw new Error("unexpected")} else {return v}})
-                res = this.combineValues(fvs.map(fv => this.evalSecondPass(fv)))
+                const fvs = res.values
+                    .filter((v) => v instanceof FuncValue)
+                    .map((v) => {
+                        if (!(v instanceof FuncValue)) {
+                            throw new Error("unexpected")
+                        } else {
+                            return v
+                        }
+                    })
+                res = this.combineValues(
+                    fvs.map((fv) => this.evalSecondPass(fv))
+                )
             }
         }
 

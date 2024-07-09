@@ -99,10 +99,16 @@ export class MultiValue {
         }
 
         if (this.hasData()) {
-            if (!this.values.some(v => v instanceof LiteralValue || v instanceof AnyValue)) {
-                this.values.forEach(v => {if (v instanceof DataValue) {
-                    parts.push(v.toString())
-                }})
+            if (
+                !this.values.some(
+                    (v) => v instanceof LiteralValue || v instanceof AnyValue
+                )
+            ) {
+                this.values.forEach((v) => {
+                    if (v instanceof DataValue) {
+                        parts.push(v.toString())
+                    }
+                })
             } else {
                 parts.push(`Data`)
             }

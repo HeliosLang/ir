@@ -81,7 +81,10 @@ export class DataValueCache {
      * @returns {DataValue}
      */
     getMainArgValue(tag, argIndex) {
-        return this.getValue(generateMainArgKey(tag, argIndex), Branches.empty())
+        return this.getValue(
+            generateMainArgKey(tag, argIndex),
+            Branches.empty()
+        )
     }
 
     /**
@@ -118,7 +121,7 @@ export class DataValueCache {
  * @param {number} argIndex
  * @returns {string}
  */
-function generateMainArgKey(tag,argIndex) {
+function generateMainArgKey(tag, argIndex) {
     return `Main${tag}.${argIndex}`
 }
 
