@@ -16,9 +16,12 @@ import {
 import {
     Analysis,
     Analyzer,
+    Branches,
+    DataValue,
     ErrorValue,
     FuncValue,
-    LiteralValue
+    LiteralValue,
+    MultiValue
 } from "../analyze/index.js"
 import {
     BuiltinExpr,
@@ -30,20 +33,23 @@ import {
     Variable
 } from "../expressions/index.js"
 import { format } from "../format/index.js"
+import { collectVariables, collectVariablesWithDepth } from "./collect.js"
 import { loop } from "./loop.js"
+import { Word } from "@helios-lang/compiler-utils"
+import { mutate } from "./mutate.js"
 
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr
  */
 
 /**
- * Any IRFuncExpr that is smaller or equal to this number will be inlined.
+ * Any FuncExpr that is smaller or equal to this number will be inlined.
  *
  * Examples of helios builtin functions that should be inlined:
  *   * __helios__bool__and
  *   * __helios__common__enum_field_0
  *
- * This is a number of bits/
+ * This is a number of bits
  */
 const INLINE_MAX_SIZE = 128
 
@@ -65,6 +71,19 @@ function isIdentityFunc(func) {
 }
 
 /**
+ * @typedef {{
+ *   commonSubExpressionPrefix: string
+ * }} OptimizerOptions
+ */
+
+/**
+ * @type {OptimizerOptions}
+ */
+const DEFAULT_OPTIMIZER_OPTIONS = {
+    commonSubExpressionPrefix: "__common"
+}
+
+/**
  * Recursive algorithm that performs the following optimizations:
  *   - replace `NameExpr` by `LiteralExpr` if the expected value is LiteralValue
  *   - replace `CallExpr` by `LiteralExpr` if the expected value is LiteralValue
@@ -81,7 +100,7 @@ function isIdentityFunc(func) {
  *   - replace `ifThenElse(true, <expr-a>, <expr-b>)` by `<expr-a>` if `<expr-b>` doesn't expect ErrorValue
  *   - replace `ifThenElse(false, <expr-a>, <expr-b>)` by `<expr-b>` if `<expr-a>` doesn't expect ErrorValue
  *   - replace `ifThenElse(nullList(<lst-expr>), <expr-a>, <expr-b>)` by `chooseList(<lst-expr>, <expr-a>, <expr-b>)`
- *   - replace `ifThenElse(<cond-expr>, <expr-a>, <expr_a>)` by `<expr-a>` if `<cond-expr>` doesn't expect ErrorValue
+ *   - replace `ifThenElse(<cond-expr>, <expr-a>, <expr-a>)` by `<expr-a>` if `<cond-expr>` doesn't expect ErrorValue
  *   - replace `chooseUnit(<expr>, ())` by `<expr>` (because `<expr>` is expected to return unit as well)
  *   - replace `chooseUnit((), <expr>)` by `<expr>`
  *   - replace `trace(<msg-expr>, <ret-expr>)` by `<ret_expr>` if `<msg-expr>` doesn't expect ErrorValue
@@ -105,7 +124,7 @@ function isIdentityFunc(func) {
  *   - replace `equalsData(bData(<expr-a>), bData(<expr-b>))` by `equalsByteString(<expr-a>, <expr-b>)`
  *   - remove unused FuncExpr arg variables if none if the corresponding CallExpr args expect errors and if all the the CallExprs expect only this FuncExpr
  *   - replace CallExpr args that are uncalled FuncExprs with `()`
- *   - flatten nested IRFuncExprs if the correspondng IRCallExprs always call them in succession
+ *   - flatten nested FuncExprs if the correspondng CallExprs always call them in succession
  *   - replace `(<vars>) -> {<name-expr>(<vars>)}` by `<name-expr>` if each var is only referenced once (i.e. only referenced in the call)
  *   - replace `(<var>) -> {<var>}(<arg-expr>)` by `<arg-expr>`
  *   - replace `<name-expr>(<arg-expr>)` by `<arg-expr>` if the expected value of `<name-expr>` is the identity function
@@ -115,6 +134,7 @@ function isIdentityFunc(func) {
  *   - inline `<fn-expr>` in `(<vars>) -> {...}(<fn-expr>, ...)` if `<fn-expr>` has a Uplc flat size smaller than INLINE_MAX_SIZE
  *   - inline `<call-expr>` in `(<vars>) -> {...}(<call-expr>, ...)` if the corresponding var is only referenced once and if all the nested FuncExprs are only evaluated once and if the CallExpr doesn't expect an error
  *   - replace `() -> {<expr>}()` by `<expr>`
+ *   - factorize common sub-expressions
  *
  * Optimizations that we have considered, but are NOT performed:
  *   * replace `subtractInteger(0, <expr>)` by `multiplyInteger(<expr>, -1)`
@@ -134,20 +154,29 @@ export class Optimizer {
     #inlining
 
     /**
-     * @param {Expr} root
+     * @readonly
+     * @type {OptimizerOptions}
      */
-    constructor(root) {
+    options
+
+    /**
+     * @param {Expr} root
+     * @param {OptimizerOptions} options
+     */
+    constructor(root, options = DEFAULT_OPTIMIZER_OPTIONS) {
         this.#root = root
 
         assertNoDuplicateExprs(root)
 
         this.#inlining = new Map()
+        this.options = options
     }
 
     /**
      * First apply following optimizations:
-     *   * flatten nested FuncExpr where possible
-     *   * remove unused FuncExpr variables
+     *   - flatten nested FuncExpr where possible
+     *   - remove unused FuncExpr variables
+     *   - factorize common sub-expressions
      * @returns {Expr}
      */
     optimize() {
@@ -156,6 +185,7 @@ export class Optimizer {
 
         this.removeUnusedArgs(analysis)
         this.replaceUncalledArgsWithUnit(analysis)
+        this.factorizeCommon(analysis)
 
         // rerun analysis
         analyzer = new Analyzer(this.#root)
@@ -164,8 +194,6 @@ export class Optimizer {
         this.flattenNestedFuncExprs(analysis)
 
         const expr = this.optimizeInternal(analysis, this.#root)
-
-        // TODO: factorize common subexprs
 
         assertNoDuplicateExprs(expr)
 
@@ -237,6 +265,311 @@ export class Optimizer {
                         return a
                     }
                 })
+            }
+        })
+    }
+
+    /**
+     * TODO: properly take care of the branches
+     * @private
+     * @param {Analysis} analysis
+     */
+    factorizeCommon(analysis) {
+        let callExprs = analysis.collectDataCallExprs()
+
+        // only keep the entries with 2 or more CallExprs
+        callExprs = new Map(
+            Array.from(callExprs.entries()).filter(([key, value]) => {
+                return value.size > 1
+            })
+        )
+
+        // entries might be split due to branches
+        /**
+         * @type {Map<CallExpr, NameExpr>}
+         */
+        let substitutions = new Map()
+
+        /**
+         * Use the deepest variable
+         * @type {Map<Variable, {vars: Variable[], injected: Variable, expr: CallExpr}[]>}
+         */
+        let injections = new Map()
+
+        /**
+         * @type {Map<CallExpr, {root: Branches, vars: Variable[], injected: Variable, expr: CallExpr}[]>}
+         */
+        let branchInjections = new Map()
+
+        let commonCount = 0
+
+        // treat lowest Data id first (which will be nested deeper in case of multiple common subexpressions in the same expression)
+        Array.from(callExprs.entries()).sort((a,b) => a[0] - b[0]).forEach(([key, callExprs]) => {
+            const callExprsArray = Array.from(callExprs)
+
+            const dataValues = callExprsArray.map((ce) => {
+                const dv = analysis.getExprValue(ce)
+
+                if (dv instanceof DataValue) {
+                    return dv
+                } else if (dv instanceof MultiValue) {
+                    const dvv = dv.values.find(
+                        (dvv) => dvv instanceof DataValue
+                    )
+
+                    if (dvv instanceof DataValue) {
+                        return dvv
+                    } else {
+                        throw new Error("unexpected")
+                    }
+                } else {
+                    throw new Error("unexpected")
+                }
+            })
+
+            if (dataValues.some((dv) => dv.branches.isEmpty())) {
+                const injectedId = commonCount
+                commonCount++
+
+                const injectedName = new Word(
+                    `${this.options.commonSubExpressionPrefix}${injectedId}`
+                )
+                const injectedVar = new Variable(injectedName)
+                const firstCallExpr = callExprsArray[0] // 
+                const variables = collectVariablesWithDepth(firstCallExpr)
+
+                
+
+                // sort lower Debruijn indices first
+                variables.sort((a, b) => a[0] - b[0])
+
+                const deepest = variables[0][1]
+                const allVars = variables.map((v) => v[1])
+
+                // make sure the other call expressions depend on the same deepest variable
+                if (!callExprsArray.slice(1).every(ce => {
+                    const vs = collectVariables(ce)
+
+                    return vs.has(deepest)
+                })) {
+                    return
+                }
+
+                const prev = injections.get(deepest)
+
+                const entry = {
+                    vars: allVars,
+                    injected: injectedVar,
+                    expr: firstCallExpr // for nested substitions we must also apply all substitutions to this expression
+                }
+
+                if (prev) {
+                    prev.push(entry)
+                } else {
+                    injections.set(deepest, [entry])
+                }
+
+                Array.from(callExprs).forEach((ce, i) => {
+                    substitutions.set(
+                        ce,
+                        new NameExpr(injectedName, injectedVar)
+                    )
+                })
+            } else {
+                // split branches, only handle groups with at least 2 entries
+                const groups = Branches.group(
+                    dataValues.map((dv) => dv.branches)
+                ).filter((g) => g.entries.length > 1)
+
+                groups.forEach((group) => {
+                    const rootBranches = group.root
+                    const lastBranch =
+                        rootBranches.branches[rootBranches.branches.length - 1]
+                    const groupCallExprs = group.entries.map(
+                        (i) => callExprsArray[i]
+                    )
+
+                    const injectedId = commonCount
+                    commonCount++
+
+                    const injectedName = new Word(
+                        `${this.options.commonSubExpressionPrefix}${injectedId}`
+                    )
+                    const injectedVar = new Variable(injectedName)
+                    const firstCallExpr = groupCallExprs[0]
+                    const variables = collectVariablesWithDepth(firstCallExpr)
+
+                    // sort lower Debruijn indices first
+                    variables.sort((a, b) => a[0] - b[0])
+
+                    const allVars = variables.map((v) => v[1])
+
+                    const prev = branchInjections.get(lastBranch.expr)
+
+                    const entry = {
+                        root: rootBranches,
+                        vars: allVars,
+                        injected: injectedVar,
+                        expr: firstCallExpr // for nested substitions we must also apply all substitutions to this expression
+                    }
+
+                    if (prev) {
+                        prev.push(entry)
+                    } else {
+                        branchInjections.set(lastBranch.expr, [entry])
+                    }
+
+                    Array.from(groupCallExprs).forEach((ce, i) => {
+                        substitutions.set(
+                            ce,
+                            new NameExpr(injectedName, injectedVar)
+                        )
+                    })
+                })
+            }
+        })
+
+        /**
+         * @param {Expr} expr
+         * @returns {Expr}
+         */
+        const applySubstitutions = (expr) => {
+            return mutate(expr, {
+                callExpr: (callExpr, oldCallExpr) => {
+                    const nameExpr = substitutions.get(oldCallExpr)
+
+                    let old
+                    if ((old = branchInjections.get(oldCallExpr))) {
+                        branchInjections.set(callExpr, old)
+                    }
+
+                    if (nameExpr) {
+                        return nameExpr
+                    } else {
+                        return callExpr
+                    }
+                }
+            })
+        }
+
+        // apply CallExpr to NameExpr substitutions
+        this.#root = applySubstitutions(this.#root)
+
+        injections.forEach((entry) => {
+            entry.forEach((entry) => {
+                entry.expr.args = entry.expr.args.map((a) =>
+                    applySubstitutions(a)
+                )
+            })
+        })
+
+        branchInjections.forEach((entry) => {
+            entry.forEach((entry) => {
+                entry.expr.args = entry.expr.args.map((a) =>
+                    applySubstitutions(a)
+                )
+            })
+        })
+
+        // apply injections
+
+        loop(this.#root, {
+            callExpr: (callExpr) => {
+                const inj = branchInjections.get(callExpr)
+
+                if (inj) {
+                    inj.slice().reverse().forEach((entry) => {
+                        const lastBranch =
+                            entry.root.branches[entry.root.branches.length - 1]
+
+                        const branchExpr =
+                            callExpr.args[lastBranch.branchId + 1]
+
+                        if (branchExpr instanceof FuncExpr) {
+                            let body = branchExpr.body
+
+                            let foundDeepestVar = false
+
+                            body = mutate(body, {
+                                funcExpr: (funcExpr) => {
+                                    if (
+                                        funcExpr.args.some(
+                                            (a) => a == entry.vars[0]
+                                        )
+                                    ) {
+                                        foundDeepestVar = true
+
+                                        return new FuncExpr(
+                                            funcExpr.site,
+                                            funcExpr.args,
+                                            new CallExpr(
+                                                entry.expr.site,
+                                                new FuncExpr(
+                                                    entry.expr.site,
+                                                    [entry.injected],
+                                                    funcExpr.body
+                                                ),
+                                                [entry.expr]
+                                            )
+                                        )
+                                    } else {
+                                        return funcExpr
+                                    }
+                                }
+                            })
+
+                            if (!foundDeepestVar) {
+                                body = new CallExpr(
+                                    entry.expr.site,
+                                    new FuncExpr(
+                                        entry.expr.site,
+                                        [entry.injected],
+                                        branchExpr.body
+                                    ),
+                                    [entry.expr]
+                                )
+                            }
+
+                            branchExpr.body = body
+                        }
+                    })
+                }
+            }
+        })
+
+        this.#root = mutate(this.#root, {
+            funcExpr: (funcExpr) => {
+                if (funcExpr.args.some((a) => injections.has(a))) {
+                    /**
+                     * @type {{vars: Variable[], injected: Variable, expr: CallExpr}[]}
+                     */
+                    let funcInjections = []
+
+                    funcExpr.args.forEach((a) => {
+                        const inj = injections.get(a)
+
+                        if (inj) {
+                            funcInjections = funcInjections.concat(inj)
+                        }
+                    })
+
+                    let body = funcExpr.body
+
+                    funcInjections.reverse()
+
+                    funcInjections.forEach((inj) => {
+                        const site = inj.expr.site
+                        body = new CallExpr(
+                            site,
+                            new FuncExpr(site, [inj.injected], body),
+                            [inj.expr]
+                        )
+                    })
+
+                    return new FuncExpr(funcExpr.site, funcExpr.args, body)
+                } else {
+                    return funcExpr
+                }
             }
         })
     }
@@ -411,7 +744,7 @@ export class Optimizer {
         const newExpr = this.#inlining.get(expr.variable)
 
         if (newExpr) {
-            // always copy to make sure any (nested) IRNameExpr is unique (=> unique DeBruijn index)
+            // always copy to make sure any (nested) NameExpr is unique (=> unique DeBruijn index)
             //  also so that functions that are inlined multiple times each get unique variables
             return newExpr.copy((oldExpr, newExpr) => {
                 analysis.notifyCopyExpr(oldExpr, newExpr)
@@ -598,10 +931,7 @@ export class Optimizer {
                     } else if (!cond.value.bool && !analysis.expectsError(a)) {
                         return b
                     }
-                } else if (
-                    !analysis.expectsError(cond) &&
-                    a.toString() == b.toString()
-                ) {
+                } else if (!analysis.expectsError(cond) && a.isEqual(b)) {
                     return a
                 } else if (
                     cond instanceof CallExpr &&
@@ -935,8 +1265,8 @@ export class Optimizer {
             args.forEach((a, i) => {
                 const v = variables[i]
 
-                if (a instanceof NameExpr) {
-                    // inline all IRNameExprs
+                if (a instanceof NameExpr || a instanceof BuiltinExpr) {
+                    // inline all NameExprs
                     unused.add(i)
                     this.inline(v, a)
                 } else if (
@@ -944,7 +1274,7 @@ export class Optimizer {
                     (analysis.countVariableReferences(v) == 1 ||
                         a.flatSize <= INLINE_MAX_SIZE)
                 ) {
-                    // inline IRFuncExpr if it is only reference once
+                    // inline FuncExpr if it is only reference once
                     unused.add(i)
                     this.inline(v, a)
                 } else if (
@@ -1070,16 +1400,17 @@ export class Optimizer {
 
 /**
  * @param {Expr} expr
+ * @param {OptimizerOptions} options
  * @returns {Expr}
  */
-export function optimize(expr) {
+export function optimize(expr, options = DEFAULT_OPTIMIZER_OPTIONS) {
     let dirty = true
     let oldState = format(expr)
 
     while (dirty) {
         dirty = false
 
-        const optimizer = new Optimizer(expr)
+        const optimizer = new Optimizer(expr, options)
 
         expr = optimizer.optimize()
 
@@ -1095,6 +1426,7 @@ export function optimize(expr) {
 }
 
 /**
+ * It is very important that each NameExpr is unique so they can resolve to different Debruijn indices
  * @param {Expr} expr
  */
 function assertNoDuplicateExprs(expr) {
@@ -1106,7 +1438,6 @@ function assertNoDuplicateExprs(expr) {
     loop(expr, {
         nameExpr: (nameExpr) => {
             if (s.has(nameExpr)) {
-                console.log(expr.toString())
                 throw new Error("duplicate NameExpr " + nameExpr.name)
             }
 

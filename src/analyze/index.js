@@ -1,5 +1,8 @@
 export { Analysis } from "./Analysis.js"
 export { Analyzer } from "./Analyzer.js"
+export { Branches } from "./Branches.js"
+export { DataValue } from "./DataValue.js"
 export { ErrorValue } from "./ErrorValue.js"
 export { FuncValue } from "./FuncValue.js"
 export { LiteralValue } from "./LiteralValue.js"
+export { MultiValue } from "./MultiValue.js"

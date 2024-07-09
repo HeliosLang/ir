@@ -5,6 +5,7 @@ import { Variable } from "../expressions/index.js"
  *   toString(): string
  *   isLiteral(): boolean
  *   hasError(maybe: boolean): boolean
+ *   isEqual(other: Value): boolean
  *   dump(codeMapper: ValueCodeMapperI, depth?: number): any
  * }} Value
  */

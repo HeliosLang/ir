@@ -48,6 +48,14 @@ export class ErrorExpr {
     resolveNames(scope) {}
 
     /**
+     * @param {ErrorExpr} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return other instanceof ErrorExpr
+    }
+
+    /**
      * @param {NotifyCopy} notifyCopy
      * @returns {Expr}
      */

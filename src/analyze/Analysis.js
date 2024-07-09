@@ -12,6 +12,7 @@ import { AnyValue } from "./AnyValue.js"
 import { ErrorValue } from "./ErrorValue.js"
 import { FuncValue } from "./FuncValue.js"
 import { MultiValue } from "./MultiValue.js"
+import { DataValue } from "./DataValue.js"
 
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr
@@ -25,7 +26,6 @@ import { MultiValue } from "./MultiValue.js"
  *   funcCallExprs: Map<FuncExpr, Set<CallExpr>>
  *   funcExprTags: Map<FuncExpr, number>
  *   rootExpr: Expr
- *   rootValue: Value
  *   variableReferences: Map<Variable, Set<NameExpr>>
  *   variableValues: Map<Variable, Value>
  * }} AnalysisProps
@@ -63,11 +63,6 @@ export class Analysis {
     rootExpr
 
     /**
-     * @type {Value}
-     */
-    rootValue
-
-    /**
      * @type {Map<Variable, Set<NameExpr>>}
      */
     variableReferences
@@ -87,7 +82,6 @@ export class Analysis {
         funcCallExprs,
         funcExprTags,
         rootExpr,
-        rootValue,
         variableReferences,
         variableValues
     }) {
@@ -96,7 +90,6 @@ export class Analysis {
         this.funcCallExprs = funcCallExprs
         this.funcExprTags = funcExprTags
         this.rootExpr = rootExpr
-        this.rootValue = rootValue
         this.variableReferences = variableReferences
         this.variableValues = variableValues
     }
@@ -106,6 +99,50 @@ export class Analysis {
      */
     get funcExprs() {
         return Array.from(this.funcCallExprs.keys())
+    }
+
+    /**
+     * TODO: extend this to FuncValues with unique ids
+     * @returns {Map<number, Set<CallExpr>>}
+     */
+    collectDataCallExprs() {
+        /**
+         * @type {Map<number, Set<CallExpr>>}
+         */
+        let callExprs = new Map()
+
+        this.exprValues.forEach((value, expr) => {
+            if (expr instanceof CallExpr && !(expr.func instanceof FuncExpr)) {
+                if (value instanceof DataValue) {
+                    const id = value.id
+
+                    const s = callExprs.get(id)
+                    if (s) {
+                        s.add(expr)
+                    } else {
+                        callExprs.set(id, new Set([expr]))
+                    }
+                } else if (
+                    value instanceof MultiValue &&
+                    value.values.some((v) => v instanceof DataValue)
+                ) {
+                    value.values.forEach((v) => {
+                        if (v instanceof DataValue) {
+                            const id = v.id
+
+                            const s = callExprs.get(id)
+                            if (s) {
+                                s.add(expr)
+                            } else {
+                                callExprs.set(id, new Set([expr]))
+                            }
+                        }
+                    })
+                }
+            }
+        })
+
+        return callExprs
     }
 
     /**

@@ -3,6 +3,7 @@ import { collectVariables } from "../ops/index.js"
 import { Stack } from "./Stack.js"
 
 /**
+ * @typedef {import("./Branch.js").Branch} Branch
  * @typedef {import("./Value.js").Value} Value
  * @typedef {import("./Value.js").ValueCodeMapperI} ValueCodeMapperI
  */
@@ -43,10 +44,11 @@ export class FuncValue {
     }
 
     /**
-     * @returns {boolean}
+     * @param {Branch} branch
+     * @returns {FuncValue}
      */
-    isLiteral() {
-        return this.stack.isLiteral()
+    addBranch(branch) {
+        return new FuncValue(this.definition, this.stack.addBranch(branch))
     }
 
     /**
@@ -55,6 +57,25 @@ export class FuncValue {
      */
     hasError(maybe = true) {
         return false
+    }
+
+    /**
+     * @param {Value} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return (
+            other instanceof FuncValue &&
+            other.definition == this.definition &&
+            this.stack.isEqual(other.stack)
+        )
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    isLiteral() {
+        return this.stack.isLiteral()
     }
 
     /**

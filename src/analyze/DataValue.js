@@ -1,3 +1,5 @@
+import { Branches } from "./Branches.js"
+
 /**
  * @typedef {import("./Value.js").Value} Value
  * @typedef {import("./Value.js").ValueCodeMapperI} ValueCodeMapperI
@@ -14,10 +16,26 @@ export class DataValue {
     id
 
     /**
-     * @param {number} id
+     * @readonly
+     * @type {Branches}
      */
-    constructor(id) {
+    branches
+
+    /**
+     * @param {number} id
+     * @param {Branches} branches
+     */
+    constructor(id, branches) {
         this.id = id
+        this.branches = branches
+    }
+
+    /**
+     * @param {Value} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return other instanceof DataValue && other.id == this.id
     }
 
     /**

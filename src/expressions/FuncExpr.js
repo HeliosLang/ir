@@ -92,6 +92,21 @@ export class FuncExpr {
     }
 
     /**
+     * @param {Expr} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return (
+            other instanceof FuncExpr &&
+            this.body.isEqual(other.body) &&
+            this.args.length == other.args.length &&
+            this.args.every(
+                (arg, i) => arg.name.value == other.args[i].name.value
+            )
+        )
+    }
+
+    /**
      * @param {Scope} scope
      */
     resolveNames(scope) {

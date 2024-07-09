@@ -33,6 +33,7 @@ import { Variable } from "./Variable.js"
  *   site: Site
  *   flatSize: number
  *   resolveNames(scope: Scope): void
+ *   isEqual(other: Expr): boolean
  *   copy(notifyCopy: NotifyCopy, varMap: Map<Variable, Variable>): Expr
  *   toUplc(): UplcTerm
  * }} Expr

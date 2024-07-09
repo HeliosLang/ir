@@ -96,6 +96,14 @@ export class NameExpr {
     }
 
     /**
+     * @param {Expr} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return other instanceof NameExpr && this.name == other.name
+    }
+
+    /**
      * @internal
      * @returns {boolean}
      */

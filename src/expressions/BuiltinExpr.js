@@ -73,6 +73,20 @@ export class BuiltinExpr {
     }
 
     /**
+     * @param {Expr} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return (
+            other instanceof BuiltinExpr &&
+            this.name == other.name &&
+            this.id == other.id &&
+            this.safe === other.safe &&
+            this.nForce === other.nForce
+        )
+    }
+
+    /**
      * @param {Scope} scope
      */
     resolveNames(scope) {}

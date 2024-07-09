@@ -10,6 +10,14 @@
  */
 export class AnyValue {
     /**
+     * @param {Value} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return true
+    }
+
+    /**
      * @returns {boolean}
      */
     isLiteral() {

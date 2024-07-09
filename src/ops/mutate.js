@@ -6,6 +6,7 @@ import { ErrorExpr } from "../expressions/ErrorExpr.js"
 import { FuncExpr } from "../expressions/FuncExpr.js"
 import { LiteralExpr } from "../expressions/LiteralExpr.js"
 import { NameExpr } from "../expressions/NameExpr.js"
+import { format } from "../format/index.js"
 
 /**
  * @typedef {import("../expressions/Expr.js").Expr} Expr
@@ -19,8 +20,8 @@ import { NameExpr } from "../expressions/NameExpr.js"
  *   nameExpr?: (expr: NameExpr) => Expr
  *   errorExpr?: (expr: ErrorExpr) => Expr
  *   literalExpr?: (expr: LiteralExpr) => Expr
- *   callExpr?: (expr: CallExpr) => Expr
- *   funcExpr?: (expr: FuncExpr) => Expr
+ *   callExpr?: (expr: CallExpr, oldExpr: CallExpr) => Expr
+ *   funcExpr?: (expr: FuncExpr, oldExpr: FuncExpr) => Expr
  *   flattenDefs?: boolean
  * }} callbacks
  */
@@ -83,8 +84,9 @@ export function mutate(root, callbacks) {
                         const args = exprs.slice(1)
 
                         let newExpr = new CallExpr(expr.site, func, args)
+
                         return callbacks.callExpr
-                            ? callbacks.callExpr(newExpr)
+                            ? callbacks.callExpr(newExpr, expr)
                             : newExpr
                     }
                 })
@@ -114,7 +116,7 @@ export function mutate(root, callbacks) {
                             )
 
                             return callbacks.funcExpr
-                                ? callbacks.funcExpr(newExpr)
+                                ? callbacks.funcExpr(newExpr, expr)
                                 : newExpr
                         }
                     })
@@ -136,7 +138,7 @@ export function mutate(root, callbacks) {
                             )
 
                             return callbacks.funcExpr
-                                ? callbacks.funcExpr(newExpr)
+                                ? callbacks.funcExpr(newExpr, expr)
                                 : newExpr
                         }
                     })

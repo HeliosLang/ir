@@ -88,10 +88,19 @@ export class LiteralValue {
     }
 
     /**
-     * @returns {string}
+     * @param {boolean} maybe
+     * @returns {boolean}
      */
-    toString() {
-        return this.value.toString()
+    hasError(maybe = true) {
+        return false
+    }
+
+    /**
+     * @param {Value} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return other instanceof LiteralValue && other.value.isEqual(this.value)
     }
 
     /**
@@ -102,11 +111,10 @@ export class LiteralValue {
     }
 
     /**
-     * @param {boolean} maybe
-     * @returns {boolean}
+     * @returns {string}
      */
-    hasError(maybe = true) {
-        return false
+    toString() {
+        return this.value.toString()
     }
 
     /**

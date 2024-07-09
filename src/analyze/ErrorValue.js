@@ -8,6 +8,14 @@
  */
 export class ErrorValue {
     /**
+     * @param {Value} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return other instanceof ErrorValue
+    }
+
+    /**
      * @returns {boolean}
      */
     isLiteral() {

@@ -1,3 +1,4 @@
+import { expectSome } from "@helios-lang/type-utils"
 import { Variable } from "../expressions/index.js"
 import { loop } from "./loop.js"
 
@@ -15,11 +16,53 @@ export function collectVariables(expr) {
      */
     const s = new Set()
 
+    /**
+     * @type {Set<Variable>}
+     */
+    const not = new Set()
+
     loop(expr, {
         nameExpr: (nameExpr) => {
             s.add(nameExpr.variable)
+        },
+        funcExpr: (funcExpr) => {
+            funcExpr.args.forEach((a) => not.add(a))
         }
     })
 
+    not.forEach((v) => s.delete(v))
+
     return s
+}
+
+/**
+ *
+ * @param {Expr} expr
+ * @returns {[number, Variable][]}
+ */
+export function collectVariablesWithDepth(expr) {
+    /**
+     * @type {[number, Variable][]}
+     */
+    const s = []
+
+    /**
+     * @type {Set<Variable>}
+     */
+    const not = new Set()
+
+    loop(expr, {
+        nameExpr: (nameExpr) => {
+            const idx = expectSome(nameExpr.index)
+
+            if (!s.some((entry) => entry[1] == nameExpr.variable)) {
+                s.push([idx, nameExpr.variable])
+            }
+        },
+        funcExpr: (funcExpr) => {
+            funcExpr.args.forEach((a) => not.add(a))
+        }
+    })
+
+    return s.filter(([_, v]) => !not.has(v))
 }

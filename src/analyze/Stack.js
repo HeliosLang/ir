@@ -1,8 +1,10 @@
 import { Variable } from "../expressions/index.js"
+import { Branches } from "./Branches.js"
 import { ErrorValue } from "./ErrorValue.js"
 import { MultiValue } from "./MultiValue.js"
 
 /**
+ * @typedef {import("./Branch.js").Branch} Branch
  * @typedef {import("./Value.js").StackI} StackI
  * @typedef {import("./Value.js").Value} Value
  * @typedef {import("./Value.js").ValueCodeMapperI} ValueCodeMapperI
@@ -18,14 +20,25 @@ export class Stack {
      */
     values
 
+    /**
+     * @readonly
+     * @type {Branches}
+     */
+    branches
+
+    /**
+     * @type {boolean}
+     */
     #isLiteral
 
     /**
      * @param {[Variable, Value][]} values
+     * @param {Branches} branches
      * @param {boolean} isLiteral
      */
-    constructor(values, isLiteral) {
+    constructor(values, branches, isLiteral) {
         this.values = values
+        this.branches = branches
         this.#isLiteral = isLiteral || values.length == 0
     }
 
@@ -57,6 +70,20 @@ export class Stack {
     }
 
     /**
+     * @param {Stack} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return (
+            this.values.length == other.values.length &&
+            this.values.every(
+                ([vr, vl], i) =>
+                    other.values[i][0] == vr && vl.isEqual(other.values[i][1])
+            )
+        )
+    }
+
+    /**
      * @returns {boolean}
      */
     isLiteral() {
@@ -74,7 +101,19 @@ export class Stack {
             return this.values[j][1]
         }
 
-        throw new Error(`${v.name} not found in IRStack`)
+        throw new Error(`${v.name} not found in Stack`)
+    }
+
+    /**
+     * @param {Branch} branch
+     * @returns {Stack}
+     */
+    addBranch(branch) {
+        return new Stack(
+            this.values,
+            this.branches.addBranch(branch),
+            this.#isLiteral
+        )
     }
 
     /**
@@ -88,6 +127,7 @@ export class Stack {
 
         return new Stack(
             this.values.concat(args),
+            this.branches,
             this.#isLiteral && args.every(([_, v]) => v.isLiteral())
         )
     }
@@ -100,6 +140,7 @@ export class Stack {
         const varVals = this.values.filter(([v]) => irVars.has(v))
         return new Stack(
             varVals,
+            this.branches,
             varVals.every(([_, v]) => v.isLiteral())
         )
     }
@@ -108,6 +149,6 @@ export class Stack {
      * @returns {Stack}
      */
     static empty() {
-        return new Stack([], true)
+        return new Stack([], new Branches([]), true)
     }
 }

@@ -1,17 +1,11 @@
 import { isSome } from "@helios-lang/type-utils"
 import { DataValue } from "./DataValue.js"
 import { LiteralValue } from "./LiteralValue.js"
+import { Branches } from "./Branches.js"
 
 /**
  * @typedef {import("@helios-lang/uplc").UplcValue} UplcValue
  * @typedef {import("./Value.js").Value} Value
- * @typedef {import("./BranchHistory.js").BranchHistory} BranchHistory
- */
-
-/**
- * @typedef {{
- *   branches: BranchHistory[]
- * }} DataValueDetails
  */
 
 export class DataValueCache {
@@ -23,41 +17,33 @@ export class DataValueCache {
     dataValueMap
 
     /**
-     * @readonly
-     * @type {DataValueDetails[]}
+     * @type {number}
      */
-    dataValueDetails
+    count
 
     constructor() {
         this.dataValueMap = new Map()
-        this.dataValueDetails = []
+        this.count = 0
     }
 
     /**
-     * @param {DataValueDetails} details
+     * @param {Branches} branches
      * @returns {DataValue}
      */
-    newValue(details = { branches: [] }) {
-        const id = this.dataValueDetails.length
+    newValue(branches) {
+        const id = this.count
+        this.count += 1
 
-        this.dataValueDetails.push(details)
-
-        return new DataValue(id)
+        return new DataValue(id, branches)
     }
 
     /**
      * @param {string} builtin
      * @param {Value[]} args
+     * @param {Branches} branches
      * @returns {DataValue}
      */
-    getBuiltinResultValue(builtin, args) {
-        /**
-         * @type {DataValueDetails}
-         */
-        const details = {
-            branches: []
-        }
-
+    getBuiltinResultValue(builtin, args, branches) {
         if (
             args.every(
                 (arg) => arg instanceof DataValue || arg instanceof LiteralValue
@@ -75,9 +61,9 @@ export class DataValueCache {
                 })
                 .join(",")})`
 
-            return this.getValue(key, details)
+            return this.getValue(key, branches)
         } else {
-            return this.newValue(details)
+            return this.newValue(branches)
         }
     }
 
@@ -86,19 +72,16 @@ export class DataValueCache {
      * @returns {DataValue}
      */
     getFromLiteralValue(uplcValue) {
-        return this.getValue(generateLiteralKey(uplcValue), {
-            branches: []
-        })
+        return this.getValue(generateLiteralKey(uplcValue), Branches.empty())
     }
 
     /**
-     * @param {number} i
+     * @param {number} tag
+     * @param {number} argIndex
      * @returns {DataValue}
      */
-    getMainArgValue(i) {
-        return this.getValue(generateMainArgKey(i), {
-            branches: []
-        })
+    getMainArgValue(tag, argIndex) {
+        return this.getValue(generateMainArgKey(tag, argIndex), Branches.empty())
     }
 
     /**
@@ -106,64 +89,22 @@ export class DataValueCache {
      * @returns {DataValue}
      */
     getParamValue(name) {
-        return this.getValue(generateParamKey(name), {
-            branches: []
-        })
-    }
-
-    /**
-     * @param {number} i
-     * @returns {DataValueDetails}
-     */
-    getMainArgDetails(i) {
-        return this.getDetails(generateMainArgKey(i), {
-            branches: []
-        })
-    }
-
-    /**
-     * @param {string} name
-     * @returns {DataValueDetails}
-     */
-    getParamDetails(name) {
-        return this.getDetails(generateParamKey(name), {
-            branches: []
-        })
+        return this.getValue(generateParamKey(name), Branches.empty())
     }
 
     /**
      * @private
      * @param {string} key
-     * @param {DataValueDetails} details
-     * @return {DataValueDetails}
-     */
-    getDetails(key, details) {
-        const id = this.dataValueMap.get(key)
-
-        if (isSome(id)) {
-            return this.dataValueDetails[id]
-        } else {
-            const value = this.newValue(details)
-
-            this.dataValueMap.set(key, value.id)
-
-            return details
-        }
-    }
-
-    /**
-     * @private
-     * @param {string} key
-     * @param {DataValueDetails} details
+     * @param {Branches} branches
      * @returns {DataValue}
      */
-    getValue(key, details) {
+    getValue(key, branches) {
         const id = this.dataValueMap.get(key)
 
         if (isSome(id)) {
-            return new DataValue(id)
+            return new DataValue(id, branches)
         } else {
-            const value = this.newValue(details)
+            const value = this.newValue(branches)
 
             this.dataValueMap.set(key, value.id)
 
@@ -173,11 +114,12 @@ export class DataValueCache {
 }
 
 /**
- * @param {number} i
+ * @param {number} tag
+ * @param {number} argIndex
  * @returns {string}
  */
-function generateMainArgKey(i) {
-    return `Main${i}`
+function generateMainArgKey(tag,argIndex) {
+    return `Main${tag}.${argIndex}`
 }
 
 /**

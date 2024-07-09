@@ -52,6 +52,14 @@ export class LiteralExpr {
     }
 
     /**
+     * @param {Expr} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return other instanceof LiteralExpr && this.value.isEqual(other.value)
+    }
+
+    /**
      * Linking doesn't do anything for literals
      * @param {Scope} scope
      */

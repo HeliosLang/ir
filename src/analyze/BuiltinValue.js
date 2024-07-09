@@ -30,10 +30,14 @@ export class BuiltinValue {
     }
 
     /**
-     * @returns {string}
+     * @param {Value} other
+     * @returns {boolean}
      */
-    toString() {
-        return `Builtin__${this.builtinName}`
+    isEqual(other) {
+        return (
+            other instanceof BuiltinValue &&
+            other.builtinName == this.builtinName
+        )
     }
 
     /**
@@ -49,6 +53,13 @@ export class BuiltinValue {
      */
     hasError(maybe = true) {
         return false
+    }
+
+    /**
+     * @returns {string}
+     */
+    toString() {
+        return `Builtin__${this.builtinName}`
     }
 
     /**

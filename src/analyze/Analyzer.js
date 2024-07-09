@@ -1,6 +1,6 @@
 import { encodeUtf8 } from "@helios-lang/codec-utils"
 import { CompilerError } from "@helios-lang/compiler-utils"
-import { isNone } from "@helios-lang/type-utils"
+import { None, expectSome, isNone } from "@helios-lang/type-utils"
 import {
     ByteArrayData,
     ConstrData,
@@ -24,6 +24,7 @@ import {
     FuncExpr,
     LiteralExpr,
     NameExpr,
+    Scope,
     Variable
 } from "../expressions/index.js"
 import { loop } from "../ops/loop.js"
@@ -38,10 +39,12 @@ import { LiteralValue } from "./LiteralValue.js"
 import { MultiValue } from "./MultiValue.js"
 import { Stack } from "./Stack.js"
 import { ValueCodeMapper } from "./ValueCodeMapper.js"
+import { Branches } from "./Branches.js"
 
 /**
  * @typedef {import("@helios-lang/uplc").UplcData} UplcData
  * @typedef {import("../expressions/index.js").Expr} Expr
+ * @typedef {import("./Branch.js").Branch} Branch
  * @typedef {import("./Value.js").Value} Value
  */
 
@@ -64,7 +67,7 @@ export class Analyzer {
      * Unwraps an IR AST
      * @type {(
      *   {
-     *     stack: Stack,
+     *     stack: Stack
      *     expr: ErrorExpr | LiteralExpr | NameExpr | FuncExpr | CallExpr | BuiltinExpr
      *   } |
      *   {calling: CallExpr, code: number, args: Value[]} |
@@ -200,13 +203,7 @@ export class Analyzer {
      * @returns {number}
      */
     getFuncExprTag(expr) {
-        const tag = this.#funcExprTags.get(expr)
-
-        if (isNone(tag)) {
-            throw new Error("tag not generated")
-        }
-
-        return tag
+        return expectSome(this.#funcExprTags.get(expr), "tag not generated")
     }
 
     /**
@@ -214,13 +211,7 @@ export class Analyzer {
      * @returns {Value}
      */
     popLastValue() {
-        const v = this.#reduce.pop()
-
-        if (!v) {
-            throw new Error("unexpected")
-        }
-
-        return v
+        return expectSome(this.#reduce.pop())
     }
 
     /**
@@ -390,6 +381,7 @@ export class Analyzer {
 
         return new Stack(
             varVals,
+            stack.branches,
             varVals.every(([_, v]) => v.isLiteral())
         )
     }
@@ -433,7 +425,7 @@ export class Analyzer {
             return values[0]
         }
 
-        // flatten nested IRMultiValues
+        // flatten nested MultiValues
         values = values
             .map((v) => {
                 if (v instanceof MultiValue) {
@@ -443,6 +435,35 @@ export class Analyzer {
                 }
             })
             .flat()
+
+        /**
+         * Remove duplicate data values
+         * @type {Value[]}
+         */
+        const tmp = []
+
+        values.forEach((v) => {
+            if (v instanceof DataValue) {
+                if (
+                    !tmp.some(
+                        (check) =>
+                            check instanceof DataValue &&
+                            check.id == v.id &&
+                            check.branches.isEqual(v.branches)
+                    )
+                ) {
+                    tmp.push(v)
+                }
+            } else if (v instanceof ErrorValue) {
+                if (!tmp.some((check) => check instanceof ErrorValue)) {
+                    tmp.push(v)
+                }
+            } else {
+                tmp.push(v)
+            }
+        })
+
+        values = tmp
 
         if (values.length == 1) {
             return values[0]
@@ -456,12 +477,22 @@ export class Analyzer {
             return values[0]
         }
 
+        // remove duplicate DataValues
+
         const hasError = values.some((v) => v instanceof ErrorValue)
+
+        if (hasError && values.some(v => v instanceof DataValue) && values.length == 2) {
+            return new MultiValue(values)
+        }
+
         const hasData = values.some(
             (v) =>
                 v instanceof DataValue ||
                 (v instanceof LiteralValue && !(v.value instanceof UplcUnit))
         )
+
+        
+
         const hasAny = values.some(
             (v) =>
                 v instanceof AnyValue ||
@@ -505,7 +536,7 @@ export class Analyzer {
 
             flattened = flattened.concat(Array.from(s.values()))
         } else if (hasData) {
-            flattened.push(this.#dataValueCache.newValue())
+            flattened.push(this.#dataValueCache.newValue(Branches.empty()))
         } else if (hasAny) {
             flattened.push(new AnyValue())
         }
@@ -523,11 +554,12 @@ export class Analyzer {
 
     /**
      * @private
-     * @param {Expr} owner
+     * @param {CallExpr} owner
      * @param {BuiltinExpr} builtinExpr
      * @param {Value[]} args
+     * @param {Stack} stack
      */
-    callBuiltin(owner, builtinExpr, args) {
+    callBuiltin(owner, builtinExpr, args, stack) {
         const builtin = builtinExpr.name
         const isSafe = builtinExpr.safe
 
@@ -565,7 +597,12 @@ export class Analyzer {
             } else if (args.some((a) => a instanceof ErrorValue)) {
                 return new ErrorValue()
             } else {
-                const res = this.callBuiltinInternal(builtin, args)
+                const res = this.callBuiltinInternal(
+                    builtin,
+                    owner,
+                    args,
+                    stack
+                )
 
                 if (isSafe && res instanceof MultiValue && res.hasError()) {
                     return this.valueWithoutErrors(res)
@@ -580,25 +617,29 @@ export class Analyzer {
 
     /**
      * @param {string} name
+     * @param {CallExpr} owner
      * @param {Value[]} args
+     * @param {Stack} stack
      * @returns {Value}
      */
-    callBuiltinInternal(name, args) {
+    callBuiltinInternal(name, owner, args, stack) {
+        const defaultResult = () => {
+            return this.#dataValueCache.getBuiltinResultValue(
+                name,
+                args,
+                stack.branches
+            )
+        }
+
         /**
          * @type {{[name: string]: (args: Value[]) => Value}}
          */
         const callbacks = {
             addInteger: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(
-                    "addInteger",
-                    [a, b]
-                )
+                return defaultResult()
             },
             subtractInteger: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(
-                    "subtractInteger",
-                    [a, b]
-                )
+                return defaultResult()
             },
             multiplyInteger: ([a, b]) => {
                 if (a instanceof LiteralValue) {
@@ -615,10 +656,7 @@ export class Analyzer {
                     }
                 }
 
-                return this.#dataValueCache.getBuiltinResultValue(
-                    "multiplyInteger",
-                    [a, b]
-                )
+                return defaultResult()
             },
             divideInteger: ([a, b]) => {
                 if (a instanceof LiteralValue && a.int == 0n) {
@@ -629,17 +667,11 @@ export class Analyzer {
                     } else if (b.int == 1n) {
                         return a
                     } else {
-                        return this.#dataValueCache.getBuiltinResultValue(
-                            name,
-                            [a, b]
-                        )
+                        return defaultResult()
                     }
                 } else {
                     return this.combineValues([
-                        this.#dataValueCache.getBuiltinResultValue(name, [
-                            a,
-                            b
-                        ]),
+                        defaultResult(),
                         new ErrorValue()
                     ])
                 }
@@ -651,17 +683,11 @@ export class Analyzer {
                     } else if (b.int == 0n) {
                         return new ErrorValue()
                     } else {
-                        return this.#dataValueCache.getBuiltinResultValue(
-                            name,
-                            [a, b]
-                        )
+                        return defaultResult()
                     }
                 } else {
                     return this.combineValues([
-                        this.#dataValueCache.getBuiltinResultValue(name, [
-                            a,
-                            b
-                        ]),
+                        defaultResult(),
                         new ErrorValue()
                     ])
                 }
@@ -675,17 +701,11 @@ export class Analyzer {
                     } else if (b.int == 1n) {
                         return a
                     } else {
-                        return this.#dataValueCache.getBuiltinResultValue(
-                            name,
-                            [a, b]
-                        )
+                        return defaultResult()
                     }
                 } else {
                     return this.combineValues([
-                        this.#dataValueCache.getBuiltinResultValue(name, [
-                            a,
-                            b
-                        ]),
+                        defaultResult(),
                         new ErrorValue()
                     ])
                 }
@@ -697,49 +717,39 @@ export class Analyzer {
                     } else if (b.int == 0n) {
                         return new ErrorValue()
                     } else {
-                        return this.#dataValueCache.getBuiltinResultValue(
-                            name,
-                            [a, b]
-                        )
+                        return defaultResult()
                     }
                 } else {
                     return this.combineValues([
-                        this.#dataValueCache.getBuiltinResultValue(name, [
-                            a,
-                            b
-                        ]),
+                        defaultResult(),
                         new ErrorValue()
                     ])
                 }
             },
             equalsInteger: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             lessThanInteger: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             lessThanEqualsInteger: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             appendByteString: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             consByteString: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             sliceByteString: ([a, b, c]) => {
                 if (b instanceof LiteralValue && b.int <= 0n) {
                     return new LiteralValue(new UplcByteArray([]))
                 } else {
-                    return this.#dataValueCache.getBuiltinResultValue(name, [
-                        a,
-                        b,
-                        c
-                    ])
+                    return defaultResult()
                 }
             },
             lengthOfByteString: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             indexByteString: ([a, b]) => {
                 if (b instanceof LiteralValue && b.int < 0n) {
@@ -748,46 +758,40 @@ export class Analyzer {
                     return new ErrorValue()
                 } else {
                     return this.combineValues([
-                        this.#dataValueCache.getBuiltinResultValue(name, [
-                            a,
-                            b
-                        ]),
+                        defaultResult(),
                         new ErrorValue()
                     ])
                 }
             },
             equalsByteString: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             lessThanByteString: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             lessThanEqualsByteString: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             appendString: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             equalsString: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             encodeUtf8: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             decodeUtf8: ([a]) => {
-                return this.combineValues([
-                    this.#dataValueCache.getBuiltinResultValue(name, [a]),
-                    new ErrorValue()
-                ])
+                return this.combineValues([defaultResult(), new ErrorValue()])
             },
             sha2_256: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             sha3_256: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             blake2b_256: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             verifyEd25519Signature: ([a, b, c]) => {
                 if (a instanceof LiteralValue && a.bytes.length != 32) {
@@ -796,11 +800,7 @@ export class Analyzer {
                     return new ErrorValue()
                 } else {
                     return this.combineValues([
-                        this.#dataValueCache.getBuiltinResultValue(name, [
-                            a,
-                            b,
-                            c
-                        ]),
+                        defaultResult(),
                         new ErrorValue()
                     ])
                 }
@@ -826,9 +826,17 @@ export class Analyzer {
 
                         return this.#dataValueCache.getBuiltinResultValue(
                             "ifThenElse",
-                            [a, b, c]
+                            [a, b, c],
+                            stack.branches
                         )
                     } else {
+                        ;[b, c] = addFuncValuesBranches(
+                            [b, c],
+                            owner,
+                            "ifThenElse",
+                            a
+                        )
+
                         return this.combineValues([b, c])
                     }
                 }
@@ -840,10 +848,10 @@ export class Analyzer {
                 return b
             },
             fstPair: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             sndPair: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             chooseList: ([a, b, c]) => {
                 if (a instanceof LiteralValue) {
@@ -864,32 +872,30 @@ export class Analyzer {
                             throw new Error("unexpected")
                         }
 
-                        return this.#dataValueCache.getBuiltinResultValue(
-                            "chooseList",
-                            [a, b, c]
-                        )
+                        return defaultResult()
                     } else {
+                        ;[b, c] = addFuncValuesBranches(
+                            [b, c],
+                            owner,
+                            "chooseList",
+                            a
+                        )
+
                         return this.combineValues([b, c])
                     }
                 }
             },
             mkCons: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             headList: ([a]) => {
-                return this.combineValues([
-                    this.#dataValueCache.getBuiltinResultValue(name, [a]),
-                    new ErrorValue()
-                ])
+                return this.combineValues([defaultResult(), new ErrorValue()])
             },
             tailList: ([a]) => {
-                return this.combineValues([
-                    this.#dataValueCache.getBuiltinResultValue(name, [a]),
-                    new ErrorValue()
-                ])
+                return this.combineValues([defaultResult(), new ErrorValue()])
             },
             nullList: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             chooseData: ([a, b, c, d, e, f]) => {
                 if (a instanceof LiteralValue) {
@@ -920,74 +926,63 @@ export class Analyzer {
                             throw new Error("unexpected")
                         }
 
-                        return this.#dataValueCache.getBuiltinResultValue(
-                            "chooseData",
-                            [a, b, c, d, e, f]
-                        )
+                        return defaultResult()
                     } else {
+                        ;[b, c, d, e, f] = addFuncValuesBranches(
+                            [b, c, d, e, f],
+                            owner,
+                            "chooseData",
+                            a
+                        )
+
                         return this.combineValues([b, c, d, e, f])
                     }
                 }
             },
             constrData: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             mapData: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             listData: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             iData: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             bData: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             unConstrData: ([a]) => {
-                return this.combineValues([
-                    this.#dataValueCache.getBuiltinResultValue(name, [a]),
-                    new ErrorValue()
-                ])
+                return this.combineValues([defaultResult(), new ErrorValue()])
             },
             unMapData: ([a]) => {
-                return this.combineValues([
-                    this.#dataValueCache.getBuiltinResultValue(name, [a]),
-                    new ErrorValue()
-                ])
+                return this.combineValues([defaultResult(), new ErrorValue()])
             },
             unListData: ([a]) => {
-                return this.combineValues([
-                    this.#dataValueCache.getBuiltinResultValue(name, [a]),
-                    new ErrorValue()
-                ])
+                return this.combineValues([defaultResult(), new ErrorValue()])
             },
             unIData: ([a]) => {
-                return this.combineValues([
-                    this.#dataValueCache.getBuiltinResultValue(name, [a]),
-                    new ErrorValue()
-                ])
+                return this.combineValues([defaultResult(), new ErrorValue()])
             },
             unBData: ([a]) => {
-                return this.combineValues([
-                    this.#dataValueCache.getBuiltinResultValue(name, [a]),
-                    new ErrorValue()
-                ])
+                return this.combineValues([defaultResult(), new ErrorValue()])
             },
             equalsData: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             mkPairData: ([a, b]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a, b])
+                return defaultResult()
             },
             mkNilData: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             mkNilPairData: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             },
             serialiseData: ([a]) => {
-                return this.#dataValueCache.getBuiltinResultValue(name, [a])
+                return defaultResult()
             }
         }
 
@@ -1275,10 +1270,14 @@ export class Analyzer {
                                 this.callFunc(expr, fn, args)
                                 this.prepareCacheValue(expr, code)
                             } else if (fn instanceof BuiltinValue) {
-                                this.callBuiltin(expr, fn.builtin, args)
+                                this.callBuiltin(
+                                    expr,
+                                    fn.builtin,
+                                    args,
+                                    head.stack
+                                )
                                 this.prepareCacheValue(expr, code)
                             } else {
-                                console.log(expr.toString())
                                 throw CompilerError.type(
                                     expr.site,
                                     "unable to call " + fn.toString()
@@ -1397,7 +1396,7 @@ export class Analyzer {
             )
         }
 
-        if (res instanceof FuncValue) {
+        if (res instanceof FuncValue || res instanceof BuiltinValue) {
             return res
         } else if (res instanceof LiteralValue) {
             return res // used by const
@@ -1421,7 +1420,7 @@ export class Analyzer {
     evalSecondPass(main) {
         const definition = main.definition
         const args = definition.args.map((a, i) =>
-            this.#dataValueCache.getMainArgValue(i)
+            this.#dataValueCache.getMainArgValue(this.getFuncExprTag(definition), i)
         )
         this.callFunc(definition, main, args)
 
@@ -1446,10 +1445,17 @@ export class Analyzer {
      * @returns {Analysis}
      */
     analyze() {
+        this.#root.resolveNames(new Scope(None, None))
+
         let res = this.evalFirstPass(this.#root)
 
-        if (res instanceof FuncValue) {
-            res = this.evalSecondPass(res)
+        while (res instanceof FuncValue || (res instanceof MultiValue && res.values.some(v => v instanceof FuncValue))) {
+            if (res instanceof FuncValue) {
+                res = this.evalSecondPass(res)
+            } else {
+                const fvs = res.values.filter(v => v instanceof FuncValue).map(v => {if (!(v instanceof FuncValue)) {throw new Error("unexpected")} else {return v}})
+                res = this.combineValues(fvs.map(fv => this.evalSecondPass(fv)))
+            }
         }
 
         return new Analysis({
@@ -1458,7 +1464,6 @@ export class Analyzer {
             funcCallExprs: this.#funcCallExprs,
             funcExprTags: this.#funcExprTags,
             rootExpr: this.#root,
-            rootValue: res,
             variableReferences: this.#variableReferences,
             variableValues: this.#variableValues
         })
@@ -1522,4 +1527,37 @@ export class Analyzer {
             throw new Error("expected LiteralValue")
         }
     }
+}
+
+/**
+ * @param {Value} v
+ * @param {Branch} branch
+ * @returns {Value}
+ */
+function addFuncValueBranch(v, branch) {
+    if (v instanceof FuncValue) {
+        return v.addBranch(branch)
+    } else if (
+        v instanceof MultiValue &&
+        v.values.some((vv) => vv instanceof FuncValue)
+    ) {
+        return new MultiValue(
+            v.values.map((vv) => addFuncValueBranch(vv, branch))
+        )
+    } else {
+        return v
+    }
+}
+
+/**
+ * @param {Value[]} vs
+ * @param {CallExpr} owner
+ * @param {Branch["type"]} type
+ * @param {Value} condition
+ * @returns {Value[]}
+ */
+function addFuncValuesBranches(vs, owner, type, condition) {
+    return vs.map((v, i) =>
+        addFuncValueBranch(v, { expr: owner, type, condition, branchId: i })
+    )
 }

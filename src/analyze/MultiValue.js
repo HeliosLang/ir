@@ -41,6 +41,20 @@ export class MultiValue {
     }
 
     /**
+     * @param {Value} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return (
+            other instanceof MultiValue &&
+            this.values.every((v) =>
+                other.values.some((vv) => vv.isEqual(v))
+            ) &&
+            other.values.every((v) => this.values.some((vv) => vv.isEqual(v)))
+        )
+    }
+
+    /**
      * @returns {boolean}
      */
     isLiteral() {
@@ -85,14 +99,20 @@ export class MultiValue {
         }
 
         if (this.hasData()) {
-            parts.push(`Data`)
+            if (!this.values.some(v => v instanceof LiteralValue || v instanceof AnyValue)) {
+                this.values.forEach(v => {if (v instanceof DataValue) {
+                    parts.push(v.toString())
+                }})
+            } else {
+                parts.push(`Data`)
+            }
         }
 
         this.values.forEach((v) => {
             if (v instanceof FuncValue) {
                 parts.push(`Fn`)
             } else if (v instanceof BuiltinValue) {
-                parts.push(`Builtin_${v.builtin.name.slice("__core__".length)}`)
+                parts.push(`Builtin_${v.builtin.name}`)
             }
         })
 

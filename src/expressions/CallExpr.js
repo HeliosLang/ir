@@ -70,6 +70,22 @@ export class CallExpr {
     }
 
     /**
+     * @param {Expr} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        if (other instanceof CallExpr) {
+            return (
+                this.func.isEqual(other.func) &&
+                this.args.length == other.args.length &&
+                this.args.every((arg, i) => arg.isEqual(other.args[i]))
+            )
+        } else {
+            return false
+        }
+    }
+
+    /**
      * @param {NotifyCopy} notifyCopy
      * @param {Map<Variable, Variable>} varMap
      * @returns {CallExpr}

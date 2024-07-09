@@ -66,8 +66,8 @@ function formatInternal(expr, indent, options) {
             if (expr.func.name == "ifThenElse") {
                 return [
                     `${formatInternal(expr.func, indent, options)}(`,
-                    `${indent}${options.tab}${formatInternal(expr.args[0], indent + options.tab, options)}`,
-                    `${indent}${options.tab}${formatInternal(expr.args[1], indent + options.tab, options)}`,
+                    `${indent}${options.tab}${formatInternal(expr.args[0], indent + options.tab, options)},`,
+                    `${indent}${options.tab}${formatInternal(expr.args[1], indent + options.tab, options)},`,
                     `${indent}${options.tab}${formatInternal(expr.args[2], indent + options.tab, options)}`,
                     `${indent})`
                 ].join("\n")
