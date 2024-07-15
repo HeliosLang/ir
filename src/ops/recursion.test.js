@@ -1,7 +1,8 @@
 import { strictEqual, throws } from "node:assert"
 import { describe, it } from "node:test"
+import { removeWhitespace } from "@helios-lang/codec-utils"
 import { format } from "../format/index.js"
-import { parse } from "../parse/index.js"
+import { parse, DEFAULT_PARSE_OPTIONS } from "../parse/index.js"
 import { injectRecursiveDeps } from "./recursion.js"
 
 /**
@@ -91,6 +92,105 @@ f`
     }
 };
 a(a)(mkNilData(()))`
+        )
+    })
+
+    it("works for real-life recursive function", () => {
+        const expr = parse(
+            `(a) -> {
+                __helios__int__to_hex = (self) -> {
+                    () -> {
+                        recurse = (self, bytes) -> {
+                            digit = __core__modInteger(self, 16);
+                            bytes = __core__consByteString(
+                                __core__ifThenElse(
+                                    __core__lessThanInteger(digit, 10),
+                                    __core__addInteger(digit, 48),
+                                    __core__addInteger(digit, 87)
+                                ),
+                                bytes
+                            );
+                            __core__ifThenElse(
+                                __core__lessThanInteger(self, 16),
+                                () -> {
+                                    bytes
+                                },
+                                () -> {
+                                    recurse(__core__divideInteger(self, 16), bytes)
+                                }
+                            )()
+                        };
+                        __core__decodeUtf8__safe(
+                            __core__ifThenElse(
+                                __core__lessThanInteger(self, 0),
+                                () -> {
+                                    __core__consByteString(
+                                        45,
+                                        recurse(__core__multiplyInteger(self, -1), #)
+                                    )
+                                },
+                                () -> {
+                                    recurse(self, #)
+                                }
+                            )()
+                        )
+                    }
+                };
+                __helios__int__to_hex(a)()
+            }`,
+            {
+                ...DEFAULT_PARSE_OPTIONS,
+                builtinsPrefix: "__core__"
+            }
+        )
+
+        const newExpr = injectRecursiveDeps(expr)
+
+        strictEqual(
+            removeWhitespace(format(newExpr, { builtinsPrefix: "__core__" })),
+            removeWhitespace(`(a) -> {
+                __helios__int__to_hex = (self) -> {
+                    () -> {
+                        recurse = (recurse) -> {
+                            (self, bytes) -> {
+                                digit = __core__modInteger(self, 16);
+                                bytes = __core__consByteString(
+                                    __core__ifThenElse(
+                                        __core__lessThanInteger(digit, 10),
+                                        __core__addInteger(digit, 48),
+                                        __core__addInteger(digit, 87)
+                                    ), 
+                                    bytes
+                                );
+                                __core__ifThenElse(
+                                    __core__lessThanInteger(self, 16),
+                                    () -> {
+                                        bytes
+                                    },
+                                    () -> {
+                                        recurse(recurse)(__core__divideInteger(self, 16), bytes)
+                                    }
+                                )()
+                            }
+                        };
+                        __core__decodeUtf8__safe(
+                            __core__ifThenElse(
+                                __core__lessThanInteger(self, 0),
+                                () -> {
+                                    __core__consByteString(
+                                        45, 
+                                        recurse(recurse)(__core__multiplyInteger(self, -1), #)
+                                    )
+                                },
+                                () -> {
+                                    recurse(recurse)(self, #)
+                                }
+                            )()
+                        )
+                    }
+                };
+                __helios__int__to_hex(a)()
+            }`)
         )
     })
 })

@@ -548,6 +548,56 @@ const testVector = [
               )
             }(unIData(arg0), unIData(arg1)))
         }`
+    },
+    {
+        description:
+            "optimizer correctly evaluates Int.to_hex() recursive function",
+        input: `() -> {
+            __helios__int__to_hex = (self) -> {
+                () -> {
+                    recurse = (recurse) -> {
+                        (self, bytes) -> {
+                            digit = modInteger(self, 16);
+                            bytes = consByteString(
+                                ifThenElse(
+                                    lessThanInteger(digit, 10),
+                                    addInteger(digit, 48),
+                                    addInteger(digit, 87)
+                                ),
+                                bytes
+                            );
+                            ifThenElse(
+                                lessThanInteger(self, 16),
+                                () -> {
+                                    bytes
+                                },
+                                () -> {
+                                    recurse(recurse)(divideInteger(self, 16), bytes)
+                                }
+                            )()
+                        }
+                    };
+                    decodeUtf8__safe(
+                        ifThenElse(
+                            lessThanInteger(self, 0),
+                            () -> {
+                                consByteString(
+                                    45,
+                                    recurse(recurse)(multiplyInteger(self, -1), #)
+                                )
+                            },
+                            () -> {
+                                recurse(recurse)(self, #)
+                            }
+                        )()
+                    )
+                }
+            };
+            __helios__int__to_hex(-1)()
+        }`,
+        expectedOutput: `() -> {
+            "-1"
+        }`
     }
 ]
 

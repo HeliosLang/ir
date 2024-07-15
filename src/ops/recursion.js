@@ -304,7 +304,7 @@ function injectMutualDependencies(defs, final, dummyVariable) {
 
     /**
      * @param {NameExpr} name
-     * @returns {Variable[]}
+     * @returns {Option<Variable[]>}
      */
     function getDeps(name) {
         const d =
@@ -313,9 +313,7 @@ function injectMutualDependencies(defs, final, dummyVariable) {
                 : defsMap.get(name.variable)
 
         if (!d) {
-            throw new Error(
-                `unexpected: couldn't find dependencies of ${name.name} in ${defs.map((d) => d.name.name.value)}${name.variable == dummyVariable ? " (is dummy var)" : ""}`
-            )
+            return None
         }
 
         return d.recursiveDeps
@@ -326,12 +324,10 @@ function injectMutualDependencies(defs, final, dummyVariable) {
      */
     const mutations = {
         nameExpr: (nameExpr) => {
-            if (
-                nameExpr.variable == dummyVariable ||
-                defsMap.has(nameExpr.variable)
-            ) {
+            const deps = getDeps(nameExpr)
+
+            if (deps) {
                 const site = nameExpr.site
-                const deps = getDeps(nameExpr)
 
                 if (deps.length == 0) {
                     return nameExpr
