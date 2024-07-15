@@ -138,12 +138,14 @@ function parseInternal(r, options) {
                 r.errors.syntax(w.site, "reserved keyword")
             }
 
-            const [semicolon, upstreamReader] = r.find(symbol(";"))
+            m = r.findNext(symbol(";"))
 
-            if (!semicolon) {
+            if (!m) {
                 r.errors.throw()
                 throw new Error("unexpected")
             }
+
+            const [upstreamReader, semicolon] = m
 
             const upstreamExpr = parseInternal(upstreamReader, options)
             const downstreamExpr = parseInternal(r, options)
