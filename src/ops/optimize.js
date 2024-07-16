@@ -182,7 +182,7 @@ export class Optimizer {
     optimize() {
         let analyzer = new Analyzer(this.#root)
         let analysis = analyzer.analyze()
-
+        console.log(analysis.annotate())
         this.removeUnusedArgs(analysis)
         this.replaceUncalledArgsWithUnit(analysis)
         this.factorizeCommon(analysis)
@@ -190,6 +190,7 @@ export class Optimizer {
         // rerun analysis
         analyzer = new Analyzer(this.#root)
         analysis = analyzer.analyze()
+        console.log(analysis.annotate())
 
         this.flattenNestedFuncExprs(analysis)
 
@@ -845,6 +846,7 @@ export class Optimizer {
                     b.value instanceof UplcInt &&
                     b.value.value == 1n
                 ) {
+                    console.log("optimize multiply int")
                     return a
                 }
 
@@ -1429,6 +1431,8 @@ export function optimize(expr, options = DEFAULT_OPTIMIZER_OPTIONS) {
             dirty = true
             oldState = newState
         }
+
+        break
     }
 
     return expr

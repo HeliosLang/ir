@@ -2,6 +2,7 @@ import { UplcDelay, UplcLambda } from "@helios-lang/uplc"
 import { CallExpr } from "./CallExpr.js"
 import { Scope } from "./Scope.js"
 import { Variable } from "./Variable.js"
+import { None } from "@helios-lang/type-utils"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
@@ -36,6 +37,13 @@ export class FuncExpr {
     body
 
     /**
+     * Variables referenced anywhere in the body
+     * @readonly
+     * @type {Set<Variable>}
+     */
+    bodyVars
+
+    /**
      * @param {Site} site
      * @param {Variable[]} args
      * @param {Expr} body
@@ -44,6 +52,7 @@ export class FuncExpr {
         this.site = site
         this.args = args
         this.body = body
+        this.bodyVars = new Set()
     }
 
     /**
@@ -112,8 +121,20 @@ export class FuncExpr {
     resolveNames(scope) {
         // in the zero-arg case no Debruijn indices need to be added because we use Delay/Force
 
-        for (let arg of this.args) {
-            scope = new Scope(scope, arg)
+        // notifyFuncExpr is always set so that the all the referenced variables can easily be collected in the bodyVars set
+
+        this.args.forEach((arg, i) => {
+            scope = new Scope(
+                scope,
+                arg,
+                i == 0 ? { notifyFuncExpr: (v) => this.bodyVars.add(v) } : {}
+            )
+        })
+
+        if (this.args.length == 0) {
+            scope = new Scope(scope, None, {
+                notifyFuncExpr: (v) => this.bodyVars.add(v)
+            })
         }
 
         this.body.resolveNames(scope)

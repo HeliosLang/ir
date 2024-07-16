@@ -158,6 +158,107 @@ export class Analyzer {
     }
 
     /**
+     * @returns {Analysis}
+     */
+    analyze() {
+        this.#root.resolveNames(new Scope(None, None))
+
+        let res = this.evalFirstPass(this.#root)
+
+        while (
+            res instanceof FuncValue ||
+            (res instanceof MultiValue &&
+                res.values.some((v) => v instanceof FuncValue))
+        ) {
+            if (res instanceof FuncValue) {
+                res = this.evalSecondPass(res)
+            } else {
+                const fvs = res.values
+                    .filter((v) => v instanceof FuncValue)
+                    .map((v) => {
+                        if (!(v instanceof FuncValue)) {
+                            throw new Error("unexpected")
+                        } else {
+                            return v
+                        }
+                    })
+                res = this.combineValues(
+                    fvs.map((fv) => this.evalSecondPass(fv))
+                )
+            }
+        }
+
+        return new Analysis({
+            callCount: this.#callCount,
+            exprValues: this.#exprValues,
+            funcCallExprs: this.#funcCallExprs,
+            funcExprTags: this.#funcExprTags,
+            rootExpr: this.#root,
+            variableReferences: this.#variableReferences,
+            variableValues: this.#variableValues
+        })
+    }
+
+    /**
+     * @returns {UplcData}
+     */
+    evalConst() {
+        const res = this.evalFirstPass(this.#root)
+
+        if (res instanceof LiteralValue) {
+            let v = res.value
+
+            if (v instanceof UplcDataValue) {
+                return v.value
+            } else if (v instanceof UplcInt) {
+                return new IntData(v.value)
+            } else if (v instanceof UplcBool) {
+                return new ConstrData(v.bool ? 1 : 0, [])
+            } else if (v instanceof UplcList) {
+                if (v.isDataList()) {
+                    return new ListData(
+                        v.items.map((item) => {
+                            if (!(item instanceof UplcDataValue)) {
+                                throw new Error("unexpected")
+                            }
+
+                            return item.value
+                        })
+                    )
+                } else if (v.isDataMap()) {
+                    return new MapData(
+                        v.items.map((item) => {
+                            const pair = item
+
+                            if (!(pair instanceof UplcPair)) {
+                                throw new Error("unexpected")
+                            }
+
+                            if (!(pair.first instanceof UplcDataValue)) {
+                                throw new Error("unexpected")
+                            }
+
+                            if (!(pair.second instanceof UplcDataValue)) {
+                                throw new Error("unexpected")
+                            }
+
+                            return [pair.first.value, pair.second.value]
+                        })
+                    )
+                }
+            } else if (v instanceof UplcString) {
+                return new ByteArrayData(encodeUtf8(v.string))
+            } else if (v instanceof UplcByteArray) {
+                return new ByteArrayData(v.bytes)
+            }
+
+            throw new Error(`unable to turn '${v.toString()}' into data`)
+        } else {
+            throw new Error("expected LiteralValue")
+        }
+    }
+
+    /**
      * @private
      */
     init() {
@@ -538,7 +639,11 @@ export class Analyzer {
 
             flattened = flattened.concat(Array.from(s.values()))
         } else if (hasData) {
-            flattened.push(this.#dataValueCache.newValue(Branches.empty()))
+            const newDataValue = this.#dataValueCache.newValue(Branches.empty())
+            if (newDataValue.id == 16) {
+                console.log("created newDataValue with id 16")
+            }
+            flattened.push(newDataValue)
         } else if (hasAny) {
             flattened.push(new AnyValue())
         }
@@ -1444,107 +1549,6 @@ export class Analyzer {
         }
 
         return res
-    }
-
-    /**
-     * @returns {Analysis}
-     */
-    analyze() {
-        this.#root.resolveNames(new Scope(None, None))
-
-        let res = this.evalFirstPass(this.#root)
-
-        while (
-            res instanceof FuncValue ||
-            (res instanceof MultiValue &&
-                res.values.some((v) => v instanceof FuncValue))
-        ) {
-            if (res instanceof FuncValue) {
-                res = this.evalSecondPass(res)
-            } else {
-                const fvs = res.values
-                    .filter((v) => v instanceof FuncValue)
-                    .map((v) => {
-                        if (!(v instanceof FuncValue)) {
-                            throw new Error("unexpected")
-                        } else {
-                            return v
-                        }
-                    })
-                res = this.combineValues(
-                    fvs.map((fv) => this.evalSecondPass(fv))
-                )
-            }
-        }
-
-        return new Analysis({
-            callCount: this.#callCount,
-            exprValues: this.#exprValues,
-            funcCallExprs: this.#funcCallExprs,
-            funcExprTags: this.#funcExprTags,
-            rootExpr: this.#root,
-            variableReferences: this.#variableReferences,
-            variableValues: this.#variableValues
-        })
-    }
-
-    /**
-     * @returns {UplcData}
-     */
-    evalConst() {
-        const res = this.evalFirstPass(this.#root)
-
-        if (res instanceof LiteralValue) {
-            let v = res.value
-
-            if (v instanceof UplcDataValue) {
-                return v.value
-            } else if (v instanceof UplcInt) {
-                return new IntData(v.value)
-            } else if (v instanceof UplcBool) {
-                return new ConstrData(v.bool ? 1 : 0, [])
-            } else if (v instanceof UplcList) {
-                if (v.isDataList()) {
-                    return new ListData(
-                        v.items.map((item) => {
-                            if (!(item instanceof UplcDataValue)) {
-                                throw new Error("unexpected")
-                            }
-
-                            return item.value
-                        })
-                    )
-                } else if (v.isDataMap()) {
-                    return new MapData(
-                        v.items.map((item) => {
-                            const pair = item
-
-                            if (!(pair instanceof UplcPair)) {
-                                throw new Error("unexpected")
-                            }
-
-                            if (!(pair.first instanceof UplcDataValue)) {
-                                throw new Error("unexpected")
-                            }
-
-                            if (!(pair.second instanceof UplcDataValue)) {
-                                throw new Error("unexpected")
-                            }
-
-                            return [pair.first.value, pair.second.value]
-                        })
-                    )
-                }
-            } else if (v instanceof UplcString) {
-                return new ByteArrayData(encodeUtf8(v.string))
-            } else if (v instanceof UplcByteArray) {
-                return new ByteArrayData(v.bytes)
-            }
-
-            throw new Error(`unable to turn '${v.toString()}' into data`)
-        } else {
-            throw new Error("expected LiteralValue")
-        }
     }
 }
 

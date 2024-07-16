@@ -3,8 +3,10 @@ import { Variable } from "./Variable.js"
 
 /**
  * Setting the dummy variable allows resolving names before injecting the recursive dependencies
+ * Setting variable==None and notifyFuncExpr allows a Scope to be used for functions that don't have any arguments but still would like to know about all the variables being referenced in their scope
  * @typedef {{
  *   dummyVariable?: Variable
+ *   notifyFuncExpr?: (v: Variable) => void
  * }} ScopeOptions
  */
 
@@ -48,11 +50,17 @@ export class Scope {
      * @returns {[number, Variable]}
      */
     getInternal(name, index) {
+        /**
+         * @type {Variable}
+         */
+        let variable
+
         if (this.variable && this.variable.isEqual(name)) {
-            return [index, this.variable]
+            variable = this.variable
         } else if (!this.parent) {
             if (this.options.dummyVariable) {
-                return [-1, this.options.dummyVariable]
+                index = -1
+                variable = this.options.dummyVariable
             } else {
                 throw CompilerError.reference(
                     name.site,
@@ -60,8 +68,17 @@ export class Scope {
                 )
             }
         } else {
-            return this.parent.getInternal(name, index + 1)
+            ;[index, variable] = this.parent.getInternal(
+                name,
+                this.variable ? index + 1 : index
+            )
         }
+
+        if (this.options.notifyFuncExpr) {
+            this.options.notifyFuncExpr(variable)
+        }
+
+        return [index, variable]
     }
 
     /**

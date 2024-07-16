@@ -92,7 +92,7 @@ export class ValueCodeMapper {
             )
         } else if (v instanceof DataValue) {
             return new Array(ValueCodeMapper.maxDepth).fill(
-                this.genCode("Data")
+                this.genCode(`Data`)
             )
         } else if (v instanceof ErrorValue) {
             return new Array(ValueCodeMapper.maxDepth).fill(
