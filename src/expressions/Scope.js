@@ -50,17 +50,11 @@ export class Scope {
      * @returns {[number, Variable]}
      */
     getInternal(name, index) {
-        /**
-         * @type {Variable}
-         */
-        let variable
-
         if (this.variable && this.variable.isEqual(name)) {
-            variable = this.variable
+            return [index, this.variable]
         } else if (!this.parent) {
             if (this.options.dummyVariable) {
-                index = -1
-                variable = this.options.dummyVariable
+                return [-1, this.options.dummyVariable]
             } else {
                 throw CompilerError.reference(
                     name.site,
@@ -68,17 +62,11 @@ export class Scope {
                 )
             }
         } else {
-            ;[index, variable] = this.parent.getInternal(
+            return this.parent.getInternal(
                 name,
                 this.variable ? index + 1 : index
             )
         }
-
-        if (this.options.notifyFuncExpr) {
-            this.options.notifyFuncExpr(variable)
-        }
-
-        return [index, variable]
     }
 
     /**
@@ -88,7 +76,21 @@ export class Scope {
      */
     get(name) {
         // one-based
-        return this.getInternal(name, 1)
+        const [index, variable] = this.getInternal(name, 1)
+
+        this.notifyFuncExprInternal(variable)
+
+        return [index, variable]
+    }
+
+    notifyFuncExprInternal(variable) {
+        if (this.options.notifyFuncExpr) {
+            this.options.notifyFuncExpr(variable)
+        }
+
+        if (this.parent) {
+            this.parent.notifyFuncExprInternal(variable)
+        }
     }
 
     /**

@@ -11,7 +11,7 @@
         "prettify": "npx prettier . --write",
         "test": "npm run test:pretty && npm run test:types && npm run test:suite",
         "test:pretty": "npx prettier . --check",
-        "test:suite": "node --test  --experimental-test-coverage",
+        "test:suite": "node --test",
         "test:types": "npx tsc -p jsconfig.json --noEmit"
     },
     "repository": {
@@ -44,6 +44,6 @@
         "@helios-lang/codec-utils": "^0.1.32",
         "@helios-lang/compiler-utils": "^0.1.49",
         "@helios-lang/type-utils": "^0.1.19",
-        "@helios-lang/uplc": "^0.1.35"
+        "@helios-lang/uplc": "^0.1.36"
     }
 }

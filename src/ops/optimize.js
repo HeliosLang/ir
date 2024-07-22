@@ -1,3 +1,5 @@
+import { Word } from "@helios-lang/compiler-utils"
+import { None } from "@helios-lang/type-utils"
 import {
     ByteArrayData,
     ConstrData,
@@ -21,7 +23,7 @@ import {
     ErrorValue,
     FuncValue,
     LiteralValue,
-    MultiValue
+    BranchedValue
 } from "../analyze/index.js"
 import {
     BuiltinExpr,
@@ -35,7 +37,6 @@ import {
 import { format } from "../format/index.js"
 import { collectVariables, collectVariablesWithDepth } from "./collect.js"
 import { loop } from "./loop.js"
-import { Word } from "@helios-lang/compiler-utils"
 import { mutate } from "./mutate.js"
 
 /**
@@ -182,7 +183,7 @@ export class Optimizer {
     optimize() {
         let analyzer = new Analyzer(this.#root)
         let analysis = analyzer.analyze()
-        console.log(analysis.annotate())
+
         this.removeUnusedArgs(analysis)
         this.replaceUncalledArgsWithUnit(analysis)
         this.factorizeCommon(analysis)
@@ -190,7 +191,6 @@ export class Optimizer {
         // rerun analysis
         analyzer = new Analyzer(this.#root)
         analysis = analyzer.analyze()
-        console.log(analysis.annotate())
 
         this.flattenNestedFuncExprs(analysis)
 
@@ -313,12 +313,10 @@ export class Optimizer {
                 const dataValues = callExprsArray.map((ce) => {
                     const dv = analysis.getExprValue(ce)
 
-                    if (dv instanceof DataValue) {
-                        return dv
-                    } else if (dv instanceof MultiValue) {
-                        const dvv = dv.values.find(
-                            (dvv) => dvv instanceof DataValue
-                        )
+                    if (dv && dv.length == 1 && dv[0] instanceof DataValue) {
+                        return dv[0]
+                    } else if (dv && dv.length > 1) {
+                        const dvv = dv.find((dvv) => dvv instanceof DataValue)
 
                         if (dvv instanceof DataValue) {
                             return dvv
@@ -493,7 +491,7 @@ export class Optimizer {
                                 ]
 
                             const branchExpr =
-                                callExpr.args[lastBranch.branchId + 1]
+                                callExpr.args[lastBranch.index + 1]
 
                             if (branchExpr instanceof FuncExpr) {
                                 let body = branchExpr.body
@@ -605,6 +603,7 @@ export class Optimizer {
     }
 
     /**
+   
      * @private
      * @param {Analysis} analysis
      */
@@ -679,6 +678,27 @@ export class Optimizer {
     /**
      * @private
      * @param {Analysis} analysis
+     * @param {Expr} expr
+     * @returns {Option<Expr>}
+     */
+    replaceByErrorOrLiteral(analysis, expr) {
+        const v = analysis.getExprValue(expr)
+
+        if (v && v.length == 1) {
+            const vv = v[0]
+            if (vv instanceof LiteralValue) {
+                return new LiteralExpr(vv.value, expr.site)
+            } else if (vv instanceof ErrorValue) {
+                return new ErrorExpr(expr.site)
+            }
+        }
+
+        return None
+    }
+
+    /**
+     * @private
+     * @param {Analysis} analysis
      * @param {FuncExpr} start
      * @param {NameExpr} nameExpr
      * @returns {boolean}
@@ -741,17 +761,13 @@ export class Optimizer {
      * @returns {Expr}
      */
     optimizeNameExpr(analysis, expr) {
-        const v = analysis.getExprValue(expr)
+        let newExpr = this.replaceByErrorOrLiteral(analysis, expr)
 
-        if (v) {
-            if (v instanceof LiteralValue) {
-                return new LiteralExpr(v.value, expr.site)
-            } else if (v instanceof ErrorValue) {
-                return new ErrorExpr(expr.site)
-            }
+        if (newExpr) {
+            return newExpr
         }
 
-        const newExpr = this.#inlining.get(expr.variable)
+        newExpr = this.#inlining.get(expr.variable)
 
         if (newExpr) {
             // always copy to make sure any (nested) NameExpr is unique (=> unique DeBruijn index)
@@ -771,14 +787,10 @@ export class Optimizer {
      * @returns {Expr}
      */
     optimizeBuiltinExpr(analysis, expr) {
-        const v = analysis.getExprValue(expr)
+        let newExpr = this.replaceByErrorOrLiteral(analysis, expr)
 
-        if (v) {
-            if (v instanceof LiteralValue) {
-                return new LiteralExpr(v.value, expr.site)
-            } else if (v instanceof ErrorValue) {
-                return new ErrorExpr(expr.site)
-            }
+        if (newExpr) {
+            return newExpr
         }
 
         return expr
@@ -846,7 +858,6 @@ export class Optimizer {
                     b.value instanceof UplcInt &&
                     b.value.value == 1n
                 ) {
-                    console.log("optimize multiply int")
                     return a
                 }
 
@@ -1234,14 +1245,13 @@ export class Optimizer {
      * @returns {Expr}
      */
     optimizeCallExpr(analysis, expr) {
-        const v = analysis.getExprValue(expr)
+        const newExprErrorOrLiteral = this.replaceByErrorOrLiteral(
+            analysis,
+            expr
+        )
 
-        if (v) {
-            if (v instanceof LiteralValue) {
-                return new LiteralExpr(v.value, expr.site)
-            } else if (v instanceof ErrorValue) {
-                return new ErrorExpr(expr.site)
-            }
+        if (newExprErrorOrLiteral) {
+            return newExprErrorOrLiteral
         }
 
         let func = expr.func
@@ -1257,7 +1267,16 @@ export class Optimizer {
         } else if (func instanceof NameExpr) {
             const v = analysis.getExprValue(func)
 
-            if (v instanceof FuncValue && isIdentityFunc(v.definition)) {
+            if (
+                v &&
+                v.every(
+                    (v) =>
+                        v instanceof FuncValue &&
+                        isIdentityFunc(
+                            analysis.getFuncDefinition(v.definitionTag)
+                        )
+                )
+            ) {
                 if (args.length != 1) {
                     throw new Error("unexpected")
                 }
@@ -1415,8 +1434,10 @@ export class Optimizer {
  * @returns {Expr}
  */
 export function optimize(expr, options = DEFAULT_OPTIMIZER_OPTIONS) {
+    const formatOptions = { syntacticSugar: false }
+
     let dirty = true
-    let oldState = format(expr)
+    let oldState = format(expr, formatOptions)
 
     while (dirty) {
         dirty = false
@@ -1425,14 +1446,12 @@ export function optimize(expr, options = DEFAULT_OPTIMIZER_OPTIONS) {
 
         expr = optimizer.optimize()
 
-        const newState = format(expr)
+        const newState = format(expr, formatOptions)
 
         if (newState != oldState) {
             dirty = true
             oldState = newState
         }
-
-        break
     }
 
     return expr

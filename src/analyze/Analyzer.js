@@ -1,6 +1,6 @@
-import { encodeUtf8 } from "@helios-lang/codec-utils"
-import { CompilerError } from "@helios-lang/compiler-utils"
-import { None, expectSome, isNone } from "@helios-lang/type-utils"
+import { encodeUtf8, removeWhitespace } from "@helios-lang/codec-utils"
+import { CompilerError, TokenSite } from "@helios-lang/compiler-utils"
+import { None, expectSome, isNone, isSome } from "@helios-lang/type-utils"
 import {
     ByteArrayData,
     ConstrData,
@@ -13,9 +13,7 @@ import {
     UplcInt,
     UplcList,
     UplcPair,
-    UplcString,
-    UplcUnit,
-    builtinsV2
+    UplcString
 } from "@helios-lang/uplc"
 import {
     BuiltinExpr,
@@ -27,56 +25,109 @@ import {
     Scope,
     Variable
 } from "../expressions/index.js"
+import { format } from "../format/index.js"
 import { loop } from "../ops/loop.js"
 import { Analysis } from "./Analysis.js"
-import { AnyValue } from "./AnyValue.js"
-import { BuiltinValue } from "./BuiltinValue.js"
-import { DataValue } from "./DataValue.js"
-import { DataValueCache } from "./DataValueCache.js"
-import { ErrorValue } from "./ErrorValue.js"
-import { FuncValue } from "./FuncValue.js"
-import { LiteralValue } from "./LiteralValue.js"
-import { MultiValue } from "./MultiValue.js"
-import { Stack } from "./Stack.js"
-import { ValueCodeMapper } from "./ValueCodeMapper.js"
-import { Branches } from "./Branches.js"
+import {
+    AnyValue,
+    BranchedValue,
+    Branches,
+    BuiltinValue,
+    DataValue,
+    ErrorValue,
+    FuncValue,
+    LiteralValue,
+    MaybeErrorValue,
+    Stack,
+    ValueCache,
+    evalBuiltin,
+    makeCallKey,
+    isAllError,
+    isAnyError
+} from "./values/index.js"
+import {
+    isAllNonError,
+    isAllMaybeNonError,
+    flattenMaybeError
+} from "./values/Value.js"
 
 /**
  * @typedef {import("@helios-lang/uplc").UplcData} UplcData
  * @typedef {import("../expressions/index.js").Expr} Expr
- * @typedef {import("./Branch.js").Branch} Branch
- * @typedef {import("./Value.js").Value} Value
- */
-
-/**
- * @typedef {{
- *   definition: FuncExpr
- *   stack: Stack
- * }} FuncValueDetails
+ * @typedef {import("./values/Branch.js").Branch} Branch
+ * @typedef {import("./values/index.js").IdGenerator} IdGenerator
+ * @typedef {import("./values/index.js").NonErrorValue} NonErrorValue
+ * @typedef {import("./values/index.js").Value} Value
+ * @typedef {import("./values/BranchedValue.js").Reconstructor} Reconstructor
+ * @typedef {import("./values/Value.js").NonBranchedValue} NonBranchedValue
  */
 
 /**
  * evalLiterals defaults to true
  * @typedef {{
  *   evalLiteral?: boolean
- * }} EvaluatorOptions
+ *   debug?: boolean
+ * }} AnalyzerOptions
  */
 
+/**
+ * @typedef {ErrorExpr | LiteralExpr | NameExpr | FuncExpr | BuiltinExpr | CallExpr} AnyExpr
+ */
+
+/**
+ * @typedef {(values: Value[]) => Value} ValueCombiner
+ */
+
+/**
+ * @typedef {{
+ *   expr: AnyExpr
+ *   stack: Stack
+ * }} ComputeExpr
+ */
+
+/**
+ * @typedef {{
+ *   collect: number
+ *   combine: ValueCombiner
+ *   owner: Option<CallExpr>
+ * }} ComputeCollect
+ */
+
+/**
+ * @typedef {{
+ *   call: Value
+ *   args: NonErrorValue[]
+ *   stack: Stack
+ *   owner: Option<CallExpr>
+ * }} ComputeCall
+ */
+
+/**
+ * @typedef {(
+ *   ComputeExpr |
+ *   ComputeCollect |
+ *   ComputeCall
+ * )} ComputeOp
+ */
+
+/**
+ * @implements {IdGenerator}
+ */
 export class Analyzer {
     /**
+     * An Evaluator can only run once per expression
+     * @type {Expr}
+     */
+    #root
+
+    /**
+     * @type {AnalyzerOptions}
+     */
+    #options
+
+    /**
      * Unwraps an IR AST
-     * @type {(
-     *   {
-     *     stack: Stack
-     *     expr: ErrorExpr | LiteralExpr | NameExpr | FuncExpr | CallExpr | BuiltinExpr
-     *   } |
-     *   {calling: CallExpr, code: number, args: Value[]} |
-     *   {fn: FuncExpr, owner: null | Expr, stack: Stack} |
-     *   {multi: number, owner: null | Expr} |
-     *   {value: Value, owner: null | Expr} |
-     *   {ignore: number, owner: null | Expr} |
-     *   {cacheExpr: CallExpr, code: number, value: Value}
-     * )[]}
+     * @type {ComputeOp[]}
      */
     #compute
 
@@ -87,13 +138,13 @@ export class Analyzer {
 
     /**
      * Keep track of the eval result of each expression
-     * @type {Map<Expr, Value>}
+     * @type {Map<Expr, Value[]>}
      */
     #exprValues
 
     /**
-     * Keep track of all values passed through IRVariables
-     * @type {Map<Variable, Value>}
+     * Keep track of all values passed through Variables
+     * @type {Map<Variable, NonErrorValue[]>}
      */
     #variableValues
 
@@ -104,10 +155,27 @@ export class Analyzer {
     #callCount
 
     /**
-     * Unique 1-based ids
+     * Unique 0-based ids, which doubles as index in #funcDefinitions
      * @type {Map<FuncExpr, number>}
      */
     #funcExprTags
+
+    /**
+     * Inverse map of #funcExprTags
+     * @type {FuncExpr[]}
+     */
+    #funcDefinitions
+
+    /**
+     * Unique 0-based ids
+     * @type {Map<Variable, number>}
+     */
+    #variableTags
+
+    /**
+     * @type {Variable[]}
+     */
+    #variables
 
     /**
      * @type {Map<FuncExpr, Set<CallExpr>>}
@@ -120,38 +188,17 @@ export class Analyzer {
     #variableReferences
 
     /**
-     * @type {Map<CallExpr, Map<number, Value>>}
+     * @type {ValueCache}
      */
-    #cachedCalls
-
-    /**
-     * @type {DataValueCache}
-     */
-    #dataValueCache
-
-    /**
-     * @type {Map<string, FuncValueDetails>}
-     */
-    #funcValueDetails
-
-    /**
-     * @type {boolean}
-     */
-    #evalLiterals
-
-    /**
-     * An Evaluator can only run once per expression
-     * @type {Expr}
-     */
-    #root
+    #cachedValues
 
     /**
      * @param {Expr} expr
-     * @param {EvaluatorOptions} options
+     * @param {AnalyzerOptions} options
      */
     constructor(expr, options = {}) {
-        this.#evalLiterals = options.evalLiteral ?? true
         this.#root = expr
+        this.#options = options
 
         this.reset()
         this.init()
@@ -165,37 +212,42 @@ export class Analyzer {
 
         let res = this.evalFirstPass(this.#root)
 
-        while (
-            res instanceof FuncValue ||
-            (res instanceof MultiValue &&
-                res.values.some((v) => v instanceof FuncValue))
-        ) {
-            if (res instanceof FuncValue) {
-                res = this.evalSecondPass(res)
-            } else {
-                const fvs = res.values
-                    .filter((v) => v instanceof FuncValue)
-                    .map((v) => {
-                        if (!(v instanceof FuncValue)) {
-                            throw new Error("unexpected")
-                        } else {
-                            return v
-                        }
-                    })
-                res = this.combineValues(
-                    fvs.map((fv) => this.evalSecondPass(fv))
-                )
-            }
+        /**
+         * @type {FuncValue[]}
+         */
+        let fns = []
+
+        /**
+         * @param {Value} res
+         */
+        const addFns = (res) => {
+            /**
+             * @type {Map<string, FuncValue>}
+             */
+            const m = new Map()
+            res.collectFuncValues(m)
+            Array.from(m.values()).forEach((fn) => fns.push(fn))
+        }
+
+        addFns(res)
+
+        let fn = fns.shift()
+        while (fn) {
+            let res = this.evalSecondPass(fn)
+            addFns(res)
+            fn = fns.shift()
         }
 
         return new Analysis({
             callCount: this.#callCount,
             exprValues: this.#exprValues,
             funcCallExprs: this.#funcCallExprs,
+            funcDefinitions: this.#funcDefinitions,
             funcExprTags: this.#funcExprTags,
             rootExpr: this.#root,
             variableReferences: this.#variableReferences,
-            variableValues: this.#variableValues
+            variableValues: this.#variableValues,
+            valueOrigins: this.#cachedValues.valueOrigins()
         })
     }
 
@@ -261,13 +313,6 @@ export class Analyzer {
     /**
      * @private
      */
-    init() {
-        this.generateFuncTags()
-    }
-
-    /**
-     * @private
-     */
     reset() {
         this.#compute = []
         this.#reduce = []
@@ -277,25 +322,90 @@ export class Analyzer {
         this.#variableValues = new Map()
         this.#callCount = new Map()
         this.#funcExprTags = new Map()
+        this.#funcDefinitions = []
+        this.#variableTags = new Map()
+        this.#variables = []
         this.#funcCallExprs = new Map()
         this.#variableReferences = new Map()
-        this.#cachedCalls = new Map()
-        this.#dataValueCache = new DataValueCache()
+        this.#cachedValues = new ValueCache()
     }
 
     /**
-     * fill the #funcExprTags map
      * @private
      */
-    generateFuncTags() {
-        let tag = 1
+    init() {
+        this.generateTags()
+    }
 
+    /**
+     * fill #funcExprTags and #variableTags
+     * @private
+     */
+    generateTags() {
         loop(this.#root, {
             funcExpr: (funcExpr) => {
-                this.#funcExprTags.set(funcExpr, tag)
-                tag = tag + 1
+                if (!this.#funcExprTags.has(funcExpr)) {
+                    const funcTag = this.#funcDefinitions.length
+                    this.#funcExprTags.set(funcExpr, funcTag)
+                    this.#funcDefinitions.push(funcExpr)
+                }
+
+                funcExpr.args.forEach((arg) => {
+                    if (!this.#variableTags.has(arg)) {
+                        const varTag = this.#variables.length
+                        this.#variableTags.set(arg, varTag)
+                        this.#variables.push(arg)
+                    }
+                })
             }
         })
+    }
+
+    /**
+     * @param {string} key
+     * @returns {number}
+     */
+    genId(key) {
+        return this.#cachedValues.genId(key)
+    }
+
+    /**
+     * @param {number} stackId
+     * @param {number} variableId
+     * @returns number
+     */
+    genOpaqueStackValueId(stackId, variableId) {
+        const key = `Stack${stackId}[${this.#variables[variableId].name.value}(${variableId})]`
+
+        return this.genId(key)
+    }
+
+    /**
+     * @param {[number, NonErrorValue][]} values
+     * @returns {number}
+     */
+    genStackId(values) {
+        values = values.slice().sort(([a], [b]) => a - b)
+
+        const key = `[${values
+            .map(([id, vl]) => {
+                return `${this.#variables[id].name.value}(${id}): ${vl.toString()}`
+            })
+            .join(", ")}]`
+
+        return this.genId(key)
+    }
+
+    /**
+     * @private
+     * @param {number} tag
+     * @returns {FuncExpr}
+     */
+    getFuncDefinition(tag) {
+        return expectSome(
+            this.#funcDefinitions[tag],
+            "Func definition not registered (tag not generated?)"
+        )
     }
 
     /**
@@ -304,7 +414,22 @@ export class Analyzer {
      * @returns {number}
      */
     getFuncExprTag(expr) {
-        return expectSome(this.#funcExprTags.get(expr), "tag not generated")
+        return expectSome(
+            this.#funcExprTags.get(expr),
+            "FuncExpr tag not generated"
+        )
+    }
+
+    /**
+     * @private
+     * @param {Variable} v
+     * @returns {number}
+     */
+    getVariableTag(v) {
+        return expectSome(
+            this.#variableTags.get(v),
+            "Variable tag not generated"
+        )
     }
 
     /**
@@ -318,28 +443,27 @@ export class Analyzer {
     /**
      * Push onto the computeStack, unwrapping CallExprs
      * @private
-     * @param {Stack} stack
      * @param {Expr} expr
+     * @param {Stack} stack
+     * @param {Option<(value: Value) => void>} onReturn
      */
-    pushExpr(stack, expr) {
-        if (expr instanceof ErrorExpr) {
-            this.#compute.push({ stack: stack, expr: expr })
-        } else if (expr instanceof LiteralExpr) {
-            this.#compute.push({ stack: stack, expr: expr })
-        } else if (expr instanceof BuiltinExpr) {
-            this.#compute.push({ stack: stack, expr: expr })
-        } else if (expr instanceof NameExpr) {
-            this.#compute.push({ stack: stack, expr: expr })
-        } else if (expr instanceof FuncExpr) {
+    pushExpr(expr, stack, onReturn = None) {
+        if (
+            expr instanceof ErrorExpr ||
+            expr instanceof LiteralExpr ||
+            expr instanceof BuiltinExpr ||
+            expr instanceof NameExpr ||
+            expr instanceof FuncExpr
+        ) {
             this.#compute.push({ stack: stack, expr: expr })
         } else if (expr instanceof CallExpr) {
             this.#compute.push({ stack: stack, expr: expr })
 
-            this.pushExpr(stack, expr.func)
+            this.pushExpr(expr.func, stack)
 
-            expr.args.forEach((a) => this.pushExpr(stack, a))
+            expr.args.forEach((a) => this.pushExpr(a, stack))
         } else {
-            throw new Error("unexpected expression type")
+            throw new Error("unhandled expression type")
         }
     }
 
@@ -347,47 +471,26 @@ export class Analyzer {
      * @private
      * @param {Expr} expr
      * @param {Value} value
-     * @returns {Value} combined value
      */
-    setExprValue(expr, value) {
+    notifyExprValue(expr, value) {
+        if (expr instanceof FuncExpr && !(value instanceof FuncValue)) {
+            throw new Error("unexpected")
+        }
+
         const outputs = this.#exprValues.get(expr)
 
         if (outputs) {
-            const combined = this.combineValues([outputs, value])
-            this.#exprValues.set(expr, combined)
-            return combined
+            outputs.push(value)
         } else {
-            this.#exprValues.set(expr, value)
-            return value
+            this.#exprValues.set(expr, [value])
         }
-    }
-
-    /**
-     * @private
-     * @param {null | Expr} owner
-     * @param {Value} value
-     */
-    pushReductionValue(owner, value) {
-        if (owner) {
-            const combined = this.setExprValue(owner, value)
-
-            if (
-                value instanceof AnyValue ||
-                (value instanceof MultiValue &&
-                    value.values.some((v) => v instanceof AnyValue))
-            ) {
-                value = combined
-            }
-        }
-
-        this.#reduce.push(value)
     }
 
     /**
      * @private
      * @param {Stack} stack
      * @param {NameExpr} nameExpr
-     * @returns {Value}
+     * @returns {NonErrorValue}
      */
     getValue(stack, nameExpr) {
         const variable = nameExpr.variable
@@ -400,732 +503,55 @@ export class Analyzer {
             this.#variableReferences.set(variable, new Set([nameExpr]))
         }
 
-        return stack.getValue(variable)
+        const id = this.getVariableTag(variable)
+
+        const res = stack.getValue(id, this)
+
+        if (res instanceof DataValue && res.id == -1) {
+            throw new Error(
+                `unexpected DataValue with id -1 when resolving '${nameExpr.name}' (stack.recursive: ${stack.recursive})`
+            )
+        }
+
+        return res
     }
 
     /**
      * @private
-     * @param {Value} value
-     * @returns {Value}
+     * @param {number} tag
+     * @param {number} incr
+     * @param {Option<CallExpr>} owner
      */
-    valueWithoutLiterals(value) {
-        if (value instanceof AnyValue) {
-            return value
-        } else if (value instanceof BuiltinValue) {
-            return value
-        } else if (value instanceof DataValue) {
-            return value
-        } else if (value instanceof ErrorValue) {
-            return value
-        } else if (value instanceof LiteralValue) {
-            if (value.value instanceof UplcUnit) {
-                return new AnyValue()
-            } else {
-                return this.#dataValueCache.getFromLiteralValue(value.value)
-            }
-        } else if (value instanceof MultiValue) {
-            return this.combineValues(
-                value.values.map((v) => this.valueWithoutLiterals(v))
-            )
-        } else if (value instanceof FuncValue) {
-            return new FuncValue(
-                value.definition,
-                this.stackWithoutLiterals(value.stack)
-            )
-        } else {
-            throw new Error("unhandled value type")
-        }
-    }
-
-    /**
-     * @private
-     * @param {Value} value
-     * @returns {Value}
-     */
-    valueWithoutErrors(value) {
-        if (value instanceof AnyValue) {
-            return value
-        } else if (value instanceof BuiltinValue) {
-            return value
-        } else if (value instanceof DataValue) {
-            return value
-        } else if (value instanceof ErrorValue) {
-            throw new Error("can't remove ErrorValue from ErrorValue")
-        } else if (value instanceof FuncValue) {
-            return value
-        } else if (value instanceof LiteralValue) {
-            return value
-        } else if (value instanceof MultiValue) {
-            return this.combineValues(
-                value.values.filter((v) => !(v instanceof ErrorValue))
-            )
-        } else {
-            throw new Error("unhandled value type")
-        }
-    }
-
-    /**
-     * @param {Stack} stack
-     * @returns {Stack}
-     */
-    stackWithoutLiterals(stack) {
-        /**
-         * @type {[Variable, Value][]}
-         */
-        const varVals = stack.values.map(([vr, vl]) => {
-            if (Stack.isGlobal(vr)) {
-                return [vr, vl]
-            } else {
-                return [vr, this.valueWithoutLiterals(vl)]
-            }
-        })
-
-        return new Stack(
-            varVals,
-            stack.branches,
-            varVals.every(([_, v]) => v.isLiteral())
-        )
-    }
-
-    /**
-     * Both stack are expected to have the same shape
-     * TODO: get rid of this
-     * @param {Stack} stackA
-     * @param {Stack} stackB
-     * @returns {Stack}
-     */
-    mergeStacks(stackA, stackB) {
-        const n = stackA.values.length
-
-        if (n != stackB.values.length) {
-            throw new Error("unexpected")
-        }
-
-        let stack = Stack.empty()
-
-        for (let i = 0; i < n; i++) {
-            const a = stackA.values[i]
-            const b = stackB.values[i]
-
-            if (a == b) {
-                stack = stack.extend([a])
-            } else {
-                stack = stack.extend([[a[0], this.combineValues([a[1], b[1]])]])
-            }
-        }
-
-        return stack
-    }
-
-    /**
-     * @param {Value[]} values
-     * @returns {Value}
-     */
-    combineValues(values) {
-        if (values.length == 1) {
-            return values[0]
-        }
-
-        // flatten nested MultiValues
-        values = values
-            .map((v) => {
-                if (v instanceof MultiValue) {
-                    return v.values
-                } else {
-                    return [v]
-                }
-            })
-            .flat()
-
-        /**
-         * Remove duplicate data values
-         * @type {Value[]}
-         */
-        const tmp = []
-
-        values.forEach((v) => {
-            if (v instanceof DataValue) {
-                if (
-                    !tmp.some(
-                        (check) =>
-                            check instanceof DataValue &&
-                            check.id == v.id &&
-                            check.branches.isEqual(v.branches)
-                    )
-                ) {
-                    tmp.push(v)
-                }
-            } else if (v instanceof ErrorValue) {
-                if (!tmp.some((check) => check instanceof ErrorValue)) {
-                    tmp.push(v)
-                }
-            } else {
-                tmp.push(v)
-            }
-        })
-
-        values = tmp
-
-        if (values.length == 1) {
-            return values[0]
-        } else if (
-            values.every(
-                (v, i) =>
-                    v instanceof LiteralValue &&
-                    (i == 0 || v.toString() == values[0].toString())
-            )
-        ) {
-            return values[0]
-        }
-
-        // remove duplicate DataValues
-
-        const hasError = values.some((v) => v instanceof ErrorValue)
-
-        if (
-            hasError &&
-            values.some((v) => v instanceof DataValue) &&
-            values.length == 2
-        ) {
-            return new MultiValue(values)
-        }
-
-        const hasData = values.some(
-            (v) =>
-                v instanceof DataValue ||
-                (v instanceof LiteralValue && !(v.value instanceof UplcUnit))
-        )
-
-        const hasAny = values.some(
-            (v) =>
-                v instanceof AnyValue ||
-                (v instanceof LiteralValue && v.value instanceof UplcUnit)
-        )
-
-        /**
-         * @type {Value[]}
-         */
-        let flattened = []
-
-        if (
-            values.some(
-                (v) => v instanceof FuncValue || v instanceof BuiltinValue
-            )
-        ) {
-            /**
-             * @type {Map<Expr, FuncValue | BuiltinValue>}
-             */
-            const s = new Map()
-
-            values.forEach((v) => {
-                if (v instanceof FuncValue) {
-                    const prev = s.get(v.definition)
-
-                    if (prev instanceof FuncValue) {
-                        s.set(
-                            v.definition,
-                            FuncValue.new(
-                                v.definition,
-                                this.mergeStacks(prev.stack, v.stack)
-                            )
-                        )
-                    } else {
-                        s.set(v.definition, v)
-                    }
-                } else if (v instanceof BuiltinValue) {
-                    s.set(v.builtin, v)
-                }
-            })
-
-            flattened = flattened.concat(Array.from(s.values()))
-        } else if (hasData) {
-            const newDataValue = this.#dataValueCache.newValue(Branches.empty())
-            if (newDataValue.id == 16) {
-                console.log("created newDataValue with id 16")
-            }
-            flattened.push(newDataValue)
-        } else if (hasAny) {
-            flattened.push(new AnyValue())
-        }
-
-        if (hasError) {
-            flattened.push(new ErrorValue())
-        }
-
-        if (flattened.length == 1) {
-            return flattened[0]
-        } else {
-            return new MultiValue(flattened)
-        }
-    }
-
-    /**
-     * @private
-     * @param {CallExpr} owner
-     * @param {BuiltinExpr} builtinExpr
-     * @param {Value[]} args
-     * @param {Stack} stack
-     */
-    callBuiltin(owner, builtinExpr, args, stack) {
-        const builtin = builtinExpr.name
-        const isSafe = builtinExpr.safe
-
-        // collect results for each permutation of multivalued args
-
-        /**
-         * @type {Value[][]}
-         */
-        const permutations = MultiValue.allPermutations(args)
-
-        const resValues = permutations.map((args) => {
-            if (args.every((a) => a instanceof LiteralValue)) {
-                try {
-                    const callback = builtinsV2[builtinExpr.id].call
-
-                    const res = callback(
-                        args.map((a) => {
-                            if (!(a instanceof LiteralValue)) {
-                                throw new Error("unexpected")
-                            }
-
-                            return a
-                        }),
-                        { print: () => {} }
-                    )
-
-                    if ("value" in res) {
-                        return new LiteralValue(res.value)
-                    } else {
-                        throw new Error("unexpected return value")
-                    }
-                } catch (e) {
-                    return new ErrorValue()
-                }
-            } else if (args.some((a) => a instanceof ErrorValue)) {
-                return new ErrorValue()
-            } else {
-                const res = this.callBuiltinInternal(
-                    builtin,
-                    owner,
-                    args,
-                    stack
-                )
-
-                if (isSafe && res instanceof MultiValue && res.hasError()) {
-                    return this.valueWithoutErrors(res)
-                } else {
-                    return res
-                }
-            }
-        })
-
-        this.pushReductionValue(owner, this.combineValues(resValues))
-    }
-
-    /**
-     * @param {string} name
-     * @param {CallExpr} owner
-     * @param {Value[]} args
-     * @param {Stack} stack
-     * @returns {Value}
-     */
-    callBuiltinInternal(name, owner, args, stack) {
-        const defaultResult = () => {
-            return this.#dataValueCache.getBuiltinResultValue(
-                name,
-                args,
-                stack.branches
-            )
-        }
-
-        /**
-         * @type {{[name: string]: (args: Value[]) => Value}}
-         */
-        const callbacks = {
-            addInteger: ([a, b]) => {
-                return defaultResult()
-            },
-            subtractInteger: ([a, b]) => {
-                return defaultResult()
-            },
-            multiplyInteger: ([a, b]) => {
-                if (a instanceof LiteralValue) {
-                    if (a.int == 0n) {
-                        return a
-                    } else if (a.int == 1n) {
-                        return b
-                    }
-                } else if (b instanceof LiteralValue) {
-                    if (b.int == 0n) {
-                        return b
-                    } else if (b.int == 1n) {
-                        return a
-                    }
-                }
-
-                return defaultResult()
-            },
-            divideInteger: ([a, b]) => {
-                if (a instanceof LiteralValue && a.int == 0n) {
-                    return this.combineValues([a, new ErrorValue()])
-                } else if (b instanceof LiteralValue) {
-                    if (b.int == 0n) {
-                        return new ErrorValue()
-                    } else if (b.int == 1n) {
-                        return a
-                    } else {
-                        return defaultResult()
-                    }
-                } else {
-                    return this.combineValues([
-                        defaultResult(),
-                        new ErrorValue()
-                    ])
-                }
-            },
-            modInteger: ([a, b]) => {
-                if (b instanceof LiteralValue) {
-                    if (b.int == 1n) {
-                        return new LiteralValue(new UplcInt(0n, true))
-                    } else if (b.int == 0n) {
-                        return new ErrorValue()
-                    } else {
-                        return defaultResult()
-                    }
-                } else {
-                    return this.combineValues([
-                        defaultResult(),
-                        new ErrorValue()
-                    ])
-                }
-            },
-            quotientInteger: ([a, b]) => {
-                if (a instanceof LiteralValue && a.int == 0n) {
-                    return this.combineValues([a, new ErrorValue()])
-                } else if (b instanceof LiteralValue) {
-                    if (b.int == 0n) {
-                        return new ErrorValue()
-                    } else if (b.int == 1n) {
-                        return a
-                    } else {
-                        return defaultResult()
-                    }
-                } else {
-                    return this.combineValues([
-                        defaultResult(),
-                        new ErrorValue()
-                    ])
-                }
-            },
-            remainderInteger: ([a, b]) => {
-                if (b instanceof LiteralValue) {
-                    if (b.int == 1n) {
-                        return new LiteralValue(new UplcInt(0n, true))
-                    } else if (b.int == 0n) {
-                        return new ErrorValue()
-                    } else {
-                        return defaultResult()
-                    }
-                } else {
-                    return this.combineValues([
-                        defaultResult(),
-                        new ErrorValue()
-                    ])
-                }
-            },
-            equalsInteger: ([a, b]) => {
-                return defaultResult()
-            },
-            lessThanInteger: ([a, b]) => {
-                return defaultResult()
-            },
-            lessThanEqualsInteger: ([a, b]) => {
-                return defaultResult()
-            },
-            appendByteString: ([a, b]) => {
-                return defaultResult()
-            },
-            consByteString: ([a, b]) => {
-                return defaultResult()
-            },
-            sliceByteString: ([a, b, c]) => {
-                if (b instanceof LiteralValue && b.int <= 0n) {
-                    return new LiteralValue(new UplcByteArray([]))
-                } else {
-                    return defaultResult()
-                }
-            },
-            lengthOfByteString: ([a]) => {
-                return defaultResult()
-            },
-            indexByteString: ([a, b]) => {
-                if (b instanceof LiteralValue && b.int < 0n) {
-                    return new ErrorValue()
-                } else if (a instanceof LiteralValue && a.bytes.length == 0) {
-                    return new ErrorValue()
-                } else {
-                    return this.combineValues([
-                        defaultResult(),
-                        new ErrorValue()
-                    ])
-                }
-            },
-            equalsByteString: ([a, b]) => {
-                return defaultResult()
-            },
-            lessThanByteString: ([a, b]) => {
-                return defaultResult()
-            },
-            lessThanEqualsByteString: ([a, b]) => {
-                return defaultResult()
-            },
-            appendString: ([a, b]) => {
-                return defaultResult()
-            },
-            equalsString: ([a, b]) => {
-                return defaultResult()
-            },
-            encodeUtf8: ([a]) => {
-                return defaultResult()
-            },
-            decodeUtf8: ([a]) => {
-                return this.combineValues([defaultResult(), new ErrorValue()])
-            },
-            sha2_256: ([a]) => {
-                return defaultResult()
-            },
-            sha3_256: ([a]) => {
-                return defaultResult()
-            },
-            blake2b_256: ([a]) => {
-                return defaultResult()
-            },
-            verifyEd25519Signature: ([a, b, c]) => {
-                if (a instanceof LiteralValue && a.bytes.length != 32) {
-                    return new ErrorValue()
-                } else if (c instanceof LiteralValue && c.bytes.length != 64) {
-                    return new ErrorValue()
-                } else {
-                    return this.combineValues([
-                        defaultResult(),
-                        new ErrorValue()
-                    ])
-                }
-            },
-            ifThenElse: ([a, b, c]) => {
-                if (a instanceof LiteralValue) {
-                    if (a.bool) {
-                        return b
-                    } else {
-                        return c
-                    }
-                } else {
-                    if (
-                        [b, c].every(
-                            (arg) =>
-                                arg instanceof DataValue ||
-                                arg instanceof LiteralValue
-                        )
-                    ) {
-                        if (!(a instanceof DataValue)) {
-                            throw new Error("unexpected")
-                        }
-
-                        return this.#dataValueCache.getBuiltinResultValue(
-                            "ifThenElse",
-                            [a, b, c],
-                            stack.branches
-                        )
-                    } else {
-                        ;[b, c] = addFuncValuesBranches(
-                            [b, c],
-                            owner,
-                            "ifThenElse",
-                            a
-                        )
-
-                        return this.combineValues([b, c])
-                    }
-                }
-            },
-            chooseUnit: ([a, b]) => {
-                return b
-            },
-            trace: ([a, b]) => {
-                return b
-            },
-            fstPair: ([a]) => {
-                return defaultResult()
-            },
-            sndPair: ([a]) => {
-                return defaultResult()
-            },
-            chooseList: ([a, b, c]) => {
-                if (a instanceof LiteralValue) {
-                    if (a.items.length == 0) {
-                        return b
-                    } else {
-                        return c
-                    }
-                } else {
-                    if (
-                        [b, c].every(
-                            (arg) =>
-                                arg instanceof DataValue ||
-                                arg instanceof LiteralValue
-                        )
-                    ) {
-                        if (!(a instanceof DataValue)) {
-                            throw new Error("unexpected")
-                        }
-
-                        return defaultResult()
-                    } else {
-                        ;[b, c] = addFuncValuesBranches(
-                            [b, c],
-                            owner,
-                            "chooseList",
-                            a
-                        )
-
-                        return this.combineValues([b, c])
-                    }
-                }
-            },
-            mkCons: ([a, b]) => {
-                return defaultResult()
-            },
-            headList: ([a]) => {
-                return this.combineValues([defaultResult(), new ErrorValue()])
-            },
-            tailList: ([a]) => {
-                return this.combineValues([defaultResult(), new ErrorValue()])
-            },
-            nullList: ([a]) => {
-                return defaultResult()
-            },
-            chooseData: ([a, b, c, d, e, f]) => {
-                if (a instanceof LiteralValue) {
-                    const data = a.data
-
-                    if (data instanceof ConstrData) {
-                        return b
-                    } else if (data instanceof MapData) {
-                        return c
-                    } else if (data instanceof ListData) {
-                        return d
-                    } else if (data instanceof IntData) {
-                        return e
-                    } else if (data instanceof ByteArrayData) {
-                        return f
-                    } else {
-                        throw new Error("unhandled UplcData type")
-                    }
-                } else {
-                    if (
-                        [b, c, d, e, f].every(
-                            (arg) =>
-                                arg instanceof DataValue ||
-                                arg instanceof LiteralValue
-                        )
-                    ) {
-                        if (!(a instanceof DataValue)) {
-                            throw new Error("unexpected")
-                        }
-
-                        return defaultResult()
-                    } else {
-                        ;[b, c, d, e, f] = addFuncValuesBranches(
-                            [b, c, d, e, f],
-                            owner,
-                            "chooseData",
-                            a
-                        )
-
-                        return this.combineValues([b, c, d, e, f])
-                    }
-                }
-            },
-            constrData: ([a, b]) => {
-                return defaultResult()
-            },
-            mapData: ([a]) => {
-                return defaultResult()
-            },
-            listData: ([a]) => {
-                return defaultResult()
-            },
-            iData: ([a]) => {
-                return defaultResult()
-            },
-            bData: ([a]) => {
-                return defaultResult()
-            },
-            unConstrData: ([a]) => {
-                return this.combineValues([defaultResult(), new ErrorValue()])
-            },
-            unMapData: ([a]) => {
-                return this.combineValues([defaultResult(), new ErrorValue()])
-            },
-            unListData: ([a]) => {
-                return this.combineValues([defaultResult(), new ErrorValue()])
-            },
-            unIData: ([a]) => {
-                return this.combineValues([defaultResult(), new ErrorValue()])
-            },
-            unBData: ([a]) => {
-                return this.combineValues([defaultResult(), new ErrorValue()])
-            },
-            equalsData: ([a, b]) => {
-                return defaultResult()
-            },
-            mkPairData: ([a, b]) => {
-                return defaultResult()
-            },
-            mkNilData: ([a]) => {
-                return defaultResult()
-            },
-            mkNilPairData: ([a]) => {
-                return defaultResult()
-            },
-            serialiseData: ([a]) => {
-                return defaultResult()
-            }
-        }
-
-        const callback = callbacks[name]
-
-        if (!callback) {
-            throw new Error(`builtin ${name} not defined in callbacks`)
-        }
-
-        return callback(args)
-    }
-
-    /**
-     * @private
-     * @param {FuncExpr} fn
-     */
-    incrCallCount(fn) {
-        const tag = this.getFuncExprTag(fn)
-
+    incrCallCount(tag, incr, owner) {
         const prev = this.#callCount.get(tag)
 
         if (prev) {
             this.#callCount.set(
                 tag,
-                Math.min(prev + 1, Number.MAX_SAFE_INTEGER)
+                Math.min(prev + incr, Number.MAX_SAFE_INTEGER)
             )
         } else {
-            this.#callCount.set(tag, 1)
+            this.#callCount.set(tag, incr)
+        }
+
+        const fnDef = this.getFuncDefinition(tag)
+
+        if (owner instanceof CallExpr) {
+            const s = this.#funcCallExprs.get(fnDef)
+
+            if (!s) {
+                this.#funcCallExprs.set(fnDef, new Set([owner]))
+            } else {
+                s.add(owner)
+            }
         }
     }
 
     /**
      * @private
      * @param {Variable[]} variables
-     * @param {Value[]} values
-     * @returns {[Variable, Value][]}
+     * @param {NonErrorValue[]} values
+     * @returns {[number, NonErrorValue][]}
      */
     mapVarsToValues(variables, values) {
         if (variables.length != values.length) {
@@ -1139,7 +565,7 @@ export class Analyzer {
         }
 
         /**
-         * @type {[Variable, Value][]}
+         * @type {[Variable, NonErrorValue][]}
          */
         const m = []
 
@@ -1149,337 +575,598 @@ export class Analyzer {
             const allValues = this.#variableValues.get(variable)
 
             if (allValues) {
-                this.#variableValues.set(
-                    variable,
-                    this.combineValues([allValues, value])
-                )
+                this.#variableValues.set(variable, allValues.concat([value]))
             } else {
-                this.#variableValues.set(variable, value)
+                this.#variableValues.set(variable, [value])
             }
 
             m.push([variable, value])
         })
 
-        return m
+        return m.map(([vr, vl]) => [this.getVariableTag(vr), vl])
     }
 
     /**
      * @private
      * @param {Stack} stack
-     * @param {null | Expr} owner
-     * @param {FuncExpr} fn
-     * @param {Value[]} args
+     * @param {[number, NonErrorValue][]} vs
+     * @param {FuncExpr} expr
+     * @returns {Stack}
      */
-    pushFuncCall(stack, owner, fn, args) {
-        if (args.some((a) => a instanceof ErrorValue)) {
-            this.pushReductionValue(owner, new ErrorValue())
-        } else {
-            if (args.some((a) => a.hasError(true))) {
-                this.#compute.push({ multi: 2, owner: owner })
-                this.#compute.push({ value: new ErrorValue(), owner: owner })
-                args = args.map((a) => this.valueWithoutErrors(a))
-            }
+    extendStack(stack, vs, expr) {
+        const allVars = stack.values.concat(vs).filter(([id]) => {
+            const v = this.#variables[id]
+            return expr.bodyVars.has(v)
+        })
 
-            const varsToValues = this.mapVarsToValues(fn.args, args)
-            stack = stack.extend(varsToValues)
-
-            this.incrCallCount(fn)
-            this.#compute.push({ fn: fn, owner: owner, stack: stack })
-            this.pushExpr(stack, fn.body)
-        }
+        return Stack.new(
+            allVars,
+            {
+                branches: stack.branches,
+                recursive: stack.recursive
+            },
+            this
+        )
     }
 
     /**
      * @private
-     * @param {Expr} owner for entry point ths is the entry point IRFuncExpr, for all other calls this is the IRCallExpr
-     * @param {FuncValue} v
-     * @param {Value[]} args
+     * @param {Value} value
+     * @param {Option<Expr>} owner
      */
-    callFunc(owner, v, args) {
-        const fn = v.definition
-        const stack = v.stack
-
-        if (owner instanceof CallExpr) {
-            const s = this.#funcCallExprs.get(fn)
-
-            if (!s) {
-                this.#funcCallExprs.set(fn, new Set([owner]))
-            } else {
-                s.add(owner)
-            }
+    pushReductionValue(value, owner) {
+        if (owner) {
+            this.notifyExprValue(owner, value)
         }
 
-        this.pushFuncCall(stack, owner, fn, args)
+        this.#reduce.push(value)
     }
 
     /**
-     * Call an unknown function (eg. returned at the deepest point of recursion)
-     * Make sure any arguments that are functions are also called so that all possible execution paths are touched (TODO: should we also called function values returned by those calls etc.?)
-     * Absorb the return values of these functions
      * @private
-     * @param {Expr} owner
-     * @param {AnyValue} fn
-     * @param {Value[]} args
+     * @param {Value} value
+     * @param {Option<Expr>} owner
+     * @param {boolean} isFromCache
      */
-    callAnyFunc(owner, fn, args) {
-        if (args.some((a) => a instanceof ErrorValue)) {
-            this.pushReductionValue(owner, new ErrorValue())
-        } else {
-            if (args.some((a) => a.hasError(false))) {
-                this.#compute.push({ multi: 2, owner: owner })
-                this.#compute.push({ value: new ErrorValue(), owner: owner })
-                args = args.map((a) => this.valueWithoutErrors(a))
-            }
-
-            /**
-             * Only user-defined functions!
-             * @type {FuncValue[]}
-             */
-            const fnsInArgs = []
-
-            args.forEach((a) => {
-                if (a instanceof MultiValue) {
-                    a.values.forEach((aa) => {
-                        if (aa instanceof FuncValue) {
-                            fnsInArgs.push(aa)
-                        }
-                    })
-                } else if (a instanceof FuncValue) {
-                    fnsInArgs.push(a)
-                }
-            })
-
-            this.#compute.push({ ignore: fnsInArgs.length, owner: owner })
-
-            fnsInArgs.forEach((fn) => {
-                this.pushFuncCall(
-                    fn.stack,
-                    null,
-                    fn.definition,
-                    fn.definition.args.map((a) => new AnyValue())
+    pushNewReductionValue(value, owner, isFromCache = false) {
+        if (owner) {
+            if (this.#options.debug) {
+                console.log(
+                    `% ${removeWhitespace(format(owner))}: ${value.toString()}${isFromCache ? ` (cached)` : ""}`
                 )
-            })
+            }
         }
+
+        this.pushReductionValue(value, owner)
     }
 
     /**
      * @private
-     * @param {CallExpr} expr
-     * @param {number} code
+     * @param {Option<Expr>} owner
+     */
+    pushErrorValue(owner) {
+        const v = new ErrorValue()
+
+        this.pushReductionValue(v, owner)
+    }
+
+    /**
+     * @private
+     * @param {Value} fn
+     * @param {NonErrorValue[]} args
+     * @param {Stack} stack - needed for the branches
+     * @param {Option<CallExpr>} owner
+     */
+    pushCall(fn, args, stack, owner) {
+        this.#compute.push({
+            call: fn,
+            args: args,
+            stack: stack,
+            owner: owner
+        })
+    }
+
+    /**
+     * @private
+     * @param {number} n
+     * @param {(values: Value[]) => Value} combine
+     * @param {Option<CallExpr>} owner
+     */
+    pushCollect(n, combine, owner) {
+        this.#compute.push({
+            collect: n,
+            combine: combine,
+            owner: owner
+        })
+    }
+
+    /**
+     * @private
+     * @param {Option<CallExpr>} owner
+     */
+    pushCollectMaybeError(owner) {
+        this.pushCollect(
+            1,
+            ([v]) => {
+                if (v instanceof ErrorValue || v instanceof MaybeErrorValue) {
+                    return v
+                } else {
+                    return new MaybeErrorValue(v)
+                }
+            },
+            owner
+        )
+    }
+
+    /**
+     * @private
+     * @param {string} key
      * @param {Value} value
      */
-    cacheValue(expr, code, value) {
-        const prev = this.#cachedCalls.get(expr)
+    setCacheValue(key, value) {
+        const prev = this.#cachedValues.get(key)
 
-        if (prev) {
-            const prevPrev = prev.get(code)
-
-            if (prevPrev && !(prevPrev instanceof AnyValue)) {
-                const newValue = this.combineValues([prevPrev, value])
-                prev.set(code, newValue)
-            } else {
-                prev.set(code, value)
+        if (prev && !(prev instanceof AnyValue)) {
+            if (prev.toString() != value.toString()) {
+                throw new Error(
+                    `unexpected, ${prev.toString()} != ${value.toString()}`
+                )
             }
         } else {
-            this.#cachedCalls.set(expr, new Map([[code, value]]))
+            if (this.#options.debug && !(value instanceof AnyValue)) {
+                console.log(`%% ${key}: ${value.toString()}`)
+            }
+
+            this.#cachedValues.set(key, value)
         }
     }
 
     /**
      * @private
-     * @param {CallExpr} expr
-     * @param {number} code
+     * @param {string} key
      */
-    prepareCacheValue(expr, code) {
-        this.#compute.push({
-            value: new AnyValue(),
-            cacheExpr: expr,
-            code: code
-        })
+    prepareCacheValue(key) {
+        const id = this.genId(key)
+        const v = new AnyValue(id)
+
+        if (this.#cachedValues.has(key)) {
+            throw new Error("unexpected")
+        }
+
+        this.#cachedValues.set(key, v)
+
+        if (this.#options.debug) {
+            console.log(`%% ${key}: Any${id} (temp)`)
+        }
+    }
+
+    /**
+     * It is important that DataValue branches are set to the current Stack branches
+     * @private
+     * @param {string} key
+     * @param {Stack} stack
+     * @returns {Option<Value>}
+     */
+    getCachedValue(key, stack) {
+        let cached = this.#cachedValues.get(key)
+
+        if (cached instanceof DataValue) {
+            if (cached.id == -1) {
+                throw new Error("unexpected")
+            }
+            return new DataValue(cached.id, stack.branches)
+        } else {
+            return cached
+        }
     }
 
     /**
      * @private
      */
     evalInternal() {
-        const codeMapper = new ValueCodeMapper(this.#funcExprTags)
+        let action = this.#compute.pop()
 
-        let head = this.#compute.pop()
-
-        while (head) {
-            if ("cacheExpr" in head) {
-                this.cacheValue(head.cacheExpr, head.code, head.value)
-            } else if ("expr" in head) {
-                const expr = head.expr
-
-                if (expr instanceof CallExpr) {
-                    let fn = this.popLastValue()
-
-                    /**
-                     * @type {Value[]}
-                     */
-                    let args = []
-
-                    for (let i = 0; i < expr.args.length; i++) {
-                        args.push(this.popLastValue())
-                    }
-
-                    // don't allow partial literal args (could lead to infinite recursion where the partial literal keeps updating)
-                    //  except when calling builtins (partial literals are important: eg. in divideInteger(<data>, 10) we know that the callExpr doesn't return an error)
-                    const allLiteral =
-                        fn.isLiteral() && args.every((a) => a.isLiteral())
-
-                    if (
-                        !allLiteral &&
-                        !(fn instanceof BuiltinValue) &&
-                        !(
-                            fn instanceof FuncValue &&
-                            fn.definition.args.length == 1 &&
-                            Stack.isGlobal(fn.definition.args[0])
-                        )
-                    ) {
-                        fn = this.valueWithoutLiterals(fn)
-                        args = args.map((a) => this.valueWithoutLiterals(a))
-                    }
-
-                    const fns = fn instanceof MultiValue ? fn.values : [fn]
-
-                    if (fns.length > 1) {
-                        this.#compute.push({ multi: fns.length, owner: expr })
-                    }
-
-                    for (let fn of fns) {
-                        const code = codeMapper.getCallCode(fn, args)
-                        const cached = this.#cachedCalls.get(expr)?.get(code)
-
-                        if (cached) {
-                            this.pushReductionValue(expr, cached)
-
-                            // increment the call count even though we are using a cached value
-                            for (let fn of fns) {
-                                if (fn instanceof FuncValue) {
-                                    this.incrCallCount(fn.definition)
-                                }
-                            }
-                        } else {
-                            this.#compute.push({
-                                calling: expr,
-                                code: code,
-                                args: args
-                            })
-                            //this.cacheValue(expr, code, new IRAnyValue());
-
-                            if (fn instanceof AnyValue) {
-                                this.callAnyFunc(expr, fn, args)
-                            } else if (fn instanceof ErrorValue) {
-                                this.pushReductionValue(expr, new ErrorValue())
-                            } else if (fn instanceof FuncValue) {
-                                this.callFunc(expr, fn, args)
-                                this.prepareCacheValue(expr, code)
-                            } else if (fn instanceof BuiltinValue) {
-                                this.callBuiltin(
-                                    expr,
-                                    fn.builtin,
-                                    args,
-                                    head.stack
-                                )
-                                this.prepareCacheValue(expr, code)
-                            } else {
-                                throw CompilerError.type(
-                                    expr.site,
-                                    "unable to call " + fn.toString()
-                                )
-                            }
-                        }
-                    }
-                } else if (expr instanceof ErrorExpr) {
-                    this.pushReductionValue(expr, new ErrorValue())
-                } else if (expr instanceof BuiltinExpr) {
-                    this.pushReductionValue(expr, new BuiltinValue(expr))
-                } else if (expr instanceof NameExpr) {
-                    if (expr.isParam()) {
-                        this.pushReductionValue(
-                            expr,
-                            this.#dataValueCache.getParamValue(expr.name)
-                        )
-                    } else {
-                        this.pushReductionValue(
-                            expr,
-                            this.getValue(head.stack, expr)
-                        )
-                    }
-                } else if (expr instanceof LiteralExpr) {
-                    if (this.#evalLiterals) {
-                        this.pushReductionValue(
-                            expr,
-                            new LiteralValue(expr.value)
-                        )
-                    } else {
-                        // a literal unit can be used as a dummy branch function if we are sure that branch is never taken
-                        if (expr.value instanceof UplcUnit) {
-                            this.pushReductionValue(expr, new AnyValue())
-                        } else {
-                            this.pushReductionValue(
-                                expr,
-                                this.#dataValueCache.getFromLiteralValue(
-                                    expr.value
-                                )
-                            )
-                        }
-                    }
-                } else if (expr instanceof FuncExpr) {
-                    // don't set owner because it is confusing wrt. return value type
-                    this.#reduce.push(FuncValue.new(expr, head.stack))
-                } else {
-                    throw new Error("unexpected expr type")
-                }
-            } else if ("calling" in head) {
-                // keep track of recursive calls
-
-                const last = this.popLastValue()
-
-                this.cacheValue(head.calling, head.code, last)
-                this.pushReductionValue(head.calling, last)
-            } else if ("fn" in head && head.fn instanceof FuncExpr) {
-                // track the owner
-                const owner = head.owner
-                const last = this.popLastValue()
-
-                this.setExprValue(head.fn, last)
-                this.pushReductionValue(owner, last)
-            } else if ("multi" in head) {
-                // collect multiple IRValues from the reductionStack and put it back as a single IRMultiValue
-
-                /**
-                 * @type {Value[]}
-                 */
-                const values = []
-
-                for (let i = 0; i < head.multi; i++) {
-                    const v = this.popLastValue()
-
-                    values.push(v)
-                }
-
-                this.pushReductionValue(head.owner, this.combineValues(values))
-            } else if ("value" in head) {
-                this.pushReductionValue(head.owner, head.value)
-            } else if ("ignore" in head) {
-                const vs = [new AnyValue()]
-                for (let i = 0; i < head.ignore; i++) {
-                    const x = this.popLastValue()
-
-                    if (x instanceof ErrorValue) {
-                        vs.push(new ErrorValue())
-                    }
-                }
-
-                this.pushReductionValue(head.owner, this.combineValues(vs))
+        while (action) {
+            if ("expr" in action) {
+                this.computeExpr(action.expr, action.stack)
+            } else if ("collect" in action) {
+                this.computeCollect(
+                    action.collect,
+                    action.combine,
+                    action.owner
+                )
+            } else if ("call" in action) {
+                this.computeCallValue(
+                    action.call,
+                    action.args,
+                    action.stack,
+                    action.owner
+                )
             } else {
                 throw new Error("unexpected term")
             }
 
-            head = this.#compute.pop()
+            action = this.#compute.pop()
+        }
+    }
+
+    /**
+     * @private
+     * @param {AnyExpr} expr
+     * @param {Stack} stack
+     */
+    computeExpr(expr, stack) {
+        if (expr instanceof LiteralExpr) {
+            this.computeLiteralExpr(expr)
+        } else if (expr instanceof ErrorExpr) {
+            this.computeErrorExpr(expr)
+        } else if (expr instanceof BuiltinExpr) {
+            this.computeBuiltinExpr(expr)
+        } else if (expr instanceof NameExpr) {
+            this.computeNameExpr(expr, stack)
+        } else if (expr instanceof FuncExpr) {
+            this.computeFuncExpr(expr, stack)
+        } else if (expr instanceof CallExpr) {
+            this.computeCallExpr(expr, stack)
+        } else {
+            throw new Error("unhandled expression")
+        }
+    }
+
+    /**
+     * @private
+     * @param {LiteralExpr} expr
+     */
+    computeLiteralExpr(expr) {
+        const v = new LiteralValue(expr.value)
+
+        this.pushReductionValue(v, expr)
+    }
+
+    /**
+     * @private
+     * @param {ErrorExpr} expr
+     */
+    computeErrorExpr(expr) {
+        this.pushErrorValue(expr)
+    }
+
+    /**
+     * @private
+     * @param {BuiltinExpr} expr
+     */
+    computeBuiltinExpr(expr) {
+        const v = new BuiltinValue(expr.name, expr.safe)
+
+        this.pushReductionValue(v, expr)
+    }
+
+    /**
+     * @private
+     * @param {NameExpr} expr
+     * @param {Stack} stack
+     */
+    computeNameExpr(expr, stack) {
+        const v = this.getValue(stack, expr)
+
+        this.pushNewReductionValue(v, expr)
+    }
+
+    /**
+     * @private
+     * @param {FuncExpr} expr
+     * @param {Stack} stack
+     */
+    computeFuncExpr(expr, stack) {
+        const tag = this.getFuncExprTag(expr)
+
+        /**
+         * @type {FuncValue}
+         */
+        let v
+
+        if (!stack.isLiteral() && stack.containsFunc(tag, 0)) {
+            // TODO: this is problematic because it doesn't allow filtering out unchanged stack variables which then remain unchanged
+            const recStack = stack.blockRecursion({
+                genId: this,
+                blockFunc: { tag: tag, depth: 0 }
+            })
+
+            v = new FuncValue(tag, recStack)
+        } else {
+            v = new FuncValue(tag, stack)
+        }
+
+        // don't set owner because it is confusing wrt. return value type
+        this.pushReductionValue(v, expr)
+    }
+
+    /**
+     * @private
+     * @param {CallExpr} expr
+     * @param {Stack} stack
+     */
+    computeCallExpr(expr, stack) {
+        /**
+         * @type {Value}
+         */
+        let fn = this.popLastValue()
+
+        /**
+         * @type {Value[]}
+         */
+        let args = []
+        for (let i = 0; i < expr.args.length; i++) {
+            args.push(this.popLastValue())
+        }
+
+        if (isAllNonError(args)) {
+            this.pushCall(fn, args, stack, expr)
+        } else if (isAllMaybeNonError(args)) {
+            const argsWithoutMaybeError = flattenMaybeError(args)
+
+            this.pushCollectMaybeError(expr)
+            this.pushCall(fn, argsWithoutMaybeError, stack, None)
+        } else {
+            this.pushErrorValue(expr)
+        }
+    }
+
+    /**
+     * @private
+     * @param {number} nValues
+     * @param {(values: Value[]) => Value} combine
+     * @param {Option<CallExpr>} owner
+     */
+    computeCollect(nValues, combine, owner) {
+        // collect multiple Values from the reductionStack and put it back as a single Value
+
+        /**
+         * @type {Value[]}
+         */
+        const values = []
+
+        for (let i = 0; i < nValues; i++) {
+            const v = this.popLastValue()
+
+            values.push(v)
+        }
+
+        // values popped like this have inverse order of the branches, so must be reversed
+        //  (reversal isn't needed when evaluating expressions and returning values, because that is push-pop-push-pop, and here it is just a single push-pop)
+        values.reverse()
+
+        const res = combine(values)
+
+        this.pushNewReductionValue(res, owner)
+    }
+
+    /**
+     * @param {Value} fn
+     * @param {NonErrorValue[]} args
+     * @param {Stack} stack
+     * @param {Option<CallExpr>}  owner
+     */
+    computeCallValue(fn, args, stack, owner) {
+        if (
+            fn instanceof ErrorValue ||
+            fn instanceof LiteralValue ||
+            fn instanceof DataValue
+        ) {
+            this.computeCallNonCallableValue(owner)
+        } else if (fn instanceof MaybeErrorValue) {
+            this.computeCallMaybeErrorValue(fn, args, stack, owner)
+        } else if (fn instanceof BranchedValue) {
+            this.computeCallBranchedValue(fn, args, stack, owner)
+        } else if (fn instanceof AnyValue) {
+            this.computeCallAny(fn, args, owner)
+        } else if (fn instanceof BuiltinValue) {
+            this.computeCallBuiltinValue(fn, args, stack, owner)
+        } else if (fn instanceof FuncValue) {
+            this.computeCallFuncValue(fn, args, owner)
+        } else {
+            throw new Error("unhandled Value type")
+        }
+    }
+
+    /**
+     * @private
+     * @param {Option<CallExpr>} owner
+     */
+    computeCallNonCallableValue(owner) {
+        this.pushErrorValue(owner)
+    }
+
+    /**
+     * @private
+     * @param {MaybeErrorValue} fn
+     * @param {NonErrorValue[]} args
+     * @param {Stack} stack
+     * @param {Option<CallExpr>} owner
+     */
+    computeCallMaybeErrorValue(fn, args, stack, owner) {
+        this.pushCollectMaybeError(owner)
+        this.pushCall(fn.value, args, stack, None)
+    }
+
+    /**
+     * @private
+     * @param {BranchedValue} fn
+     * @param {NonErrorValue[]} args
+     * @param {Stack} stack
+     * @param {Option<CallExpr>} owner
+     */
+    computeCallBranchedValue(fn, args, stack, owner) {
+        this.pushCollect(
+            fn.nCases,
+            (cases) => {
+                /**
+                 * @type {DataValue | BranchedValue}
+                 */
+                let res
+
+                if (
+                    !cases.some((c) => c.isCallable(true)) &&
+                    cases.some((c) => c.isDataLike(true))
+                ) {
+                    const key = makeCallKey(
+                        new BuiltinValue(fn.type, false),
+                        [/** @type {Value} */ (fn.condition)].concat(cases)
+                    )
+                    const id = this.genId(key)
+
+                    res = new DataValue(id, stack.branches)
+                } else {
+                    res = new BranchedValue(fn.type, fn.condition, cases)
+                }
+
+                if (isAnyError(cases)) {
+                    return new MaybeErrorValue(res)
+                } else {
+                    return res
+                }
+            },
+            owner
+        )
+
+        fn.cases.forEach((c) => {
+            this.pushCall(c, args, stack, None)
+        })
+    }
+
+    /**
+     * TODO: perform the analytics collects elsewhere
+     * @private
+     * @param {AnyValue} fn
+     * @param {Value[]} args
+     * @param {Option<CallExpr>} owner
+     */
+    computeCallAny(fn, args, owner) {
+        /**
+         * @type {Set<number>}
+         */
+        const s = new Set()
+
+        args.forEach((a) => a.collectFuncTags(s))
+
+        Array.from(s).forEach((tag) => {
+            // twice, to make sure optimizer doesn't touch these functions
+            this.incrCallCount(tag, 2, None)
+        })
+
+        const key = makeCallKey(fn, args)
+        const id = this.genId(key)
+        const v = new MaybeErrorValue(new AnyValue(id))
+
+        this.pushNewReductionValue(v, owner)
+    }
+
+    /**
+     * @private
+     * @param {BuiltinValue} builtin
+     * @param {NonErrorValue[]} args
+     * @param {Stack} stack
+     * @param {Option<CallExpr>} owner
+     */
+    computeCallBuiltinValue(builtin, args, stack, owner) {
+        const result = evalBuiltin(owner, builtin, args, stack, this)
+
+        this.pushNewReductionValue(result, owner)
+    }
+
+    /**
+     * @private
+     * @param {FuncValue} fn
+     * @param {NonErrorValue[]} args
+     * @param {Option<FuncExpr | CallExpr>} owner for entry point ths is the entry point FuncExpr, for all other calls this is the CallExpr
+     */
+    computeCallFuncValue(fn, args, owner) {
+        const key = makeCallKey(fn, args)
+        const cached = this.#cachedValues.get(key)
+
+        const fnDef = this.getFuncDefinition(fn.definitionTag)
+        const callExprOwner = owner instanceof CallExpr ? owner : None
+        this.incrCallCount(this.getFuncExprTag(fnDef), 1, callExprOwner)
+
+        if (cached) {
+            this.pushNewReductionValue(cached, owner)
+        } else {
+            let recursive = fn.stack.recursive
+
+            let argKeys = args.map((a) => a.toString())
+
+            if (
+                args.some((a) => !a.isLiteral()) &&
+                args.some((a) => a.containsFunc(fn.definitionTag, 0))
+            ) {
+                // TODO: is this really needed?
+                if (!fn.isRecursive()) {
+                    ;[fn] = fn.blockRecursion({
+                        genId: this
+                    })
+                }
+
+                const argsAndKeys = args.map((a, i) =>
+                    a.blockRecursion({
+                        keyPath: `Arg${this.getVariableTag(fnDef.args[i])}`,
+                        blockFunc: { tag: fn.definitionTag, depth: 0 },
+                        genId: this
+                    })
+                )
+
+                args = argsAndKeys.map(([a, k]) => a)
+                argKeys = argsAndKeys.map(([a, k]) => k)
+
+                recursive = true
+            } else if (recursive) {
+                const argsAndKeys = args.map((a, i) =>
+                    a.blockRecursion({
+                        keyPath: `Arg${this.getVariableTag(fnDef.args[i])}`,
+                        genId: this
+                    })
+                )
+
+                args = argsAndKeys.map(([a, k]) => a)
+                argKeys = argsAndKeys.map(([a, k]) => k)
+            }
+
+            const varsToValues = this.mapVarsToValues(fnDef.args, args)
+
+            const argKeysMap = new Map(
+                fnDef.args.map((a, i) => {
+                    return [this.getVariableTag(a), argKeys[i]]
+                })
+            )
+
+            const allVars = fn.stack.values
+                .concat(varsToValues)
+                .filter(([id]) => {
+                    const v = this.#variables[id]
+                    return fnDef.bodyVars.has(v)
+                })
+
+            const stackKey = `[${allVars
+                .map((v) => {
+                    const vKey = argKeysMap.get(v[0]) ?? v[1].toString()
+                    return `${v[0]}: ${vKey}`
+                })
+                .join(", ")}]`
+            const id = this.genId(stackKey)
+
+            const stack = new Stack(id, allVars, fn.stack.branches, recursive)
+
+            this.pushCollect(
+                1,
+                ([v]) => {
+                    this.setCacheValue(key, v)
+                    return v
+                },
+                callExprOwner
+            )
+
+            this.pushExpr(fnDef.body, stack)
+
+            this.prepareCacheValue(key)
         }
     }
 
@@ -1489,34 +1176,19 @@ export class Analyzer {
      * @returns {Value}
      */
     evalFirstPass(expr) {
-        this.pushExpr(Stack.empty(), expr)
+        const stack = Stack.new([], { branches: Branches.empty() }, this)
+
+        this.pushExpr(expr, stack)
 
         this.evalInternal()
 
         const res = this.popLastValue()
 
         if (this.#reduce.length != 0) {
-            throw new Error(
-                "expected a single reduction value in first phase [" +
-                    this.#reduce.map((v) => v.toString()).join(", ") +
-                    "]"
-            )
+            throw new Error("expected consumption of all reduction values")
         }
 
-        if (res instanceof FuncValue || res instanceof BuiltinValue) {
-            return res
-        } else if (res instanceof LiteralValue) {
-            return res // used by const
-        } else if (
-            res instanceof MultiValue &&
-            res.values.some((v) => v instanceof AnyValue)
-        ) {
-            return res
-        } else {
-            throw new Error(
-                `expected entry point function, got ${res.toString()}`
-            )
-        }
+        return res
     }
 
     /**
@@ -1525,14 +1197,15 @@ export class Analyzer {
      * @returns {Value}
      */
     evalSecondPass(main) {
-        const definition = main.definition
-        const args = definition.args.map((a, i) =>
-            this.#dataValueCache.getMainArgValue(
-                this.getFuncExprTag(definition),
-                i
-            )
-        )
-        this.callFunc(definition, main, args)
+        const definition = this.getFuncDefinition(main.definitionTag)
+        const args = definition.args.map((a, i) => {
+            const key = `Arg${main.definitionTag}.${i}`
+            const id = this.#cachedValues.genId(key)
+
+            return new DataValue(id, Branches.empty())
+        })
+
+        this.computeCallFuncValue(main, args, definition)
 
         this.evalInternal()
 
@@ -1550,37 +1223,4 @@ export class Analyzer {
 
         return res
     }
-}
-
-/**
- * @param {Value} v
- * @param {Branch} branch
- * @returns {Value}
- */
-function addFuncValueBranch(v, branch) {
-    if (v instanceof FuncValue) {
-        return v.addBranch(branch)
-    } else if (
-        v instanceof MultiValue &&
-        v.values.some((vv) => vv instanceof FuncValue)
-    ) {
-        return new MultiValue(
-            v.values.map((vv) => addFuncValueBranch(vv, branch))
-        )
-    } else {
-        return v
-    }
-}
-
-/**
- * @param {Value[]} vs
- * @param {CallExpr} owner
- * @param {Branch["type"]} type
- * @param {Value} condition
- * @returns {Value[]}
- */
-function addFuncValuesBranches(vs, owner, type, condition) {
-    return vs.map((v, i) =>
-        addFuncValueBranch(v, { expr: owner, type, condition, branchId: i })
-    )
 }

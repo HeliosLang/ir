@@ -3,25 +3,26 @@ import {
     UplcByteArray,
     UplcDataValue,
     UplcInt,
-    UplcList,
-    UplcUnit
+    UplcList
 } from "@helios-lang/uplc"
+import { Branches } from "./Branches.js"
 import { DataValue } from "./DataValue.js"
-import { AnyValue } from "./AnyValue.js"
 
 /**
  * @typedef {import("@helios-lang/uplc").UplcData} UplcData
  * @typedef {import("@helios-lang/uplc").UplcValue} UplcValue
- * @typedef {import("./Value.js").Value} Value
- * @typedef {import("./Value.js").ValueCodeMapperI} ValueCodeMapperI
+ * @typedef {import("./IdGenerator.js").IdGenerator} IdGenerator
+ * @typedef {import("./ValueI.js").BlockRecursionProps} BlockRecursionProps
+ * @typedef {import("./ValueI.js").ValueI} ValueI
  */
 
 /**
- * @implements {Value}
+ * @implements {ValueI}
  */
 export class LiteralValue {
     /**
      * @readonly
+     * @type {UplcValue}
      */
     value
 
@@ -88,19 +89,47 @@ export class LiteralValue {
     }
 
     /**
-     * @param {boolean} maybe
+     * @param {BlockRecursionProps} props
+     * @returns {[DataValue, string]}
+     */
+    blockRecursion({ keyPath, genId }) {
+        const key = keyPath
+        const id = genId.genId(key)
+        const v = new DataValue(id, Branches.empty())
+
+        return [v, v.toString()]
+    }
+
+    /**
+     * @param {Set<number>} s
+     */
+    collectFuncTags(s) {}
+
+    collectFuncValues() {}
+
+    /**
+     * @param {number} tag
+     * @param {number} depth
      * @returns {boolean}
      */
-    hasError(maybe = true) {
+    containsFunc(tag, depth) {
         return false
     }
 
     /**
-     * @param {Value} other
+     * @param {boolean} anyAsDataOnly
      * @returns {boolean}
      */
-    isEqual(other) {
-        return other instanceof LiteralValue && other.value.isEqual(this.value)
+    isCallable(anyAsDataOnly) {
+        return false
+    }
+
+    /**
+     * @param {boolean} anyAsFuncOnly
+     * @returns {boolean}
+     */
+    isDataLike(anyAsFuncOnly) {
+        return true
     }
 
     /**
@@ -115,18 +144,5 @@ export class LiteralValue {
      */
     toString() {
         return this.value.toString()
-    }
-
-    /**
-     * @param {ValueCodeMapperI} codeMapper
-     * @param {number} depth
-     * @returns {any}
-     */
-    dump(codeMapper, depth = 0) {
-        return {
-            type: "Literal",
-            code: codeMapper.getCode(this),
-            value: this.toString()
-        }
     }
 }

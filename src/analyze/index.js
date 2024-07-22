@@ -1,8 +1,15 @@
+export {
+    BranchedValue,
+    Branches,
+    DataValue,
+    ErrorValue,
+    FuncValue,
+    LiteralValue
+} from "./values/index.js"
 export { Analysis } from "./Analysis.js"
 export { Analyzer } from "./Analyzer.js"
-export { Branches } from "./Branches.js"
-export { DataValue } from "./DataValue.js"
-export { ErrorValue } from "./ErrorValue.js"
-export { FuncValue } from "./FuncValue.js"
-export { LiteralValue } from "./LiteralValue.js"
-export { MultiValue } from "./MultiValue.js"
+export { annotate } from "./annotate.js"
+
+/**
+ * @typedef {import("./annotate.js").AnnotateAnalysisOptions} AnnotateAnalysisOptions
+ */

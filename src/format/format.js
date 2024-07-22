@@ -16,6 +16,7 @@ import {
  *   builtinsPrefix?: string
  *   safeBuiltinSuffix?: string
  *   tab?: string
+ *   syntacticSugar?: boolean
  * }} PartialFormatOptions
  */
 
@@ -24,6 +25,7 @@ import {
  *   builtinsPrefix?: string
  *   safeBuiltinSuffix: string
  *   tab: string
+ *   syntacticSugar?: boolean
  * }} FormatOptions
  */
 
@@ -53,6 +55,8 @@ export function format(expr, partialOptions = {}) {
  * @returns {string}
  */
 function formatInternal(expr, indent, options) {
+    const syntacticSugar = options.syntacticSugar ?? true
+
     if (expr instanceof LiteralExpr) {
         return expr.value.toString()
     } else if (expr instanceof NameExpr) {
@@ -76,7 +80,8 @@ function formatInternal(expr, indent, options) {
             }
         } else if (
             expr.func instanceof FuncExpr &&
-            expr.func.args.length == 1
+            expr.func.args.length == 1 &&
+            syntacticSugar
         ) {
             return [
                 `${expr.func.args[0].name} = ${formatInternal(expr.args[0], indent, options)};`,

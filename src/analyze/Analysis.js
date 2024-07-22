@@ -1,4 +1,4 @@
-import { isNone } from "@helios-lang/type-utils"
+import { None, expectSome, isNone } from "@helios-lang/type-utils"
 import {
     BuiltinExpr,
     CallExpr,
@@ -8,30 +8,37 @@ import {
     LiteralExpr,
     Variable
 } from "../expressions/index.js"
-import { AnyValue } from "./AnyValue.js"
-import { ErrorValue } from "./ErrorValue.js"
-import { FuncValue } from "./FuncValue.js"
-import { MultiValue } from "./MultiValue.js"
-import { DataValue } from "./DataValue.js"
+import { format } from "../format/index.js"
+import {
+    AnyValue,
+    BranchedValue,
+    DataValue,
+    ErrorValue,
+    FuncValue,
+    uniqueFlattenedValues,
+    isMaybeError,
+    uniqueValues,
+    MaybeErrorValue
+} from "./values/index.js"
 
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr
- * @typedef {import("./Value.js").Value} Value
+ * @typedef {import("./values/index.js").Value} Value
  */
 
 /**
  * @typedef {{
  *   callCount: Map<number, number>
- *   exprValues: Map<Expr, Value>
+ *   exprValues: Map<Expr, Value[]>
  *   funcCallExprs: Map<FuncExpr, Set<CallExpr>>
+ *   funcDefinitions: FuncExpr[]
  *   funcExprTags: Map<FuncExpr, number>
  *   rootExpr: Expr
  *   variableReferences: Map<Variable, Set<NameExpr>>
- *   variableValues: Map<Variable, Value>
+ *   variableValues: Map<Variable, Value[]>
+ *   valueOrigins: string[]
  * }} AnalysisProps
  */
-
-const TAB = "  "
 
 export class Analysis {
     /**
@@ -42,7 +49,7 @@ export class Analysis {
 
     /**
      * Keep track of the eval result of each expression
-     * @type {Map<Expr, Value>}
+     * @type {Map<Expr, Value[]>}
      */
     exprValues
 
@@ -52,10 +59,15 @@ export class Analysis {
     funcCallExprs
 
     /**
-     * Unique 1-based ids
+     * Unique 0-based ids
      * @type {Map<FuncExpr, number>}
      */
     funcExprTags
+
+    /**
+     * @type {FuncExpr[]}
+     */
+    funcDefinitions
 
     /**
      * @type {Expr}
@@ -69,9 +81,14 @@ export class Analysis {
 
     /**
      * Keep track of all values passed through IRVariables
-     * @type {Map<Variable, Value>}
+     * @type {Map<Variable, Value[]>}
      */
     variableValues
+
+    /**
+     * @type {string[]}
+     */
+    valueOrigins
 
     /**
      * @param {AnalysisProps} props
@@ -80,18 +97,22 @@ export class Analysis {
         callCount,
         exprValues,
         funcCallExprs,
+        funcDefinitions,
         funcExprTags,
         rootExpr,
         variableReferences,
-        variableValues
+        variableValues,
+        valueOrigins
     }) {
         this.callCount = callCount
         this.exprValues = exprValues
         this.funcCallExprs = funcCallExprs
+        this.funcDefinitions = funcDefinitions
         this.funcExprTags = funcExprTags
         this.rootExpr = rootExpr
         this.variableReferences = variableReferences
         this.variableValues = variableValues
+        this.valueOrigins = valueOrigins
     }
 
     /**
@@ -103,7 +124,7 @@ export class Analysis {
 
     /**
      * TODO: extend this to FuncValues with unique ids
-     * @returns {Map<number, Set<CallExpr>>}
+     * @returns {Map<number, Set<CallExpr>>} - the key is the id of the DataValue
      */
     collectDataCallExprs() {
         /**
@@ -111,33 +132,37 @@ export class Analysis {
          */
         let callExprs = new Map()
 
-        this.exprValues.forEach((value, expr) => {
-            if (expr instanceof CallExpr && !(expr.func instanceof FuncExpr)) {
-                if (value instanceof DataValue) {
-                    const id = value.id
+        /**
+         * @param {CallExpr} expr
+         * @param {DataValue} dv
+         */
+        const addDataValue = (expr, dv) => {
+            const id = dv.id
 
-                    const s = callExprs.get(id)
-                    if (s) {
-                        s.add(expr)
-                    } else {
-                        callExprs.set(id, new Set([expr]))
-                    }
-                } else if (
-                    value instanceof MultiValue &&
-                    value.values.some((v) => v instanceof DataValue)
+            const s = callExprs.get(id)
+            if (s) {
+                s.add(expr)
+            } else {
+                callExprs.set(id, new Set([expr]))
+            }
+        }
+
+        this.exprValues.forEach((values, expr) => {
+            const uvs = uniqueValues(values)
+            if (uvs.length == 1) {
+                const v = uvs[0]
+                if (
+                    expr instanceof CallExpr &&
+                    !(expr.func instanceof FuncExpr)
                 ) {
-                    value.values.forEach((v) => {
-                        if (v instanceof DataValue) {
-                            const id = v.id
-
-                            const s = callExprs.get(id)
-                            if (s) {
-                                s.add(expr)
-                            } else {
-                                callExprs.set(id, new Set([expr]))
-                            }
-                        }
-                    })
+                    if (v instanceof DataValue) {
+                        addDataValue(expr, v)
+                    } else if (
+                        v instanceof MaybeErrorValue &&
+                        v.value instanceof DataValue
+                    ) {
+                        addDataValue(expr, v.value)
+                    }
                 }
             }
         })
@@ -163,10 +188,21 @@ export class Analysis {
 
     /**
      * @param {Expr} expr
-     * @returns {Option<Value>}
+     * @param {boolean} raw
+     * @returns {Option<Value[]>}
      */
-    getExprValue(expr) {
-        return this.exprValues.get(expr)
+    getExprValue(expr, raw = false) {
+        const values = this.exprValues.get(expr)
+
+        if (values) {
+            if (raw) {
+                return values
+            } else {
+                return uniqueFlattenedValues(values)
+            }
+        } else {
+            return None
+        }
     }
 
     /**
@@ -175,6 +211,14 @@ export class Analysis {
      */
     getFuncCallExprs(fn) {
         return Array.from(this.funcCallExprs.get(fn) ?? [])
+    }
+
+    /**
+     * @param {number} tag
+     * @returns {FuncExpr}
+     */
+    getFuncDefinition(tag) {
+        return expectSome(this.funcDefinitions[tag])
     }
 
     /**
@@ -221,10 +265,16 @@ export class Analysis {
 
     /**
      * @param {Variable} v
-     * @returns {Option<Value>}
+     * @returns {Option<Value[]>}
      */
-    getVariableValue(v) {
-        return this.variableValues.get(v)
+    getVariableValues(v) {
+        const values = this.variableValues.get(v)
+
+        if (values) {
+            return uniqueFlattenedValues(values)
+        } else {
+            return None
+        }
     }
 
     /**
@@ -234,16 +284,8 @@ export class Analysis {
     expectsError(expr) {
         const v = this.getExprValue(expr)
 
-        if (v) {
-            if (v instanceof ErrorValue) {
-                return true
-            } else if (v instanceof MultiValue && v.hasError()) {
-                return true
-            } else if (v instanceof AnyValue) {
-                return true
-            } else {
-                return false
-            }
+        if (v && v.length > 0) {
+            return v.some(isMaybeError)
         } else {
             // the expression might be recently formed, so if not found, better be on the safe side
             return true
@@ -301,15 +343,16 @@ export class Analysis {
 
             const v = this.getExprValue(ce.func)
 
-            if (!v) {
+            if (!v || v.length == 0) {
                 return false
-            } else if (v instanceof MultiValue) {
-                return v.values.every(
-                    (vv) => !(vv instanceof FuncValue) || vv.definition == fn
-                )
-            } else if (v instanceof FuncValue) {
-                //assert(v.definition == fn, `expected ${fn.toString()}, not ${v.definition.toString()}`);
+            } else if (v.length == 1 && v[0] instanceof FuncValue) {
                 return true
+            } else if (v.length > 1) {
+                return v.every(
+                    (vv) =>
+                        !(vv instanceof FuncValue) ||
+                        vv.definitionTag == this.getFuncExprTag(fn)
+                )
             } else {
                 throw new Error(`unexpected ${v.toString()}`)
             }
@@ -317,8 +360,17 @@ export class Analysis {
     }
 
     /**
+     * Imagine the following expressions:
+     * `(first) -> {
+     *   (second) -> {
+     *   }
+     * }`
+     *
+     * `onlyNestedCalls` returns true if this expression is always called as <expr>(a)(b)
+     *
      * @param {FuncExpr} first
      * @param {FuncExpr} second
+     * @returns {boolean}
      */
     onlyNestedCalls(first, second) {
         const callExprs = this.getFuncCallExprs(second)
@@ -332,109 +384,20 @@ export class Analysis {
             if (ce.func instanceof CallExpr) {
                 const v = this.getExprValue(ce.func.func)
 
-                if (!v) {
+                if (!v || v.length == 0) {
                     return false
-                } else if (v instanceof MultiValue) {
-                    return v.values.every(
-                        (vv) =>
-                            !(vv instanceof FuncValue) || vv.definition == first
-                    )
-                } else if (v instanceof FuncValue) {
-                    return v.definition == first
+                } else if (v.length == 1 && v[0] instanceof FuncValue) {
+                    return v[0].definitionTag == this.getFuncExprTag(first)
                 } else {
-                    throw new Error(`unexpected ${v.toString()}`)
+                    return v.every(
+                        (vv) =>
+                            !(vv instanceof FuncValue) ||
+                            vv.definitionTag == this.getFuncExprTag(first)
+                    )
                 }
             } else {
                 return false
             }
         })
-    }
-
-    /**
-     * @returns {string}
-     */
-    annotate() {
-        /**
-         * @param {Expr} expr
-         * @param {string} indent
-         * @returns {string}
-         */
-        const recurse = (expr, indent) => {
-            if (expr instanceof LiteralExpr) {
-                return expr.value.toString()
-            } else if (expr instanceof ErrorExpr) {
-                return `error()`
-            } else if (expr instanceof BuiltinExpr) {
-                return expr.name
-            } else if (expr instanceof NameExpr) {
-                const output = this.getExprValue(expr)
-
-                if (output) {
-                    return `${expr.name}: ${output.toString()}`
-                } else {
-                    return expr.name
-                }
-            } else if (expr instanceof FuncExpr) {
-                const output = this.getExprValue(expr)
-
-                const isGlobalDef =
-                    expr.args.length == 1 &&
-                    expr.args[0].name.value.startsWith("__")
-                const innerIndent = indent + (isGlobalDef ? "" : TAB)
-
-                let countStr = ""
-                const count = this.countFuncCalls(expr)
-                if (count == Number.MAX_SAFE_INTEGER) {
-                    countStr = "\u221e"
-                } else {
-                    countStr = count.toString()
-                }
-
-                return `Fn${this.getFuncExprTag(expr)}(${expr.args
-                    .map((a) => {
-                        const v = this.getVariableValue(a)
-
-                        if (v) {
-                            return `${a.name}: ${v.toString()}`
-                        } else {
-                            return a.name
-                        }
-                    })
-                    .join(
-                        ", "
-                    )})${countStr} -> ${output ? output.toString() + " " : ""}{\n${innerIndent}${recurse(expr.body, innerIndent)}\n${indent}}`
-            } else if (expr instanceof CallExpr) {
-                if (expr.func instanceof FuncExpr && expr.args.length == 1) {
-                    return `${expr.func.args[0].name} = ${recurse(expr.args[0], indent)};\n${indent}${recurse(expr.func.body, indent)}`
-                } else {
-                    const output = this.getExprValue(expr)
-
-                    const isGlobalDef =
-                        expr.func instanceof FuncExpr &&
-                        expr.func.args.length == 1 &&
-                        expr.func.args[0].name.value.startsWith("__")
-                    const globalDef =
-                        expr.func instanceof FuncExpr &&
-                        expr.func.args.length == 1
-                            ? expr.func.args[0].name
-                            : ""
-
-                    const parens = `(${isGlobalDef ? `\n${indent}${TAB}/* ${globalDef} */` : ""}${expr.args.map((a) => `\n${indent}${TAB}${recurse(a, indent + TAB)}`).join(",")}${expr.args.length > 0 || isGlobalDef ? `\n${indent}` : ""})${output ? `: ${output.toString()}` : ""}`
-
-                    if (
-                        expr.func instanceof NameExpr ||
-                        expr.func instanceof BuiltinExpr
-                    ) {
-                        return `${expr.func.name}${parens}`
-                    } else {
-                        return `${recurse(expr.func, indent)}${parens}`
-                    }
-                }
-            } else {
-                throw new Error("unhandled IRExpr")
-            }
-        }
-
-        return recurse(this.rootExpr, "")
     }
 }

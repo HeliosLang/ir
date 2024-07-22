@@ -9,7 +9,12 @@ import { optimize } from "./optimize.js"
  * @type {{description: string, input: string, expectedOutput: string}[]}
  */
 const testVector = [
-    /*{
+    {
+        description: "unused Error branch is eliminated",
+        input: `ifThenElse(false, () -> {error()}, () -> {0})()`,
+        expectedOutput: "0"
+    },
+    {
         description: "multiplication by literal 0 becomes literal 0",
         input: `(a, b) -> {
             multiplyInteger(addInteger(a, b), 0)
@@ -598,10 +603,9 @@ const testVector = [
         expectedOutput: `() -> {
             "-1"
         }`
-    },*/
+    },
     {
-        description:
-            "optimizer correctly evaluates Int.to_hex() recursive function",
+        description: "optimizer correctly inlines a recursive function",
         input: `(a) -> {
             __helios__int__to_hex = (self) -> {
                 () -> {
@@ -645,8 +649,41 @@ const testVector = [
             };
             __helios__int__to_hex(a)()
         }`,
-        expectedOutput: `() -> {
-            "-1"
+        expectedOutput: `(self) -> {
+            recurse = (recurse, self, bytes) -> {
+                digit = modInteger(self, 16);
+                bytes = consByteString(
+                    ifThenElse(
+                        lessThanInteger(digit, 10),
+                        addInteger(digit, 48),
+                        addInteger(digit, 87)
+                    ),
+                    bytes
+                );
+                ifThenElse(
+                    lessThanInteger(self, 16),
+                    () -> {
+                        bytes
+                    },
+                    () -> {
+                        recurse(recurse,divideInteger(self, 16), bytes)
+                    }
+                )()
+            };
+            decodeUtf8__safe(
+                ifThenElse(
+                    lessThanInteger(self, 0),
+                    () -> {
+                        consByteString(
+                            45,
+                            recurse(recurse,multiplyInteger(self, -1), #)
+                        )
+                    },
+                    () -> {
+                        recurse(recurse,self, #)
+                    }
+                )()
+            )
         }`
     }
 ]
