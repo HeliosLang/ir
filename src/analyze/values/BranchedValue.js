@@ -1,4 +1,3 @@
-import { None, expectSome } from "@helios-lang/type-utils"
 import { AnyValue } from "./AnyValue.js"
 import { branchTypeToPrefix } from "./BranchType.js"
 import { DataValue } from "./DataValue.js"
@@ -9,8 +8,6 @@ import { FuncValue } from "./FuncValue.js"
  * @typedef {import("../../expressions/index.js").Expr} Expr
  * @typedef {import("./Branch.js").Branch} Branch
  * @typedef {import("./BranchType.js").BranchType} BranchType
- * @typedef {import("./IdGenerator.js").IdGenerator} IdGenerator
- * @typedef {import("./ValueI.js").BlockRecursionProps} BlockRecursionProps
  * @typedef {import("./ValueI.js").ValueI} ValueI
  * @typedef {import("./Value.js").AnyDataValue} AnyDataValue
  * @typedef {import("./Value.js").Value} Value
@@ -87,39 +84,6 @@ export class BranchedValue {
                 }
             })
         )
-    }
-
-    /**
-     * @param {BlockRecursionProps} props
-     * @returns {[BranchedValue, string]}
-     */
-    blockRecursion({ keyPath, blockFunc, genId }) {
-        const [cond, condKey] = this.condition.blockRecursion({
-            keyPath: `${keyPath}_${this.prefix}Cond`,
-            genId: genId
-        })
-
-        const cases = this.cases.map((c, i) =>
-            c.blockRecursion({
-                keyPath: `${keyPath}_${this.prefix}Case${i}`,
-                blockFunc: blockFunc,
-                genId: genId
-            })
-        )
-
-        const key = makeBranchedValueKey(
-            this.prefix,
-            condKey,
-            cases.map((c) => c[1])
-        )
-
-        const v = new BranchedValue(
-            this.type,
-            this.condition,
-            this.cases.map((c) => c[0])
-        )
-
-        return [v, key]
     }
 
     /**

@@ -113,15 +113,5 @@ export function annotate(analysis, options = {}) {
         }
     }
 
-    const res = recurse(analysis.rootExpr, "")
-
-    if (debug) {
-        const cacheEntries = analysis.valueOrigins.map(
-            (key, i) => `# ${i}: ${key}`
-        )
-
-        return cacheEntries.concat([res]).join("\n")
-    } else {
-        return res
-    }
+    return recurse(analysis.rootExpr, "")
 }

@@ -1,6 +1,4 @@
 /**
- * @typedef {import("./IdGenerator.js").IdGenerator} IdGenerator
- * @typedef {import("./ValueI.js").BlockRecursionProps} BlockRecursionProps
  * @typedef {import("./ValueI.js").ValueI} ValueI
  */
 
@@ -27,14 +25,6 @@ export class BuiltinValue {
     constructor(name, safe) {
         this.name = name
         this.safe = safe
-    }
-
-    /**
-     * @param {BlockRecursionProps} props
-     * @returns {[BuiltinValue, string]}
-     */
-    blockRecursion(props) {
-        return [this, this.toString()]
     }
 
     /**

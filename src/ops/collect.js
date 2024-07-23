@@ -1,5 +1,5 @@
 import { expectSome } from "@helios-lang/type-utils"
-import { Variable } from "../expressions/index.js"
+import { NameExpr, Variable } from "../expressions/index.js"
 import { loop } from "./loop.js"
 
 /**
@@ -65,4 +65,30 @@ export function collectVariablesWithDepth(expr) {
     })
 
     return s.filter(([_, v]) => !not.has(v))
+}
+
+/**
+ * @param {Expr} expr - names must already be resolved
+ * @returns {Map<Variable, Set<NameExpr>>}
+ */
+export function collectVariableNameExprs(expr) {
+    /**
+     * @type {Map<Variable, Set<NameExpr>>}
+     */
+    const m = new Map()
+
+    loop(expr, {
+        nameExpr: (nameExpr) => {
+            const v = nameExpr.variable
+            const prev = m.get(v)
+
+            if (prev) {
+                prev.add(nameExpr)
+            } else {
+                m.set(v, new Set([nameExpr]))
+            }
+        }
+    })
+
+    return m
 }

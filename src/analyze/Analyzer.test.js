@@ -6,7 +6,7 @@ import { strictEqual } from "node:assert"
 import { annotate } from "./annotate.js"
 
 describe(Analyzer.name, () => {
-    /*it("doesn't detect common values spuriously", () => {
+    it("doesn't detect common values spuriously", () => {
         const src = `
         (i) -> {
             (id) -> {
@@ -30,13 +30,13 @@ describe(Analyzer.name, () => {
 
         const root = parse(src)
 
-        const analyzer = new Analyzer(root, {debug: true})
+        const analyzer = new Analyzer(root, { debug: true })
         const analysis = analyzer.analyze()
 
-        console.log(analysis.annotate(true))
-    })*/
+        console.log(annotate(analysis, { debug: true }))
+    })
 
-    /*it("detects deep, non-recursive, common values", () => {
+    it("detects deep, non-recursive, common values", () => {
         const src = `(a) -> {
             ifThenElse(
                 a,
@@ -63,10 +63,10 @@ describe(Analyzer.name, () => {
         const analyzer = new Analyzer(root)
         const analysis = analyzer.analyze()
 
-        console.log(analysis.annotate())
-    })*/
+        console.log(annotate(analysis))
+    })
 
-    /*it("complete a complex recursive analysis", () => {
+    it("complete a complex recursive analysis", () => {
         const src = `(a) -> {
             __helios__int__to_hex = (self) -> {
                 () -> {
@@ -113,11 +113,11 @@ describe(Analyzer.name, () => {
 
         const root = parse(src)
 
-        const analyzer = new Analyzer(root, {debug: true})
+        const analyzer = new Analyzer(root, { debug: true })
         const analysis = analyzer.analyze()
 
         console.log(annotate(analysis))
-    })*/
+    })
 
     it("complete another complex recursive analysis", () => {
         const src = `(arg0) -> {
@@ -168,7 +168,6 @@ describe(Analyzer.name, () => {
         console.log(annotate(analysis, { debug: true, syntacticSugar: false }))
     })
 
-    return
     it("evaluates both passes", () => {
         const root = parse(`(x) -> {x}`)
 

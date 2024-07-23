@@ -1,8 +1,6 @@
 import { FuncValue } from "./FuncValue.js"
 
 /**
- * @typedef {import("./IdGenerator.js").IdGenerator} IdGenerator
- * @typedef {import("./ValueI.js").BlockRecursionProps} BlockRecursionProps
  * @typedef {import("./ValueI.js").ValueI} ValueI
  */
 
@@ -11,14 +9,6 @@ import { FuncValue } from "./FuncValue.js"
  */
 export class ErrorValue {
     constructor() {}
-
-    /**
-     * @param {BlockRecursionProps} props
-     * @returns {[ErrorValue, string]}
-     */
-    blockRecursion(props) {
-        return [this, this.toString()]
-    }
 
     /**
      * @param {number} tag

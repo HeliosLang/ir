@@ -1,19 +1,8 @@
 import { None, expectSome, isNone } from "@helios-lang/type-utils"
+import { CallExpr, FuncExpr, NameExpr, Variable } from "../expressions/index.js"
+import { collectVariableNameExprs } from "../ops/collect.js"
 import {
-    BuiltinExpr,
-    CallExpr,
-    ErrorExpr,
-    FuncExpr,
-    NameExpr,
-    LiteralExpr,
-    Variable
-} from "../expressions/index.js"
-import { format } from "../format/index.js"
-import {
-    AnyValue,
-    BranchedValue,
     DataValue,
-    ErrorValue,
     FuncValue,
     uniqueFlattenedValues,
     isMaybeError,
@@ -28,22 +17,20 @@ import {
 
 /**
  * @typedef {{
- *   callCount: Map<number, number>
+ *   callCount: Map<FuncExpr, number>
  *   exprValues: Map<Expr, Value[]>
  *   funcCallExprs: Map<FuncExpr, Set<CallExpr>>
  *   funcDefinitions: FuncExpr[]
  *   funcExprTags: Map<FuncExpr, number>
  *   rootExpr: Expr
- *   variableReferences: Map<Variable, Set<NameExpr>>
  *   variableValues: Map<Variable, Value[]>
- *   valueOrigins: string[]
  * }} AnalysisProps
  */
 
 export class Analysis {
     /**
      * FuncExpr tag as key
-     * @type {Map<number, number>}
+     * @type {Map<FuncExpr, number>}
      */
     callCount
 
@@ -86,11 +73,6 @@ export class Analysis {
     variableValues
 
     /**
-     * @type {string[]}
-     */
-    valueOrigins
-
-    /**
      * @param {AnalysisProps} props
      */
     constructor({
@@ -100,9 +82,7 @@ export class Analysis {
         funcDefinitions,
         funcExprTags,
         rootExpr,
-        variableReferences,
-        variableValues,
-        valueOrigins
+        variableValues
     }) {
         this.callCount = callCount
         this.exprValues = exprValues
@@ -110,9 +90,8 @@ export class Analysis {
         this.funcDefinitions = funcDefinitions
         this.funcExprTags = funcExprTags
         this.rootExpr = rootExpr
-        this.variableReferences = variableReferences
         this.variableValues = variableValues
-        this.valueOrigins = valueOrigins
+        this.variableReferences = collectVariableNameExprs(rootExpr)
     }
 
     /**
@@ -175,7 +154,7 @@ export class Analysis {
      * @returns {number}
      */
     countFuncCalls(fn) {
-        return this.callCount.get(this.getFuncExprTag(fn)) ?? 0
+        return this.callCount.get(fn) ?? 0
     }
 
     /**

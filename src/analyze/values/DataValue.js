@@ -3,8 +3,6 @@ import { AnyValue } from "./AnyValue.js"
 import { LiteralValue } from "./LiteralValue.js"
 
 /**
- * @typedef {import("./IdGenerator.js").IdGenerator} IdGenerator
- * @typedef {import("./ValueI.js").BlockRecursionProps} BlockRecursionProps
  * @typedef {import("./ValueI.js").ValueI} ValueI
  */
 
@@ -32,18 +30,6 @@ export class DataValue {
     constructor(id, branches) {
         this.id = id
         this.branches = branches
-    }
-
-    /**
-     * @param {BlockRecursionProps} props
-     * @returns {[DataValue, string]}
-     */
-    blockRecursion({ keyPath, genId }) {
-        const key = keyPath
-        const id = genId.genId(key)
-        const v = new DataValue(id, Branches.empty())
-
-        return [v, v.toString()]
     }
 
     /**

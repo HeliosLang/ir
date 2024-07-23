@@ -1,6 +1,4 @@
 /**
- * @typedef {import("./IdGenerator.js").IdGenerator} IdGenerator
- * @typedef {import("./ValueI.js").BlockRecursionProps} BlockRecursionProps
  * @typedef {import("./ValueI.js").ValueI} ValueI
  */
 
@@ -21,18 +19,6 @@ export class AnyValue {
      */
     constructor(id) {
         this.id = id
-    }
-
-    /**
-     * @param {BlockRecursionProps} props
-     * @returns {[AnyValue, string]}
-     */
-    blockRecursion({ keyPath, genId }) {
-        const key = keyPath
-        const id = genId.genId(key)
-        const v = new AnyValue(id)
-
-        return [v, v.toString()]
     }
 
     /**

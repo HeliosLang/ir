@@ -3,8 +3,6 @@ import { AnyValue } from "./AnyValue.js"
 import { FuncValue } from "./FuncValue.js"
 
 /**
- * @typedef {import("./IdGenerator.js").IdGenerator} IdGenerator
- * @typedef {import("./ValueI.js").BlockRecursionProps} BlockRecursionProps
  * @typedef {import("./ValueI.js").ValueI} ValueI
  * @typedef {import("./Value.js").NonErrorValue} NonErrorValue
  */
@@ -24,16 +22,6 @@ export class MaybeErrorValue {
      */
     constructor(value) {
         this.value = value
-    }
-
-    /**
-     * @param {BlockRecursionProps} props
-     * @returns {[MaybeErrorValue, string]}
-     */
-    blockRecursion(props) {
-        const [v, vKey] = this.value.blockRecursion(props)
-
-        return [new MaybeErrorValue(v), makeMaybeErrorKey(vKey)]
     }
 
     /**

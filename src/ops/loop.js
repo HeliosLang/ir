@@ -28,47 +28,44 @@ import {
 export function loop(root, callbacks) {
     const stack = [root]
 
-    let head = stack.pop()
+    let expr = stack.pop()
 
-    while (head) {
-        if (head instanceof BuiltinExpr) {
+    while (expr) {
+        if (expr instanceof BuiltinExpr) {
             if (callbacks.builtinExpr) {
-                callbacks.builtinExpr(head)
+                callbacks.builtinExpr(expr)
             }
-        } else if (head instanceof NameExpr) {
+        } else if (expr instanceof NameExpr) {
             if (callbacks.nameExpr) {
-                callbacks.nameExpr(head)
+                callbacks.nameExpr(expr)
             }
-        } else if (head instanceof ErrorExpr) {
+        } else if (expr instanceof ErrorExpr) {
             if (callbacks.errorExpr) {
-                callbacks.errorExpr(head)
+                callbacks.errorExpr(expr)
             }
-        } else if (head instanceof LiteralExpr) {
+        } else if (expr instanceof LiteralExpr) {
             if (callbacks.literalExpr) {
-                callbacks.literalExpr(head)
+                callbacks.literalExpr(expr)
             }
-        } else if (head instanceof CallExpr) {
-            stack.push(head.func)
-
-            for (let a of head.args) {
-                stack.push(a)
-            }
+        } else if (expr instanceof CallExpr) {
+            stack.push(expr.func)
+            expr.args.forEach((a) => stack.push(a))
 
             if (callbacks.callExpr) {
-                callbacks.callExpr(head)
+                callbacks.callExpr(expr)
             }
-        } else if (head instanceof FuncExpr) {
-            if (callbacks.funcExpr) {
-                callbacks.funcExpr(head)
-            }
+        } else if (expr instanceof FuncExpr) {
+            stack.push(expr.body)
 
-            stack.push(head.body)
+            if (callbacks.funcExpr) {
+                callbacks.funcExpr(expr)
+            }
         }
 
         if (callbacks.exit && callbacks.exit()) {
             return
         }
 
-        head = stack.pop()
+        expr = stack.pop()
     }
 }

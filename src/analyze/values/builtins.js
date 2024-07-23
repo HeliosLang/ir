@@ -1,4 +1,4 @@
-import { None, expectSome } from "@helios-lang/type-utils"
+import { expectSome } from "@helios-lang/type-utils"
 import {
     ByteArrayData,
     ConstrData,
@@ -15,13 +15,15 @@ import {
     builtinsV2Map
 } from "@helios-lang/uplc"
 import { CallExpr } from "../../expressions/index.js"
-import { BuiltinValue } from "./BuiltinValue.js"
-import { DataValue } from "./DataValue.js"
-import { LiteralValue } from "./LiteralValue.js"
-import { FuncValue, Stack } from "./FuncValue.js"
-import { ErrorValue } from "./ErrorValue.js"
 import { AnyValue } from "./AnyValue.js"
 import { BranchedValue } from "./BranchedValue.js"
+import { BuiltinValue } from "./BuiltinValue.js"
+import { DataValue } from "./DataValue.js"
+import { ErrorValue } from "./ErrorValue.js"
+import { FuncValue } from "./FuncValue.js"
+import { LiteralValue } from "./LiteralValue.js"
+import { MaybeErrorValue } from "./MaybeErrorValue.js"
+import { Stack } from "./Stack.js"
 import {
     isAllLiteral,
     isLiteralValue,
@@ -29,11 +31,11 @@ import {
     isDataLikeValue,
     isNonLiteralDataLikeValue
 } from "./Value.js"
-import { MaybeErrorValue } from "./MaybeErrorValue.js"
+import { ValueGenerator } from "../ValueGenerator.js"
 
 /**
  * @typedef {import("./BranchType.js").BranchType} BranchType
- * @typedef {import("./IdGenerator.js").IdGenerator} IdGenerator
+ * @typedef {import("./EvalContext.js").EvalContext} EvalContext
  * @typedef {import("./Value.js").Value} Value
  * @typedef {import("./Value.js").BranchableValue} BranchableValue
  * @typedef {import("./Value.js").DataLikeValue} DataLikeValue
@@ -45,7 +47,7 @@ import { MaybeErrorValue } from "./MaybeErrorValue.js"
  * @param {BuiltinValue} builtin
  * @param {NonErrorValue[]} args
  * @param {Stack} stack
- * @param {IdGenerator} ctx
+ * @param {ValueGenerator} ctx
  * @returns {Value}
  */
 export function evalBuiltin(expr, builtin, args, stack, ctx) {
@@ -74,7 +76,7 @@ function isIdentityBuiltin(name) {
  * @param {BranchType} name
  * @param {NonErrorValue[]} args
  * @param {Stack} stack
- * @param {IdGenerator} ctx
+ * @param {ValueGenerator} ctx
  * @returns {Value}
  */
 function evalBranchingBuiltin(expr, name, args, stack, ctx) {
@@ -185,19 +187,14 @@ function evalLiteralCondBranchingBuiltin(name, cond, args) {
  * @param {DataValue | AnyValue} cond
  * @param {NonErrorValue[]} args
  * @param {Stack} stack
- * @param {IdGenerator} ctx
+ * @param {ValueGenerator} ctx
  * @returns {NonErrorValue}
  */
 function evalDataCondBranchingBuiltin(expr, name, cond, args, stack, ctx) {
     if (isAllDataLike(args)) {
         const key = `${name}(${cond.toString()}, ${args.map((a) => a.toString()).join(", ")})`
-        const id = ctx.genId(key)
-
-        return new DataValue(id, stack.branches)
+        return ctx.genData(key, stack.branches)
     } else {
-        const key = `${name}(${cond.toString()})`
-        const id = ctx.genId(key)
-
         args = /** @type {NonErrorValue[]} */ (args).map((a, i) => {
             if (a instanceof FuncValue || a instanceof BranchedValue) {
                 return a.addBranch({
@@ -259,7 +256,7 @@ function evalIdentityBuiltin(name, args) {
  * @param {BuiltinValue} builtin
  * @param {Value[]} args
  * @param {Stack} stack
- * @param {IdGenerator} ctx
+ * @param {ValueGenerator} ctx
  * @returns {Value}
  */
 function evalDataBuiltin(builtin, args, stack, ctx) {
@@ -309,7 +306,7 @@ function evalLiteralDataBuiltin(name, args) {
  * @param {BuiltinValue} builtin
  * @param {DataLikeValue[]} args
  * @param {Stack} stack
- * @param {IdGenerator} ctx
+ * @param {ValueGenerator} ctx
  * @returns {DataLikeValue | ErrorValue}
  */
 function evalNonLiteralDataBuiltin(builtin, args, stack, ctx) {
@@ -317,9 +314,7 @@ function evalNonLiteralDataBuiltin(builtin, args, stack, ctx) {
 
     const defaultResult = () => {
         const key = `${builtin.toString()}(${args.map((a) => a.toString()).join(", ")})`
-        const id = ctx.genId(key)
-
-        return new DataValue(id, stack.branches)
+        return ctx.genData(key, stack.branches)
     }
 
     /**

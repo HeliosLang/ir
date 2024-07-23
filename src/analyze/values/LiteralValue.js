@@ -5,14 +5,10 @@ import {
     UplcInt,
     UplcList
 } from "@helios-lang/uplc"
-import { Branches } from "./Branches.js"
-import { DataValue } from "./DataValue.js"
 
 /**
  * @typedef {import("@helios-lang/uplc").UplcData} UplcData
  * @typedef {import("@helios-lang/uplc").UplcValue} UplcValue
- * @typedef {import("./IdGenerator.js").IdGenerator} IdGenerator
- * @typedef {import("./ValueI.js").BlockRecursionProps} BlockRecursionProps
  * @typedef {import("./ValueI.js").ValueI} ValueI
  */
 
@@ -86,18 +82,6 @@ export class LiteralValue {
         }
 
         return this.value.items
-    }
-
-    /**
-     * @param {BlockRecursionProps} props
-     * @returns {[DataValue, string]}
-     */
-    blockRecursion({ keyPath, genId }) {
-        const key = keyPath
-        const id = genId.genId(key)
-        const v = new DataValue(id, Branches.empty())
-
-        return [v, v.toString()]
     }
 
     /**
