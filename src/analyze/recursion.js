@@ -1,17 +1,17 @@
 import { ValueGenerator } from "./ValueGenerator.js"
 import {
     AnyValue,
-    BranchedValue,
     Branches,
-    BuiltinValue,
     DataValue,
     ErrorValue,
-    FuncValue,
     LiteralValue,
     MaybeErrorValue,
-    StackValues
+    StackValues,
+    initValuePath,
+    pathToKey,
+    mutate,
+    collectNonConst
 } from "./values/index.js"
-import { loop, mutate } from "./values/index.js"
 
 /**
  * @typedef {import("./values/index.js").NonErrorValue} NonErrorValue
@@ -21,12 +21,13 @@ import { loop, mutate } from "./values/index.js"
 /**
  * @param {StackValues} values
  * @param {ValueGenerator} valueGenerator
+ * @param {Option<StackValues>} prevValues
  * @returns {StackValues}
  */
-export function makeRecursiveDataOpaque(values, valueGenerator) {
-    const [mustBeMadeOpaque, allLiteral] = getAllDataLike(values)
+export function makeRecursiveDataOpaque(values, valueGenerator, prevValues) {
+    const [nonConstKeys, allLiteral] = collectNonConst(values, prevValues)
 
-    if (allLiteral || mustBeMadeOpaque.size == 0) {
+    if (allLiteral || nonConstKeys.size == 0) {
         return values
     } else {
         /**
@@ -37,7 +38,7 @@ export function makeRecursiveDataOpaque(values, valueGenerator) {
         const makeValueOpaque = (path, value) => {
             const key = pathToKey(path)
 
-            if (mustBeMadeOpaque.has(key)) {
+            if (nonConstKeys.has(key)) {
                 if (value instanceof AnyValue) {
                     return valueGenerator.genAny(key)
                 } else if (value instanceof DataValue) {
@@ -51,7 +52,7 @@ export function makeRecursiveDataOpaque(values, valueGenerator) {
         }
 
         const mutatedValues = values.values.map(([id, v]) => {
-            const newValue = mutate([`${id}`], v, {
+            const newValue = mutate(initValuePath(id), v, {
                 genStackSummary: (vs, tag) => {
                     return valueGenerator.genStackSummary(vs, tag)
                 },
@@ -72,66 +73,4 @@ export function makeRecursiveDataOpaque(values, valueGenerator) {
 
         return new StackValues(mutatedValues)
     }
-}
-
-/**
- * @param {string[]} path
- * @returns {string}
- */
-function pathToKey(path) {
-    return path.join("_")
-}
-
-/**
- * @param {StackValues} values
- * @returns {[Set<string>, boolean]}
- */
-function getAllDataLike(values) {
-    /**
-     * Keys for which the value is null are made opaque
-     * @type {Map<string, Value | null>}
-     */
-    const m = new Map()
-
-    let allLiteral = true
-
-    /**
-     * @param {string[]} path
-     * @param {Value} value
-     */
-    const setValue = (path, value) => {
-        const key = pathToKey(path)
-        const prev = m.get(key)
-
-        if (prev === undefined) {
-            m.set(key, value)
-        } else if (prev === null) {
-            // do nothing
-        } else if (prev.toString() != value.toString()) {
-            m.set(key, null)
-        }
-    }
-
-    values.values.forEach(([id, v]) => {
-        loop([`${id}`], v, {
-            anyValue: (path, value) => {
-                allLiteral = false
-                setValue(path, value)
-            },
-            dataValue: (path, value) => {
-                allLiteral = false
-                setValue(path, value)
-            },
-            literalValue: (path, value) => {
-                setValue(path, value)
-            }
-        })
-    })
-
-    const s = new Set(
-        Array.from(m.entries())
-            .filter(([k, v]) => v === null)
-            .map(([k]) => k)
-    )
-    return [s, allLiteral]
 }

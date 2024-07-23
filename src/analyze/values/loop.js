@@ -67,7 +67,7 @@ export function loop(rootPath, root, callbacks) {
             }
         } else if (value instanceof FuncValue) {
             value.stack.values.values.forEach(([id, v]) =>
-                stack.push([[`${id}`], v])
+                stack.push([initValuePath(id), v])
             )
 
             if (callbacks.funcValue) {
@@ -91,4 +91,20 @@ export function loop(rootPath, root, callbacks) {
 
         head = stack.pop()
     }
+}
+
+/**
+ * @param {number} id
+ * @returns {string[]}
+ */
+export function initValuePath(id) {
+    return [`Arg${id}`]
+}
+
+/**
+ * @param {string[]} path
+ * @returns {string}
+ */
+export function pathToKey(path) {
+    return path.join("_")
 }

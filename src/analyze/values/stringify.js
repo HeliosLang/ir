@@ -114,7 +114,7 @@ export function stringifyValue(value, blockRecursion = None) {
                     values: [first],
                     stringifiedValues: [],
                     fn: (items) => {
-                        return `ME(${items[0]})`
+                        return `(${items[0]} | Error)`
                     }
                 })
             } else if (value instanceof BranchedValue) {

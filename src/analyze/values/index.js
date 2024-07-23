@@ -21,11 +21,14 @@ export {
     flattenMaybeError,
     uniqueFlattenedValues,
     uniqueValues
-} from "./Value.js"
-export { makeCallKey, ValueCache } from "./ValueCache.js"
-export { loop } from "./loop.js"
+} from "./Value.js" // TODO: move checks to check.js
+export { initValuePath, loop, pathToKey } from "./loop.js"
 export { mutate } from "./mutate.js"
-export { collectFuncTags, collectFuncValues } from "./ops.js"
+export {
+    collectFuncTags,
+    collectFuncValues,
+    collectNonConst
+} from "./collect.js"
 export {
     stringifyCall,
     stringifyStackValues,

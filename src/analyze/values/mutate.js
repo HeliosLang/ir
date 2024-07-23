@@ -8,6 +8,7 @@ import { LiteralValue } from "./LiteralValue.js"
 import { MaybeErrorValue } from "./MaybeErrorValue.js"
 import { Stack } from "./Stack.js"
 import { StackValues } from "./StackValues.js"
+import { initValuePath } from "./loop.js"
 
 /**
  * @typedef {import("./Value.js").Value} Value
@@ -143,14 +144,14 @@ export function mutate(rootPath, root, callbacks) {
 
                     state = {
                         compute: {
-                            path: [`${first[0]}`],
+                            path: initValuePath(first[0]),
                             value: first[1]
                         }
                     }
 
                     frames.push({
                         args: value.stack.values.values.map(([id, v]) => [
-                            [`${id}`],
+                            initValuePath(id),
                             v
                         ]),
                         mutatedArgs: [],

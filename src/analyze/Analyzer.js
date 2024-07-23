@@ -65,6 +65,12 @@ export class Analyzer {
             this.#root
         )
 
+        if (this.#options.debug) {
+            variables.keyValues.forEach((v, i) =>
+                console.log(`Var ${i}: ${v.name}`)
+            )
+        }
+
         /**
          * @param {number | FuncExpr} exprOrTag
          * @param {number} incr

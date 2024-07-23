@@ -28,7 +28,9 @@ import {
     flattenMaybeError,
     isAllMaybeNonError,
     isAllNonError,
-    isAnyError
+    isAnyError,
+    initValuePath,
+    pathToKey
 } from "./values/index.js"
 import { BiMap } from "./BiMap.js"
 import { ValueGenerator } from "./ValueGenerator.js"
@@ -114,6 +116,12 @@ export class Evaluator {
 
     /**
      * @private
+     * @type {Map<number, StackValues[]>}
+     */
+    activeStacks
+
+    /**
+     * @private
      * @type {Map<string, Value>}
      */
     cachedValues
@@ -133,8 +141,9 @@ export class Evaluator {
         this.compute = []
         this.reduce = []
 
+        this.activeStacks = new Map()
         this.cachedValues = new Map()
-        this.valueGenerator = new ValueGenerator()
+        this.valueGenerator = new ValueGenerator({ debug: props.debug })
     }
 
     /**
@@ -171,7 +180,9 @@ export class Evaluator {
 
         const args = def.args.map((a) => {
             const id = this.getVarId(a)
-            return this.valueGenerator.genData(`Arg${id}`, Branches.empty())
+            const key = pathToKey(initValuePath(id))
+
+            return this.valueGenerator.genData(key, Branches.empty())
         })
 
         this.computeCallFuncValue(fn, args, def)
@@ -326,6 +337,40 @@ export class Evaluator {
     }
 
     /**
+     * @private
+     * @param {number} tag
+     * @param {number} minDepth
+     * @returns {Option<StackValues>}
+     */
+    getActiveStack(tag, minDepth = 0) {
+        const stacks = this.activeStacks.get(tag)
+
+        if (stacks) {
+            const n = stacks.length
+
+            if (n > 0 && n > minDepth) {
+                return stacks[n - 1]
+            } else {
+                return None
+            }
+        } else {
+            return None
+        }
+    }
+
+    /**
+     * @private
+     * @param {number} tag
+     */
+    popActiveStack(tag) {
+        const stacks = this.activeStacks.get(tag)
+
+        if (stacks) {
+            stacks.pop()
+        }
+    }
+
+    /**
      * Throws an error if there are still values left in the `this.reduce` list
      * @private
      * @returns {Value}
@@ -349,6 +394,21 @@ export class Evaluator {
             this.reduce.pop(),
             "no more reduction values available"
         )
+    }
+
+    /**
+     * @private
+     * @param {number} tag
+     * @param {StackValues} values
+     */
+    pushActiveStack(tag, values) {
+        const stacks = this.activeStacks.get(tag)
+
+        if (stacks) {
+            stacks.push(values)
+        } else {
+            this.activeStacks.set(tag, [values])
+        }
     }
 
     /**
@@ -727,17 +787,20 @@ export class Evaluator {
             const bodyVarIds = new Set(
                 Array.from(fnDef.bodyVars).map((v) => this.getVarId(v))
             )
-            const allVars = fn.stack.values.extend(varsToValues, bodyVarIds)
-            const allVarsBlockedRecursion = makeRecursiveDataOpaque(
-                allVars,
-                this.valueGenerator
+            let stackValues = fn.stack.values.extend(varsToValues, bodyVarIds)
+            stackValues = makeRecursiveDataOpaque(
+                stackValues,
+                this.valueGenerator,
+                this.getActiveStack(fn.definitionTag)
             )
-            const stack = new Stack(allVarsBlockedRecursion, fn.stack.branches)
+            const stack = new Stack(stackValues, fn.stack.branches)
 
             this.pushCollect(
                 1,
                 ([v]) => {
+                    // set the real cache value and pop the stack
                     this.setCachedValue(key, v)
+                    this.popActiveStack(fn.definitionTag)
                     return v
                 },
                 callExprOwner
@@ -745,7 +808,9 @@ export class Evaluator {
 
             this.pushExpr(fnDef.body, stack)
 
+            // set any value and set the stack
             this.setAnyCachedValue(key)
+            this.pushActiveStack(fn.definitionTag, stackValues)
         }
     }
 

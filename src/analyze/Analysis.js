@@ -9,6 +9,7 @@ import {
     uniqueValues,
     MaybeErrorValue
 } from "./values/index.js"
+import { BiMap } from "./BiMap.js"
 
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr
