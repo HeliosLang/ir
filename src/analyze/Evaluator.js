@@ -80,11 +80,13 @@ import { makeRecursiveDataOpaque } from "./recursion.js"
  */
 
 /**
+ * `owner` isn't optional because branch expressions need them for correct common sub-expression factorization
  * @typedef {{
  *   call: Value
  *   args: NonErrorValue[]
  *   stack: Stack
- *   owner: Option<CallExpr>
+ *   owner: CallExpr
+ *   registerOwner: boolean
  * }} ComputeCall
  */
 
@@ -224,7 +226,8 @@ export class Evaluator {
                     action.call,
                     action.args,
                     action.stack,
-                    action.owner
+                    action.owner,
+                    action.registerOwner
                 )
             } else {
                 throw new Error("unexpected term")
@@ -416,14 +419,16 @@ export class Evaluator {
      * @param {Value} fn
      * @param {NonErrorValue[]} args
      * @param {Stack} stack - needed for the branches
-     * @param {Option<CallExpr>} owner
+     * @param {CallExpr} owner
+     * @param {boolean} registerOwner
      */
-    pushCall(fn, args, stack, owner) {
+    pushCall(fn, args, stack, owner, registerOwner) {
         this.compute.push({
             call: fn,
             args: args,
             stack: stack,
-            owner: owner
+            owner: owner,
+            registerOwner: registerOwner
         })
     }
 
@@ -457,6 +462,18 @@ export class Evaluator {
             },
             owner
         )
+    }
+
+    /**
+     * @private
+     * @param {Value} fn
+     * @param {NonErrorValue[]} args
+     * @param {Stack} stack
+     * @param {CallExpr} owner
+     */
+    pushCollectCallMaybeError(fn, args, stack, owner) {
+        this.pushCollectMaybeError(owner)
+        this.pushCall(fn, args, stack, owner, false)
     }
 
     /**
@@ -561,12 +578,16 @@ export class Evaluator {
         }
 
         if (isAllNonError(args)) {
-            this.pushCall(fn, args, stack, expr)
+            this.pushCall(fn, args, stack, expr, true)
         } else if (isAllMaybeNonError(args)) {
             const argsWithoutMaybeError = flattenMaybeError(args)
 
-            this.pushCollectMaybeError(expr)
-            this.pushCall(fn, argsWithoutMaybeError, stack, None)
+            this.pushCollectCallMaybeError(
+                fn,
+                argsWithoutMaybeError,
+                stack,
+                expr
+            )
         } else {
             this.pushErrorValue(expr)
         }
@@ -620,28 +641,30 @@ export class Evaluator {
     }
 
     /**
+     * @private
      * @param {Value} fn
      * @param {NonErrorValue[]} args
      * @param {Stack} stack
-     * @param {Option<CallExpr>}  owner
+     * @param {CallExpr}  owner
+     * @param {boolean} registerOwner
      */
-    computeCallValue(fn, args, stack, owner) {
+    computeCallValue(fn, args, stack, owner, registerOwner) {
         if (
             fn instanceof ErrorValue ||
             fn instanceof LiteralValue ||
             fn instanceof DataValue
         ) {
-            this.computeCallNonCallableValue(owner)
+            this.computeCallNonCallableValue(registerOwner ? owner : None)
         } else if (fn instanceof MaybeErrorValue) {
             this.computeCallMaybeErrorValue(fn, args, stack, owner)
         } else if (fn instanceof BranchedValue) {
-            this.computeCallBranchedValue(fn, args, stack, owner)
+            this.computeCallBranchedValue(fn, args, stack, owner, registerOwner)
         } else if (fn instanceof AnyValue) {
-            this.computeCallAny(fn, args, owner)
+            this.computeCallAny(fn, args, registerOwner ? owner : None)
         } else if (fn instanceof BuiltinValue) {
-            this.computeCallBuiltinValue(fn, args, stack, owner)
+            this.computeCallBuiltinValue(fn, args, stack, owner, registerOwner)
         } else if (fn instanceof FuncValue) {
-            this.computeCallFuncValue(fn, args, owner)
+            this.computeCallFuncValue(fn, args, registerOwner ? owner : None)
         } else {
             throw new Error("unhandled Value type")
         }
@@ -660,11 +683,10 @@ export class Evaluator {
      * @param {MaybeErrorValue} fn
      * @param {NonErrorValue[]} args
      * @param {Stack} stack
-     * @param {Option<CallExpr>} owner
+     * @param {CallExpr} owner
      */
     computeCallMaybeErrorValue(fn, args, stack, owner) {
-        this.pushCollectMaybeError(owner)
-        this.pushCall(fn.value, args, stack, None)
+        this.pushCollectCallMaybeError(fn.value, args, stack, owner)
     }
 
     /**
@@ -672,9 +694,10 @@ export class Evaluator {
      * @param {BranchedValue} fn
      * @param {NonErrorValue[]} args
      * @param {Stack} stack
-     * @param {Option<CallExpr>} owner
+     * @param {CallExpr} owner
+     * @param {boolean} registerOwner
      */
-    computeCallBranchedValue(fn, args, stack, owner) {
+    computeCallBranchedValue(fn, args, stack, owner, registerOwner) {
         this.pushCollect(
             fn.nCases,
             (cases) => {
@@ -702,11 +725,11 @@ export class Evaluator {
                     return res
                 }
             },
-            owner
+            registerOwner ? owner : None
         )
 
         fn.cases.forEach((c) => {
-            this.pushCall(c, args, stack, None)
+            this.pushCall(c, args, stack, owner, false)
         })
     }
 
@@ -733,9 +756,10 @@ export class Evaluator {
      * @param {BuiltinValue} builtin
      * @param {NonErrorValue[]} args
      * @param {Stack} stack
-     * @param {Option<CallExpr>} owner
+     * @param {CallExpr} owner
+     * @param {boolean} registerOwner
      */
-    computeCallBuiltinValue(builtin, args, stack, owner) {
+    computeCallBuiltinValue(builtin, args, stack, owner, registerOwner) {
         const result = evalBuiltin(
             owner,
             builtin,
@@ -744,7 +768,7 @@ export class Evaluator {
             this.valueGenerator
         )
 
-        this.pushValue(result, owner)
+        this.pushValue(result, registerOwner ? owner : None)
     }
 
     /**

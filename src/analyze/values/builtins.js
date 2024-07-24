@@ -43,7 +43,7 @@ import { ValueGenerator } from "../ValueGenerator.js"
  */
 
 /**
- * @param {Option<CallExpr>} expr
+ * @param {CallExpr} expr
  * @param {BuiltinValue} builtin
  * @param {NonErrorValue[]} args
  * @param {Stack} stack
@@ -72,7 +72,7 @@ function isIdentityBuiltin(name) {
 }
 
 /**
- * @param {Option<CallExpr>} expr
+ * @param {CallExpr} expr
  * @param {BranchType} name
  * @param {NonErrorValue[]} args
  * @param {Stack} stack
@@ -181,8 +181,7 @@ function evalLiteralCondBranchingBuiltin(name, cond, args) {
 }
 
 /**
- *
- * @param {Option<CallExpr>} expr
+ * @param {CallExpr} expr
  * @param {BranchType} name
  * @param {DataValue | AnyValue} cond
  * @param {NonErrorValue[]} args
@@ -198,7 +197,7 @@ function evalDataCondBranchingBuiltin(expr, name, cond, args, stack, ctx) {
         args = /** @type {NonErrorValue[]} */ (args).map((a, i) => {
             if (a instanceof FuncValue || a instanceof BranchedValue) {
                 return a.addBranch({
-                    expr: expectSome(expr),
+                    expr: expr,
                     type: /** @type {any} */ (name),
                     condition: cond,
                     index: i
