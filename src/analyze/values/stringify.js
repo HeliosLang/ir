@@ -26,13 +26,15 @@ export function stringifyCall(fn, args) {
 }
 
 /**
+ * Bottleneck of an evaluation, caching is important
  * @param {StackValues} values
  * @param {BlockRecursionProps} blockRecursion - not optional because it is almost always needed when stringifying stacks
+ * @param {Map<Value, string>} cache
  * @returns {string}
  */
-export function stringifyStackValues(values, blockRecursion) {
+export function stringifyStackValues(values, blockRecursion, cache) {
     const items = values.values.map(([id, v]) => {
-        const item = stringifyValue(v, blockRecursion)
+        const item = stringifyValue(v, blockRecursion, cache)
 
         return `${id}: ${item}`
     })
@@ -42,11 +44,13 @@ export function stringifyStackValues(values, blockRecursion) {
 
 /**
  * Non-recursive algorithm for speed
+ * This is still the bottleneck though
  * @param {Value} value
  * @param {Option<BlockRecursionProps>} blockRecursion
+ * @param {Option<Map<Value, string>>} cache
  * @returns {string}
  */
-export function stringifyValue(value, blockRecursion = None) {
+export function stringifyValue(value, blockRecursion = None, cache = None) {
     /**
      * @typedef {{
      *   value: Value
@@ -71,8 +75,15 @@ export function stringifyValue(value, blockRecursion = None) {
     }
 
     /**
-     * @typedef {{values: ComputeItem[], stringifiedValues: string[], fn: (items: string[]) => string}} Frame
+     * The owner is used to cache the value
+     * @typedef {{
+     *   owner: Value
+     *   values: ComputeItem[]
+     *   stringifiedValues: string[]
+     *   fn: (items: string[]) => string
+     * }} Frame
      */
+    
     /**
      * @type {Frame[]}
      */
@@ -81,8 +92,15 @@ export function stringifyValue(value, blockRecursion = None) {
     while (true) {
         if ("compute" in state) {
             const { value, depth } = state.compute
+            const cached = cache?.get(value)
 
-            if (
+            if (cached) {
+                state = {
+                    reduce: {
+                        item: cached
+                    }
+                }
+            } else if (
                 value instanceof AnyValue ||
                 value instanceof DataValue ||
                 value instanceof LiteralValue ||
@@ -111,10 +129,11 @@ export function stringifyValue(value, blockRecursion = None) {
                 }
 
                 frames.push({
+                    owner: value,
                     values: [first],
                     stringifiedValues: [],
                     fn: (items) => {
-                        return `(${items[0]} | Error)`
+                        return "(" + items[0] + " | Error)"
                     }
                 })
             } else if (value instanceof BranchedValue) {
@@ -131,6 +150,7 @@ export function stringifyValue(value, blockRecursion = None) {
                 }
 
                 frames.push({
+                    owner: value,
                     values: [first].concat(
                         value.cases.map((c, i) => {
                             return { value: c, depth: depth }
@@ -140,7 +160,8 @@ export function stringifyValue(value, blockRecursion = None) {
                     fn: (items) => {
                         const cond = items[0]
                         const cases = items.slice(1)
-                        return `${value.prefix}(${cond}, ${cases.join(", ")})`
+
+                        return value.prefix + "(" + cond + ", " + cases.join(", ") + ")"
                     }
                 })
             } else if (value instanceof FuncValue) {
@@ -151,13 +172,13 @@ export function stringifyValue(value, blockRecursion = None) {
                 ) {
                     state = {
                         reduce: {
-                            item: `Fn${value.definitionTag}`
+                            item: "Fn" + value.definitionTag
                         }
                     }
                 } else if (value.stack.values.values.length == 0) {
                     state = {
                         reduce: {
-                            item: `Fn${value.definitionTag}[]`
+                            item: "Fn" + value.definitionTag + "[]"
                         }
                     }
                 } else {
@@ -180,6 +201,7 @@ export function stringifyValue(value, blockRecursion = None) {
                     }
 
                     frames.push({
+                        owner: value,
                         values: [first].concat(
                             value.stack.values.values
                                 .slice(1)
@@ -193,10 +215,10 @@ export function stringifyValue(value, blockRecursion = None) {
                             const stackEntries = items.map((item, i) => {
                                 const id = value.stack.values.values[i][0]
 
-                                return `${id}: ${item}`
+                                return id + ": " + item
                             })
 
-                            return `Fn${value.definitionTag}[${stackEntries.join(", ")}]`
+                            return "Fn" + value.definitionTag + "[" + stackEntries.join(", ") + "]"
                         }
                     })
                 }
@@ -213,9 +235,14 @@ export function stringifyValue(value, blockRecursion = None) {
             frame.stringifiedValues.push(state.reduce.item)
 
             if (frame.stringifiedValues.length == frame.values.length) {
+                const s = frame.fn(frame.stringifiedValues)
+                if (cache && frame.owner) {
+                    cache.set(frame.owner, s)
+                }
+
                 state = {
                     reduce: {
-                        item: frame.fn(frame.stringifiedValues)
+                        item: s
                     }
                 }
             } else {

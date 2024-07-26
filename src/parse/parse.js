@@ -272,7 +272,7 @@ function parseInternal(r, options) {
             }
 
             if (isReserved(m)) {
-                r.errors.syntax(m.site, "reserved keyword")
+                r.errors.syntax(m.site, `reserved keyword ${m.value}`)
             }
 
             let builtinName = m.value.slice(options.builtinsPrefix.length)

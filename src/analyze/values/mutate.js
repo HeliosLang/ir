@@ -103,7 +103,9 @@ export function mutate(rootPath, root, callbacks) {
                             throw new Error("invalid branch cases mutation")
                         }
 
-                        const v = new BranchedValue(
+                        const isSame = condition == value.condition && cases.every((c, i) => c == value.cases[i])
+
+                        const v = isSame ? value : new BranchedValue(
                             value.type,
                             condition,
                             cases
@@ -171,16 +173,27 @@ export function mutate(rootPath, root, callbacks) {
                                 })
                             )
 
-                            const stackSummary = callbacks.genStackSummary(
-                                stackValues,
-                                value.definitionTag
-                            )
+                            const isSame = stackValues.values.every(([id, v], i) => id == value.stack.values.values[i][0] && v == value.stack.values.values[i][1])
 
-                            const v = new FuncValue(
-                                value.definitionTag,
-                                new Stack(stackValues, value.stack.branches),
-                                stackSummary
-                            )
+                            /**
+                             * @type {FuncValue}
+                             */
+                            let v
+
+                            if (isSame) {
+                                v = value
+                            } else {
+                                const stackSummary = callbacks.genStackSummary(
+                                    stackValues,
+                                    value.definitionTag
+                                )
+    
+                                v = new FuncValue(
+                                    value.definitionTag,
+                                    new Stack(stackValues, value.stack.branches),
+                                    stackSummary
+                                )
+                            }
 
                             return callbacks.funcValue
                                 ? callbacks.funcValue(path, v)
@@ -206,16 +219,25 @@ export function mutate(rootPath, root, callbacks) {
                     args: [[path, value.value]],
                     mutatedArgs: [],
                     fn: (values) => {
-                        const value = values[0]
+                        const innerValue = values[0]
 
                         if (
-                            value instanceof ErrorValue ||
-                            value instanceof MaybeErrorValue
+                            innerValue instanceof ErrorValue ||
+                            innerValue instanceof MaybeErrorValue
                         ) {
                             throw new Error("invalid MaybeErrorValue mutation")
                         }
 
-                        const v = new MaybeErrorValue(value)
+                        /**
+                         * @type {MaybeErrorValue}
+                         */
+                        let v
+                        
+                        if (innerValue == value.value) {
+                            v = value
+                        } else {
+                            v = new MaybeErrorValue(innerValue)
+                        }
 
                         return callbacks.maybeErrorValue
                             ? callbacks.maybeErrorValue(path, v)

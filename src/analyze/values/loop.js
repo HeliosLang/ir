@@ -12,9 +12,7 @@ import { MaybeErrorValue } from "./MaybeErrorValue.js"
  */
 
 /**
- * @param {string[]} rootPath
- * @param {Value} root
- * @param {{
+ * @typedef {{
  *   anyValue?: (path: string[], value: AnyValue) => void
  *   branchedValue?: (path: string[], value: BranchedValue) => void
  *   builtinValue?: (path: string[], value: BuiltinValue) => void
@@ -24,15 +22,35 @@ import { MaybeErrorValue } from "./MaybeErrorValue.js"
  *   literalValue?: (path: string[], value: LiteralValue) => void
  *   maybeErrorValue?: (path: string[], value: MaybeErrorValue) => void
  *   exit?: () => boolean
- * }} callbacks
+ * }} LoopCallbacks
+ */
+
+/**
+ * @param {string[]} rootPath
+ * @param {Value} root
+ * @param {LoopCallbacks} callbacks
  */
 export function loop(rootPath, root, callbacks) {
+    loopMany([[rootPath, root]], callbacks)
+}
+
+
+/**
+ * @param {[string[], Value][]} items
+ * @param {LoopCallbacks} callbacks
+ */
+export function loopMany(items, callbacks) {
     /**
      * @type {[string[], Value][]}
      */
-    const stack = [[rootPath, root]]
+    const stack = items.slice()
 
     let head = stack.pop()
+
+    /**
+     * @type {Set<FuncValue>}
+     */
+    const doneFns = new Set()
 
     while (head) {
         const [valuePath, value] = head
@@ -66,12 +84,16 @@ export function loop(rootPath, root, callbacks) {
                 callbacks.errorValue(valuePath, value)
             }
         } else if (value instanceof FuncValue) {
-            value.stack.values.values.forEach(([id, v]) =>
-                stack.push([initValuePath(id), v])
-            )
+            if (!doneFns.has(value)) {
+                value.stack.values.values.forEach(([id, v]) =>
+                    stack.push([initValuePath(id), v])
+                )
 
-            if (callbacks.funcValue) {
-                callbacks.funcValue(valuePath, value)
+                if (callbacks.funcValue) {
+                    callbacks.funcValue(valuePath, value)
+                }
+
+                doneFns.add(value)
             }
         } else if (value instanceof LiteralValue) {
             if (callbacks.literalValue) {

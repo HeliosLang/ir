@@ -267,18 +267,6 @@ export class Evaluator {
 
     /**
      * @private
-     * @param {number} id
-     * @returns {Variable}
-     */
-    getVar(id) {
-        return expectSome(
-            this.props.variables.getValueByKey(id),
-            `invalid variable id '${id}'`
-        )
-    }
-
-    /**
-     * @private
      * @param {Variable} v
      * @returns {number}
      */

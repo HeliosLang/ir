@@ -1,6 +1,6 @@
 import { FuncValue } from "./FuncValue.js"
 import { StackValues } from "./StackValues.js"
-import { initValuePath, loop, pathToKey } from "./loop.js"
+import { initValuePath, loopMany, pathToKey } from "./loop.js"
 
 /**
  * @typedef {import("./Value.js").Value} Value
@@ -68,31 +68,23 @@ export function collectNonConst(values, prevValues) {
     }
 
     /**
-     * @param {StackValues} st
+     * @type {[string[], Value][]}
      */
-    const getAll = (st) => {
-        st.values.forEach(([id, v]) => {
-            loop(initValuePath(id), v, {
-                anyValue: (path, value) => {
-                    allLiteral = false
-                    setValue(path, value)
-                },
-                dataValue: (path, value) => {
-                    allLiteral = false
-                    setValue(path, value)
-                },
-                literalValue: (path, value) => {
-                    setValue(path, value)
-                }
-            })
-        })
-    }
+    const loopItems = values.values.concat(prevValues ? prevValues.values : []).map(([id, v]) => [initValuePath(id), v])
 
-    if (prevValues) {
-        getAll(prevValues)
-    }
-
-    getAll(values)
+    loopMany(loopItems, {
+        anyValue: (path, value) => {
+            allLiteral = false
+            setValue(path, value)
+        },
+        dataValue: (path, value) => {
+            allLiteral = false
+            setValue(path, value)
+        },
+        literalValue: (path, value) => {
+            setValue(path, value)
+        }
+    })
 
     const s = new Set(
         Array.from(m.entries())
