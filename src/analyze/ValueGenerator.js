@@ -86,7 +86,8 @@ export class ValueGenerator {
      */
     genStackSummary(values, blockRecursionTag) {
         const key = stringifyStackValues(
-            values, {
+            values,
+            {
                 tag: blockRecursionTag,
                 maxDepth: 0
             },
@@ -103,7 +104,7 @@ export class ValueGenerator {
     }
 
     /**
-     * @param {number} blockRecursionTag 
+     * @param {number} blockRecursionTag
      * @returns {Map<Value, string>}
      */
     getStringifyCache(blockRecursionTag) {

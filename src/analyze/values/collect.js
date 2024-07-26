@@ -70,7 +70,9 @@ export function collectNonConst(values, prevValues) {
     /**
      * @type {[string[], Value][]}
      */
-    const loopItems = values.values.concat(prevValues ? prevValues.values : []).map(([id, v]) => [initValuePath(id), v])
+    const loopItems = values.values
+        .concat(prevValues ? prevValues.values : [])
+        .map(([id, v]) => [initValuePath(id), v])
 
     loopMany(loopItems, {
         anyValue: (path, value) => {

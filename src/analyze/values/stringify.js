@@ -83,7 +83,7 @@ export function stringifyValue(value, blockRecursion = None, cache = None) {
      *   fn: (items: string[]) => string
      * }} Frame
      */
-    
+
     /**
      * @type {Frame[]}
      */
@@ -161,7 +161,14 @@ export function stringifyValue(value, blockRecursion = None, cache = None) {
                         const cond = items[0]
                         const cases = items.slice(1)
 
-                        return value.prefix + "(" + cond + ", " + cases.join(", ") + ")"
+                        return (
+                            value.prefix +
+                            "(" +
+                            cond +
+                            ", " +
+                            cases.join(", ") +
+                            ")"
+                        )
                     }
                 })
             } else if (value instanceof FuncValue) {
@@ -218,7 +225,13 @@ export function stringifyValue(value, blockRecursion = None, cache = None) {
                                 return id + ": " + item
                             })
 
-                            return "Fn" + value.definitionTag + "[" + stackEntries.join(", ") + "]"
+                            return (
+                                "Fn" +
+                                value.definitionTag +
+                                "[" +
+                                stackEntries.join(", ") +
+                                "]"
+                            )
                         }
                     })
                 }

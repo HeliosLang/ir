@@ -103,13 +103,13 @@ export function mutate(rootPath, root, callbacks) {
                             throw new Error("invalid branch cases mutation")
                         }
 
-                        const isSame = condition == value.condition && cases.every((c, i) => c == value.cases[i])
+                        const isSame =
+                            condition == value.condition &&
+                            cases.every((c, i) => c == value.cases[i])
 
-                        const v = isSame ? value : new BranchedValue(
-                            value.type,
-                            condition,
-                            cases
-                        )
+                        const v = isSame
+                            ? value
+                            : new BranchedValue(value.type, condition, cases)
 
                         return callbacks.branchedValue
                             ? callbacks.branchedValue(path, v)
@@ -173,7 +173,11 @@ export function mutate(rootPath, root, callbacks) {
                                 })
                             )
 
-                            const isSame = stackValues.values.every(([id, v], i) => id == value.stack.values.values[i][0] && v == value.stack.values.values[i][1])
+                            const isSame = stackValues.values.every(
+                                ([id, v], i) =>
+                                    id == value.stack.values.values[i][0] &&
+                                    v == value.stack.values.values[i][1]
+                            )
 
                             /**
                              * @type {FuncValue}
@@ -187,10 +191,13 @@ export function mutate(rootPath, root, callbacks) {
                                     stackValues,
                                     value.definitionTag
                                 )
-    
+
                                 v = new FuncValue(
                                     value.definitionTag,
-                                    new Stack(stackValues, value.stack.branches),
+                                    new Stack(
+                                        stackValues,
+                                        value.stack.branches
+                                    ),
                                     stackSummary
                                 )
                             }
@@ -232,7 +239,7 @@ export function mutate(rootPath, root, callbacks) {
                          * @type {MaybeErrorValue}
                          */
                         let v
-                        
+
                         if (innerValue == value.value) {
                             v = value
                         } else {

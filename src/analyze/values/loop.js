@@ -34,7 +34,6 @@ export function loop(rootPath, root, callbacks) {
     loopMany([[rootPath, root]], callbacks)
 }
 
-
 /**
  * @param {[string[], Value][]} items
  * @param {LoopCallbacks} callbacks
