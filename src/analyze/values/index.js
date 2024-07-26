@@ -22,7 +22,7 @@ export {
     uniqueFlattenedValues,
     uniqueValues
 } from "./Value.js" // TODO: move checks to check.js
-export { initValuePath, loop, pathToKey } from "./loop.js"
+export { initValuePath, loopValues, pathToKey } from "./loop.js"
 export { mutate } from "./mutate.js"
 export {
     collectFuncTags,

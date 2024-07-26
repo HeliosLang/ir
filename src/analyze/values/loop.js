@@ -12,6 +12,7 @@ import { MaybeErrorValue } from "./MaybeErrorValue.js"
  */
 
 /**
+ * Note: creating a DataLike-specific version of `loopValues()` with a subset of the callbacks didn't give any performance benefit
  * @typedef {{
  *   anyValue?: (path: string[], value: AnyValue) => void
  *   branchedValue?: (path: string[], value: BranchedValue) => void
@@ -26,19 +27,10 @@ import { MaybeErrorValue } from "./MaybeErrorValue.js"
  */
 
 /**
- * @param {string[]} rootPath
- * @param {Value} root
- * @param {LoopCallbacks} callbacks
- */
-export function loop(rootPath, root, callbacks) {
-    loopMany([[rootPath, root]], callbacks)
-}
-
-/**
  * @param {[string[], Value][]} items
  * @param {LoopCallbacks} callbacks
  */
-export function loopMany(items, callbacks) {
+export function loopValues(items, callbacks) {
     /**
      * @type {[string[], Value][]}
      */

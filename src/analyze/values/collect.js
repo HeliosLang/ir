@@ -1,6 +1,6 @@
 import { FuncValue } from "./FuncValue.js"
 import { StackValues } from "./StackValues.js"
-import { initValuePath, loopMany, pathToKey } from "./loop.js"
+import { initValuePath, loopValues, pathToKey } from "./loop.js"
 
 /**
  * @typedef {import("./Value.js").Value} Value
@@ -74,7 +74,7 @@ export function collectNonConst(values, prevValues) {
         .concat(prevValues ? prevValues.values : [])
         .map(([id, v]) => [initValuePath(id), v])
 
-    loopMany(loopItems, {
+    loopValues(loopItems, {
         anyValue: (path, value) => {
             allLiteral = false
             setValue(path, value)
