@@ -88,6 +88,55 @@ const testVector = [
         }`
     },
     {
+        description: "don't eliminate arg that is only used in builtin func value call when calling a branched value",
+        input: `(arg0) -> {
+            iData(ifThenElse(
+                chooseData(arg0, () -> {
+                    false
+                }, () -> {
+                    false
+                }, () -> {
+                    false
+                }, () -> {
+                    true
+                }, () -> {
+                    false
+                })(),
+                () -> {
+                    unIData
+                },
+                () -> {
+                    (_) -> {
+                        error()
+                    }
+                }
+            )()(arg0))
+        }`,
+        expectedOutput: `(arg0) -> {
+            iData(ifThenElse(
+                chooseData(arg0, () -> {
+                    false
+                }, () -> {
+                    false
+                }, () -> {
+                    false
+                }, () -> {
+                    true
+                }, () -> {
+                    false
+                })(),
+                () -> {
+                    unIData
+                },
+                () -> {
+                    (_) -> {
+                        error()
+                    }
+                }
+            )()(arg0))
+        }`
+    },
+    {
         description: "can handle recursive functions",
         input: `
         (i) -> {
