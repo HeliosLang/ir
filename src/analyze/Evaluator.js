@@ -187,7 +187,7 @@ export class Evaluator {
             return this.valueGenerator.genData(key, Branches.empty())
         })
 
-        this.computeCallFuncValue(fn, args, def)
+        this.computeCallFuncValue(fn, args, def, false)
 
         return this.evalCek()
     }
@@ -652,7 +652,7 @@ export class Evaluator {
         } else if (fn instanceof BuiltinValue) {
             this.computeCallBuiltinValue(fn, args, stack, owner, registerOwner)
         } else if (fn instanceof FuncValue) {
-            this.computeCallFuncValue(fn, args, registerOwner ? owner : None)
+            this.computeCallFuncValue(fn, args, owner, registerOwner)
         } else {
             throw new Error("unhandled Value type")
         }
@@ -763,9 +763,10 @@ export class Evaluator {
      * @private
      * @param {FuncValue} fn
      * @param {NonErrorValue[]} args
-     * @param {Option<FuncExpr | CallExpr>} owner for entry point ths is the entry point FuncExpr, for all other calls this is the CallExpr
+     * @param {FuncExpr | CallExpr} owner for entry point ths is the entry point FuncExpr, for all other calls this is the CallExpr
+     * @param {boolean} registerOwner
      */
-    computeCallFuncValue(fn, args, owner) {
+    computeCallFuncValue(fn, args, owner, registerOwner) {
         const key = stringifyCall(fn, args)
         const cached = this.getCachedValue(key)
 
@@ -781,7 +782,7 @@ export class Evaluator {
         }
 
         if (cached) {
-            this.pushValue(cached, owner)
+            this.pushValue(cached, registerOwner ? owner : None)
         } else {
             const varsToValues = fnDef.args.map((a, i) => {
                 const v = args[i]
@@ -815,7 +816,7 @@ export class Evaluator {
                     this.popActiveStack(fn.definitionTag)
                     return v
                 },
-                callExprOwner
+                registerOwner ? callExprOwner : None
             )
 
             this.pushExpr(fnDef.body, stack)

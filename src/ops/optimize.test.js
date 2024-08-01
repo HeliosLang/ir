@@ -819,8 +819,8 @@ const testVector = [
                 () -> {
                     (d) -> {
                         self = unIData(headList(sndPair(unConstrData(d))));
-                        () -> {
-                            decodeUtf8__safe(recurse = (recurse, i, bytes) -> {
+                        decodeUtf8__safe(
+                            recurse = (recurse, i, bytes) -> {
                                 bytes = consByteString(addInteger(modInteger(i, 10), 48), bytes);
                                 ifThenElse(
                                     lessThanInteger(i, 10),
@@ -840,8 +840,8 @@ const testVector = [
                                 () -> {
                                     recurse(recurse, self, #)
                                 }
-                            )())
-                        }()
+                            )()
+                        )
                     }
                 }
             )()(arg0);

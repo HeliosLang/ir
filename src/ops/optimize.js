@@ -22,8 +22,7 @@ import {
     DataValue,
     ErrorValue,
     FuncValue,
-    LiteralValue,
-    BranchedValue
+    LiteralValue
 } from "../analyze/index.js"
 import {
     BuiltinExpr,
