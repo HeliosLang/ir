@@ -366,10 +366,10 @@ export class Analysis {
                 return true
             } else if (v.length > 1) {
                 return v.every(
-                    (vv) => !(vv instanceof BuiltinValue) && (
-                        !(vv instanceof FuncValue) ||
-                        vv.definitionTag == this.getFuncExprTag(fn)
-                    )
+                    (vv) =>
+                        !(vv instanceof BuiltinValue) &&
+                        (!(vv instanceof FuncValue) ||
+                            vv.definitionTag == this.getFuncExprTag(fn))
                 )
             } else {
                 throw new Error(`unexpected ${v.toString()}`)

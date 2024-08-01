@@ -88,7 +88,8 @@ const testVector = [
         }`
     },
     {
-        description: "don't eliminate arg that is only used in builtin func value call when calling a branched value",
+        description:
+            "don't eliminate arg that is only used in builtin func value call when calling a branched value",
         input: `(arg0) -> {
             iData(ifThenElse(
                 chooseData(arg0, () -> {
