@@ -1,6 +1,6 @@
 import { None, expectSome, isNone } from "@helios-lang/type-utils"
 import { CallExpr, FuncExpr, NameExpr, Variable } from "../expressions/index.js"
-import { collectVariableNameExprs } from "../ops/collect.js"
+import { callExprContains, collectVariableNameExprs } from "../ops/index.js"
 import {
     DataValue,
     FuncValue,
@@ -9,7 +9,6 @@ import {
     uniqueValues,
     MaybeErrorValue
 } from "./values/index.js"
-import { BiMap } from "./BiMap.js"
 
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr
@@ -146,6 +145,43 @@ export class Analysis {
                 }
             }
         })
+
+        return callExprs
+    }
+
+    /**
+     * TODO: extend this to FuncValues with unique ids
+     * @returns {Map<number, Set<CallExpr>>} - the key is the id of the DataValue
+     */
+    collectFactorizableDataCallExprs() {
+        let callExprs = this.collectDataCallExprs()
+
+        // filter out callExprs that contain any of the other callExprs
+        callExprs = new Map(
+            Array.from(callExprs.entries()).map(([key, s]) => {
+                const ces = Array.from(s)
+
+                s = new Set(
+                    ces.filter((ce) => {
+                        return !ces.some((contained) => {
+                            if (contained == ce) {
+                                return false
+                            } else {
+                                return callExprContains(ce, contained)
+                            }
+                        })
+                    })
+                )
+
+                return [key, s]
+            })
+        )
+        // only keep the entries with 2 or more CallExprs
+        callExprs = new Map(
+            Array.from(callExprs.entries()).filter(([key, value]) => {
+                return value.size > 1
+            })
+        )
 
         return callExprs
     }

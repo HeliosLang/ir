@@ -15,6 +15,7 @@ import {
  * @typedef {{
  *   builtinsPrefix?: string
  *   safeBuiltinSuffix?: string
+ *   errorPrefix?: string
  *   tab?: string
  *   syntacticSugar?: boolean
  * }} PartialFormatOptions
@@ -24,6 +25,7 @@ import {
  * @typedef {{
  *   builtinsPrefix?: string
  *   safeBuiltinSuffix: string
+ *   errorPrefix?: string
  *   tab: string
  *   syntacticSugar?: boolean
  * }} FormatOptions
@@ -50,6 +52,18 @@ export function format(expr, partialOptions = {}) {
 
 /**
  * @param {Expr} expr
+ * @returns {boolean}
+ */
+function isAssignmentLike(expr) {
+    return (
+        expr instanceof CallExpr &&
+        expr.func instanceof FuncExpr &&
+        expr.func.args.length == 1
+    )
+}
+
+/**
+ * @param {Expr} expr
  * @param {string} indent
  * @param {FormatOptions} options
  * @returns {string}
@@ -64,7 +78,7 @@ function formatInternal(expr, indent, options) {
     } else if (expr instanceof BuiltinExpr) {
         return `${options.builtinsPrefix ?? ""}${expr.name}${expr.safe ? options.safeBuiltinSuffix : ""}`
     } else if (expr instanceof ErrorExpr) {
-        return "error()"
+        return `${options.errorPrefix ?? ""}error()`
     } else if (expr instanceof CallExpr) {
         if (expr.func instanceof BuiltinExpr) {
             if (expr.func.name == "ifThenElse") {
@@ -81,6 +95,7 @@ function formatInternal(expr, indent, options) {
         } else if (
             expr.func instanceof FuncExpr &&
             expr.func.args.length == 1 &&
+            !isAssignmentLike(expr.args[0]) &&
             syntacticSugar
         ) {
             return [

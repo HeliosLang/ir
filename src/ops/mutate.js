@@ -6,7 +6,6 @@ import { ErrorExpr } from "../expressions/ErrorExpr.js"
 import { FuncExpr } from "../expressions/FuncExpr.js"
 import { LiteralExpr } from "../expressions/LiteralExpr.js"
 import { NameExpr } from "../expressions/NameExpr.js"
-import { format } from "../format/index.js"
 
 /**
  * @typedef {import("../expressions/Expr.js").Expr} Expr

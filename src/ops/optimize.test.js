@@ -476,43 +476,46 @@ const testVector = [
             }(mkNilData(()))
           `,
         expectedOutput: `(arg0) -> {
-            b = a = unIData(arg0);
-            equalsInteger(
-                self = ifThenElse(
-                    lessThanInteger(a, 0),
-                    () -> {
-                        subtractInteger(multiplyInteger(a, -2), 1)
-                    },
-                    () -> {
-                        multiplyInteger(a, 2)
-                    }
-                )();
-                ifThenElse(
-                    lessThanInteger(self, 0),
-                    () -> {
-                        error()
-                    },
-                    () -> {
-                        ifThenElse(
-                            equalsInteger(modInteger(self, 2), 0),
-                            () -> {
-                                divideInteger(self, 2)
-                            },
-                            () -> {
-                                divideInteger(addInteger(self, 1), -2)
-                            }
-                        )()
-                    }
-                )(), 
-                a
-            );
-            constrData(
-                ifThenElse(
-                    b,
-                    1,
-                    0
-                ), 
-                []
+            (b) ->{
+                constrData(
+                    ifThenElse(
+                        b,
+                        1,
+                        0
+                    ), 
+                    []
+                )
+            }(
+                a = unIData(arg0);
+                equalsInteger(
+                    self = ifThenElse(
+                        lessThanInteger(a, 0),
+                        () -> {
+                            subtractInteger(multiplyInteger(a, -2), 1)
+                        },
+                        () -> {
+                            multiplyInteger(a, 2)
+                        }
+                    )();
+                    ifThenElse(
+                        lessThanInteger(self, 0),
+                        () -> {
+                            error()
+                        },
+                        () -> {
+                            ifThenElse(
+                                equalsInteger(modInteger(self, 2), 0),
+                                () -> {
+                                    divideInteger(self, 2)
+                                },
+                                () -> {
+                                    divideInteger(addInteger(self, 1), -2)
+                                }
+                            )()
+                        }
+                    )(), 
+                    a
+                )
             )
         }`
     },
@@ -684,6 +687,165 @@ const testVector = [
                     }
                 )()
             )
+        }`
+    },
+    {
+        description: "real script 3",
+        input: `(__helios__string____to_data) -> {
+            (__helios__int__show_digit) -> {
+            (__helios__int__show) -> {
+            (__helios__int__from_data) -> {
+            (__helios__common__enum_fields) -> {
+            (__helios__common__enum_field_0) -> {
+            (__helios__common__enum_tag_equals) -> {
+            (__helios__common__identity) -> {
+            (__module__match_string__Datum[]__from_data) -> {
+            (__module__match_string__Datum[]__One____is) -> {
+            (__module__match_string__Datum[]__Two__code) -> {
+            (__module__match_string__main) -> {
+                /*entry point*/
+                (arg0) -> {
+                    __helios__string____to_data(__module__match_string__main(__module__match_string__Datum[]__from_data(arg0)))
+                }
+            }(
+                /*__module__match_string__main*/
+                (datum) -> {
+                (e0) ->
+                    {(
+            ifThenElse(
+                                            __module__match_string__Datum[]__One____is(e0),
+                                            () -> {
+                                                    (__lhs_0) -> {
+                                ""
+                            }
+                                            }, () -> {
+                                                    (d) -> {
+                                __helios__int__show(__module__match_string__Datum[]__Two__code(d))()
+                            }
+                                            }
+                                    )()
+                    )(e0)}(datum)
+            }
+            )
+            }(
+                /*__module__match_string__Datum[]__Two__code*/
+                (self) -> {
+                                                                    __helios__int__from_data(__helios__common__enum_field_0(self))
+                                                            }
+            )
+            }(
+                /*__module__match_string__Datum[]__One____is*/
+                (data) -> {
+                            __helios__common__enum_tag_equals(data, 0)
+                        }
+            )
+            }(
+                /*__module__match_string__Datum[]__from_data*/
+                __helios__common__identity
+            )
+            }(
+                /*__helios__common__identity*/
+                (self) -> {self}
+            )
+            }(
+                /*__helios__common__enum_tag_equals*/
+                (data, i) -> {
+                        equalsInteger(fstPair(unConstrData(data)), i)
+                    }
+            )
+            }(
+                /*__helios__common__enum_field_0*/
+                (self) -> {
+                    headList(__helios__common__enum_fields(self))
+                }
+            )
+            }(
+                /*__helios__common__enum_fields*/
+                (self) -> {
+                    sndPair(unConstrData(self))
+                }
+            )
+            }(
+                /*__helios__int__from_data*/
+                unIData
+            )
+            }(
+                /*__helios__int__show*/
+                (self) -> {
+                    () -> {
+                        decodeUtf8__safe(
+                            recurse = (recurse, i, bytes) -> {
+                                (bytes) -> {
+                                    ifThenElse(
+                                        lessThanInteger(i, 10),
+                                        () -> {
+                                            bytes
+                                        },
+                                        () -> {
+                                            recurse(recurse, divideInteger(i, 10), bytes)
+                                        }
+                                    )()
+                                }(consByteString(__helios__int__show_digit(i), bytes))
+                            };
+                            ifThenElse(
+                                lessThanInteger(self, 0),
+                                () -> {consByteString(45, recurse(recurse, multiplyInteger(self, -1), #))},
+                                () -> {recurse(recurse, self, #)}
+                            )()
+                        )
+                    }
+                }
+            )
+            }(
+                /*__helios__int__show_digit*/
+                (x) -> {
+                    addInteger(modInteger(x, 10), 48)
+                }
+            )
+            }(
+                /*__helios__string____to_data*/
+                (s) -> {
+                    bData(encodeUtf8(s))
+                }
+            )`,
+        expectedOutput: `(arg0) -> {
+            s = ifThenElse(
+                equalsInteger(fstPair(unConstrData(arg0)), 0),
+                () -> {
+                    (__lhs_0) -> {
+                        ""
+                    }
+                },
+                () -> {
+                    (d) -> {
+                        self = unIData(headList(sndPair(unConstrData(d))));
+                        () -> {
+                            decodeUtf8__safe(recurse = (recurse, i, bytes) -> {
+                                bytes = consByteString(addInteger(modInteger(i, 10), 48), bytes);
+                                ifThenElse(
+                                    lessThanInteger(i, 10),
+                                    () -> {
+                                        bytes
+                                    },
+                                    () -> {
+                                        recurse(recurse, divideInteger(i, 10), bytes)
+                                    }
+                                )()
+                            };
+                            ifThenElse(
+                                lessThanInteger(self, 0),
+                                () -> {
+                                    consByteString(45, recurse(recurse, multiplyInteger(self, -1), #))
+                                },
+                                () -> {
+                                    recurse(recurse, self, #)
+                                }
+                            )())
+                        }()
+                    }
+                }
+            )()(arg0);
+            bData(encodeUtf8(s))
         }`
     }
 ]

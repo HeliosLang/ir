@@ -69,3 +69,23 @@ export function loop(root, callbacks) {
         expr = stack.pop()
     }
 }
+
+/**
+ * @param {CallExpr} expr
+ * @param {CallExpr} contained
+ * @returns {boolean}
+ */
+export function callExprContains(expr, contained) {
+    let found = false
+
+    loop(expr, {
+        callExpr: (callExpr) => {
+            if (callExpr == contained) {
+                found = true
+            }
+        },
+        exit: () => found
+    })
+
+    return found
+}

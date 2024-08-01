@@ -11,7 +11,6 @@ import { deconstructFuncBody } from "./deconstruct.js"
 import { loop } from "./loop.js"
 import { mutate } from "./mutate.js"
 import { reconstructFuncBody } from "./reconstruct.js"
-import { format } from "../format/index.js"
 import { resetVariables } from "./reset.js"
 
 /**

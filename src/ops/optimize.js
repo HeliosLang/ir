@@ -34,7 +34,7 @@ import {
     NameExpr,
     Variable
 } from "../expressions/index.js"
-import { format } from "../format/index.js"
+import { format } from "../format/format.js"
 import { collectVariables, collectVariablesWithDepth } from "./collect.js"
 import { loop } from "./loop.js"
 import { mutate } from "./mutate.js"
@@ -276,31 +276,24 @@ export class Optimizer {
      * @param {Analysis} analysis
      */
     factorizeCommon(analysis) {
-        let callExprs = analysis.collectDataCallExprs()
-
-        // only keep the entries with 2 or more CallExprs
-        callExprs = new Map(
-            Array.from(callExprs.entries()).filter(([key, value]) => {
-                return value.size > 1
-            })
-        )
+        const callExprs = analysis.collectFactorizableDataCallExprs()
 
         // entries might be split due to branches
         /**
          * @type {Map<CallExpr, NameExpr>}
          */
-        let substitutions = new Map()
+        const substitutions = new Map()
 
         /**
          * Use the deepest variable
          * @type {Map<Variable, {vars: Variable[], injected: Variable, expr: CallExpr}[]>}
          */
-        let injections = new Map()
+        const injections = new Map()
 
         /**
          * @type {Map<CallExpr, {root: Branches, vars: Variable[], injected: Variable, expr: CallExpr}[]>}
          */
-        let branchInjections = new Map()
+        const branchInjections = new Map()
 
         let commonCount = 0
 
