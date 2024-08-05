@@ -1,4 +1,5 @@
-import { None } from "@helios-lang/type-utils"
+import { None, isSome } from "@helios-lang/type-utils"
+import { BiMap } from "../BiMap.js"
 import { AnyValue } from "./AnyValue.js"
 import { BranchedValue } from "./BranchedValue.js"
 import { BuiltinValue } from "./BuiltinValue.js"
@@ -29,28 +30,41 @@ export function stringifyCall(fn, args) {
  * Bottleneck of an evaluation, caching is important
  * @param {StackValues} values
  * @param {BlockRecursionProps} blockRecursion - not optional because it is almost always needed when stringifying stacks
- * @param {Map<Value, string>} cache
+ * @param {Map<Value, string>} valueCache
  * @returns {string}
  */
-export function stringifyStackValues(values, blockRecursion, cache) {
+export function stringifyStackValues(values, blockRecursion, valueCache) {
+    /**
+     * @type {BiMap<string>}
+     */
+    const stackIds = new BiMap()
+
     const items = values.values.map(([id, v]) => {
-        const item = stringifyValue(v, blockRecursion, cache)
+        const item = stringifyValue(v, blockRecursion, valueCache, stackIds)
 
         return `${id}: ${item}`
     })
 
-    return `[${items.join(", ")}]`
+    let refs = ""
+    if (stackIds.keyValues.length > 0) {
+        refs = stackIds.keyValues.map((v, i) => `Ref${i}: ${v}`).join("\n") + "\n"
+    }
+
+    const res = refs + `[${items.join(", ")}]`
+
+    return res
 }
 
 /**
  * Non-recursive algorithm for speed
- * This is still the bottleneck though
+ * This is still the bottleneck though (both in terms of cpu and memory)
  * @param {Value} value
  * @param {Option<BlockRecursionProps>} blockRecursion
- * @param {Option<Map<Value, string>>} cache
+ * @param {Option<Map<Value, string>>} valueCache
+ * @param {Option<BiMap<string>>} stackIds_
  * @returns {string}
  */
-export function stringifyValue(value, blockRecursion = None, cache = None) {
+export function stringifyValue(value, blockRecursion = None, valueCache = None, stackIds_ = None) {
     /**
      * @typedef {{
      *   value: Value
@@ -89,10 +103,16 @@ export function stringifyValue(value, blockRecursion = None, cache = None) {
      */
     const frames = []
 
+    /**
+     * Give each stringified Stack a unique ID, which is reused for repeated 
+     * @type {BiMap<string>}
+     */
+    const stackIds = stackIds_ ?? new BiMap()
+
     while (true) {
         if ("compute" in state) {
             const { value, depth } = state.compute
-            const cached = cache?.get(value)
+            const cached = valueCache?.get(value)
 
             if (cached) {
                 state = {
@@ -225,13 +245,30 @@ export function stringifyValue(value, blockRecursion = None, cache = None) {
                                 return id + ": " + item
                             })
 
-                            return (
-                                "Fn" +
-                                value.definitionTag +
-                                "[" +
-                                stackEntries.join(", ") +
-                                "]"
-                            )
+                            // TODO: lookup in a cache instead
+                            const stackStr = "[" +
+                            stackEntries.join(", ") +
+                            "]"
+
+                            // cache the StackValues themselves
+                            //stackCache?.set(value.stack.values, stackStr)
+
+                            /*const id = stackIds.getKeyByValue(stackStr)
+
+                            if (isSome(id)) {
+                                return "Fn" + value.definitionTag + "St" + id.toString()
+                            } else {*/
+                                // give the stringified StackValues a unique id for this run
+                                //const id = stackIds.add(stackStr)
+
+                                return (
+                                    "Fn" +
+                                    value.definitionTag +
+                                    //"St" + 
+                                    //id.toString() +
+                                    stackStr
+                                )
+                            //}
                         }
                     })
                 }
@@ -248,9 +285,16 @@ export function stringifyValue(value, blockRecursion = None, cache = None) {
             frame.stringifiedValues.push(state.reduce.item)
 
             if (frame.stringifiedValues.length == frame.values.length) {
-                const s = frame.fn(frame.stringifiedValues)
-                if (cache && frame.owner) {
-                    cache.set(frame.owner, s)
+                let s = frame.fn(frame.stringifiedValues)
+
+                if (valueCache && frame.owner) {
+                    if (frame.owner instanceof FuncValue) {
+                        // generate an id
+                        const id = stackIds.add(s)
+                        s = "Ref" + id
+                    }
+
+                    valueCache.set(frame.owner, s)
                 }
 
                 state = {
@@ -274,5 +318,12 @@ export function stringifyValue(value, blockRecursion = None, cache = None) {
         throw new Error("unexpected")
     }
 
-    return state.reduce.item
+    const res = state.reduce.item
+
+    if (res.length > 100000) {
+        console.log(res)
+        throw new Error("stringified value too big")
+    }
+
+    return res
 }

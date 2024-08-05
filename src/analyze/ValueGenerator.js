@@ -91,7 +91,7 @@ export class ValueGenerator {
                 tag: blockRecursionTag,
                 maxDepth: 0
             },
-            this.getStringifyCache(blockRecursionTag)
+            this.getStringifyValueCache(blockRecursionTag)
         )
 
         const id = this.groups.Stack.add(key)
@@ -107,7 +107,7 @@ export class ValueGenerator {
      * @param {number} blockRecursionTag
      * @returns {Map<Value, string>}
      */
-    getStringifyCache(blockRecursionTag) {
+    getStringifyValueCache(blockRecursionTag) {
         const cache = this.stringifyCache.get(blockRecursionTag)
 
         if (cache) {

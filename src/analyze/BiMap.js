@@ -1,4 +1,4 @@
-import { isNone, isSome } from "@helios-lang/type-utils"
+import { isNone } from "@helios-lang/type-utils"
 
 /**
  * A Bidirectional or Bijective map, mapping an instance of any type to a unique integer

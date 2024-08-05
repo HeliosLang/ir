@@ -266,7 +266,7 @@ const testVector = [
     }
 ]
 
-/*describe(Evaluator.name, () => {
+describe(Evaluator.name, () => {
     testVector.forEach((t) => {
         it(t.description, () => {
             const expr = parse(t.source)
@@ -281,9 +281,9 @@ const testVector = [
             evaluator.eval(expr)
         })
     })
-})*/
+})
 
-/*describe(`benchmark`, () => {
+describe(`benchmark`, () => {
     const src = `(__REDEEMER, __CONTEXT) -> {
         (__helios__error) -> {
     (__helios__bool__and) -> {
@@ -642,9 +642,9 @@ const testVector = [
     evaluator.eval(expr)
 
     console.log(`Evaluator benchmark completed in ${Date.now() - tick}ms`)
-})*/
+})
 
-describe("not too much memory usage when there are many stack interdependencies", () => {
+/*describe("not too much memory usage when there are many stack interdependencies", () => {
     const src = `(__helios__common__list_0) -> {
         (__helios__bool____to_data) -> {
         (__helios__int__from_data) -> {
@@ -691,12 +691,10 @@ describe("not too much memory usage when there are many stack interdependencies"
         (__module__valuable_singleton_script__get_singleton_wrapper[__helios__txoutput]) -> {
         (__helios__option[__helios__stakingcredential]__none____new) -> {
         (__module__valuable_singleton_script__main) -> {
-            /*entry point*/
             (arg0) -> {
                 __helios__bool____to_data(__module__valuable_singleton_script__main(__helios__int__from_data(arg0)))
             }
         }(
-            /*__module__valuable_singleton_script__main*/
             (lovelace) -> {
             (pub_key_hash_bytes) -> {
                 (address) -> {
@@ -712,25 +710,21 @@ describe("not too much memory usage when there are many stack interdependencies"
         }
         )
         }(
-            /*__helios__option[__helios__stakingcredential]__none____new*/
             () -> {
                 __helios__option__NONE
             }
         )
         }(
-            /*__module__valuable_singleton_script__get_singleton_wrapper[__helios__txoutput]*/
             (v) -> {
             __helios__value__get_singleton_asset_class(__helios__txoutput__value(v))()
         }
         )
         }(
-            /*__helios__txoutput__value*/
             (self) -> {
                 __core__unMapData(__helios__common__enum_field_1(self))
             }
         )
         }(
-            /*__helios__value__get_singleton_asset_class*/
             (self) -> {
                     () -> {
                         recurse = (recurse, map, found, asset_class) -> {
@@ -801,7 +795,6 @@ describe("not too much memory usage when there are many stack interdependencies"
                 }
         )
         }(
-            /*__helios__error*/
             (msg) -> {
                 __core__trace(
                     msg, 
@@ -812,45 +805,36 @@ describe("not too much memory usage when there are many stack interdependencies"
             }
         )
         }(
-            /*__helios__pubkeyhash__new*/
             __helios__common__identity
         )
         }(
-            /*__helios__spendingcredential__new_pubkey*/
             (hash) -> {
                 __core__constrData(0, __helios__common__list_1(__helios__pubkeyhash____to_data(hash)))
             }
         )
         }(
-            /*__helios__pubkeyhash____to_data*/
             __helios__bytearray____to_data
         )
         }(
-            /*__helios__address__new*/
             (cred, staking_cred) -> {
                 __core__constrData(0, __helios__common__list_2(cred, staking_cred))
             }
         )
         }(
-            /*__helios__mintingpolicyhash__new*/
             __helios__common__identity
         )
         }(
-            /*__helios__common__identity*/
             (self) -> {self}
         )
         }(
-            /*__helios__value__lovelace*/
             (i) -> {
                 __helios__value__new(__helios__assetclass__ADA, i)
             }
         )
         }(
-            /*__helios__assetclass__ADA*/
             __helios__assetclass__new(#, #)
         )
         }(
-            /*__helios__assetclass__new*/
             (mph, token_name) -> {
                 __core__constrData(0, __helios__common__list_2(
                     __helios__mintingpolicyhash____to_data(mph), 
@@ -859,15 +843,12 @@ describe("not too much memory usage when there are many stack interdependencies"
             }
         )
         }(
-            /*__helios__mintingpolicyhash____to_data*/
             __helios__bytearray____to_data
         )
         }(
-            /*__helios__bytearray____to_data*/
             __core__bData
         )
         }(
-            /*__helios__value__new*/
             (assetClass, i) -> {
                 __core__ifThenElse(
                     __core__equalsInteger(0, i),
@@ -894,45 +875,37 @@ describe("not too much memory usage when there are many stack interdependencies"
             }
         )
         }(
-            /*__helios__int____to_data*/
             __core__iData
         )
         }(
-            /*__helios__common__enum_field_1*/
             (self) -> {
                 __core__headList(__helios__common__enum_fields_after_0(self))
             }
         )
         }(
-            /*__helios__common__enum_fields_after_0*/
             (self) -> {
                 __core__tailList(__helios__common__enum_fields(self))
             }
         )
         }(
-            /*__helios__common__enum_field_0*/
             (self) -> {
                 __core__headList(__helios__common__enum_fields(self))
             }
         )
         }(
-            /*__helios__common__enum_fields*/
             (self) -> {
                 __core__sndPair(__core__unConstrData(self))
             }
         )
         }(
-            /*__helios__value__ZERO*/
             __core__mkNilPairData(())
         )
         }(
-            /*__helios__value____add*/
             (a, b) -> {
                 __helios__value__add_or_subtract(a, b, __core__addInteger)
             }
         )
         }(
-            /*__helios__value__add_or_subtract*/
             (a, b, op) -> {
                 recurse = (recurse, keys, result) -> {
                     __core__chooseList(
@@ -954,7 +927,6 @@ describe("not too much memory usage when there are many stack interdependencies"
             }
         )
         }(
-            /*__helios__value__get_inner_map*/
             (map, mph) -> {
                 recurse = (recurse, map) -> {
                     __core__chooseList(
@@ -973,7 +945,6 @@ describe("not too much memory usage when there are many stack interdependencies"
             }
         )
         }(
-            /*__helios__value__add_or_subtract_inner*/
             (op) -> {
                 (a, b) -> {
                     recurse = (recurse, keys, result) -> {
@@ -997,7 +968,6 @@ describe("not too much memory usage when there are many stack interdependencies"
             }
         )
         }(
-            /*__helios__value__merge_map_keys*/
             (a, b) -> {
                 aKeys = __helios__value__get_map_keys(a);
                 recurse = (recurse, keys, map) -> {
@@ -1019,7 +989,6 @@ describe("not too much memory usage when there are many stack interdependencies"
             }
         )
         }(
-            /*__helios__common__concat*/
             (a, b) -> {
                 (recurse) -> {
                     recurse(recurse, b, a)
@@ -1035,13 +1004,11 @@ describe("not too much memory usage when there are many stack interdependencies"
             }
         )
         }(
-            /*__helios__common__is_in_bytearray_list*/
             (lst, key) -> {
                 __helios__common__any(lst, (item) -> {__core__equalsData(item, key)})
             }
         )
         }(
-            /*__helios__common__any*/
             (self, fn) -> {
                 (recurse) -> {
                     recurse(recurse, self, fn)
@@ -1063,7 +1030,6 @@ describe("not too much memory usage when there are many stack interdependencies"
             }
         )
         }(
-            /*__helios__value__get_map_keys*/
             (map) -> {
                 recurse = (recurse, map) -> {
                     __core__chooseList(
@@ -1076,7 +1042,6 @@ describe("not too much memory usage when there are many stack interdependencies"
             }
         )
         }(
-            /*__helios__value__get_inner_map_int*/
             (map, key) -> {
                 recurse = (recurse, map, key) -> {
                     __core__chooseList(
@@ -1095,65 +1060,53 @@ describe("not too much memory usage when there are many stack interdependencies"
             }
         )
         }(
-            /*__helios__txoutputdatum__new_none*/
             () -> {
                 __core__constrData(0, __helios__common__list_0)
             }
         )
         }(
-            /*__helios__txoutput__new*/
             (address, value, datum) -> {
                 __core__constrData(0, __helios__common__list_4(address, __core__mapData(value), datum, __helios__option__NONE))
             }
         )
         }(
-            /*__helios__option__NONE*/
             __core__constrData(1, __helios__common__list_0)
         )
         }(
-            /*__helios__common__list_4*/
             (arg0, arg1, arg2, arg3) -> {
                 __core__mkCons(arg0, __helios__common__list_3(arg1, arg2, arg3))
             }
         )
         }(
-            /*__helios__common__list_3*/
             (arg0, arg1, arg2) -> {
                 __core__mkCons(arg0, __helios__common__list_2(arg1, arg2))
             }
         )
         }(
-            /*__helios__common__list_2*/
             (arg0, arg1) -> {
                 __core__mkCons(arg0, __helios__common__list_1(arg1))
             }
         )
         }(
-            /*__helios__common__list_1*/
             (a) -> {
                 __core__mkCons(a, __helios__common__list_0)
             }
         )
         }(
-            /*__helios__assetclass____eq*/
             __helios__common____eq
         )
         }(
-            /*__helios__common____eq*/
             __core__equalsData
         )
         }(
-            /*__helios__int__from_data*/
             __core__unIData
         )
         }(
-            /*__helios__bool____to_data*/
             (b) -> {
                 __core__constrData(__core__ifThenElse(b, 1, 0), __helios__common__list_0)
             }
         )
         }(
-            /*__helios__common__list_0*/
             __core__mkNilData(())
         )`
 
@@ -1167,8 +1120,9 @@ describe("not too much memory usage when there are many stack interdependencies"
 
     const evaluator = new Evaluator({
         funcExprs,
-        variables
+        variables,
+        debug: true
     })
 
     evaluator.eval(expr)
-})
+})*/
