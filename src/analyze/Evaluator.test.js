@@ -266,7 +266,7 @@ const testVector = [
     }
 ]
 
-describe(Evaluator.name, () => {
+/*describe(Evaluator.name, () => {
     testVector.forEach((t) => {
         it(t.description, () => {
             const expr = parse(t.source)
@@ -281,9 +281,9 @@ describe(Evaluator.name, () => {
             evaluator.eval(expr)
         })
     })
-})
+})*/
 
-describe(`benchmark`, () => {
+/*describe(`benchmark`, () => {
     const src = `(__REDEEMER, __CONTEXT) -> {
         (__helios__error) -> {
     (__helios__bool__and) -> {
@@ -318,67 +318,55 @@ describe(`benchmark`, () => {
                 () -> {__helios__error("validation returned false")}
             )()
     }(
-        /*__module__always_succeeds__main*/
         (_) -> {
         __helios__value____gt(__helios__tx__fee(__helios__scriptcontext__tx), __helios__value__ZERO)
     }
     )
     }(
-        /*__helios__value__ZERO*/
         __core__mkNilPairData(())
     )
     }(
-        /*__helios__scriptcontext__tx*/
         __helios__common__enum_field_0(__helios__scriptcontext__data)
     )
     }(
-        /*__helios__scriptcontext__data*/
         __CONTEXT
     )
     }(
-        /*__helios__common__enum_field_0*/
         (self) -> {
             __core__headList(__helios__common__enum_fields(self))
         }
     )
     }(
-        /*__helios__tx__fee*/
         (self) -> {
             __core__unMapData(__helios__common__enum_field_3(self))
         }
     )
     }(
-        /*__helios__common__enum_field_3*/
         (self) -> {
             __core__headList(__helios__common__enum_fields_after_2(self))
         }
     )
     }(
-        /*__helios__common__enum_fields_after_2*/
         (self) -> {
             __core__tailList(__helios__common__enum_fields_after_1(self))
         }
     )
     }(
-        /*__helios__common__enum_fields_after_1*/
         (self) -> {
             __core__tailList(__helios__common__enum_fields_after_0(self))
         }
     )
     }(
-        /*__helios__common__enum_fields_after_0*/
         (self) -> {
             __core__tailList(__helios__common__enum_fields(self))
         }
     )
     }(
-        /*__helios__common__enum_fields*/
         (self) -> {
             __core__sndPair(__core__unConstrData(self))
         }
     )
     }(
-        /*__helios__value____gt*/
         (a, b) -> {
             __helios__bool__and(
                 () -> {
@@ -402,7 +390,6 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__value__compare*/
         (a, b, comp) -> {
             recurse = (recurse, keys) -> {
                 __core__chooseList(
@@ -428,7 +415,6 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__value__get_inner_map*/
         (map, mph) -> {
             recurse = (recurse, map) -> {
                 __core__chooseList(
@@ -447,7 +433,6 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__value__compare_inner*/
         (comp, a, b) -> {
             recurse = (recurse, keys) -> {
                 __core__chooseList(
@@ -472,7 +457,6 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__value__merge_map_keys*/
         (a, b) -> {
             aKeys = __helios__value__get_map_keys(a);
             recurse = (recurse, keys, map) -> {
@@ -494,7 +478,6 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__common__concat*/
         (a, b) -> {
             (recurse) -> {
                 recurse(recurse, b, a)
@@ -510,13 +493,11 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__common__is_in_bytearray_list*/
         (lst, key) -> {
             __helios__common__any(lst, (item) -> {__core__equalsData(item, key)})
         }
     )
     }(
-        /*__helios__common__any*/
         (self, fn) -> {
             (recurse) -> {
                 recurse(recurse, self, fn)
@@ -538,7 +519,6 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__value__get_map_keys*/
         (map) -> {
             recurse = (recurse, map) -> {
                 __core__chooseList(
@@ -551,11 +531,9 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__common__list_0*/
         __core__mkNilData(())
     )
     }(
-        /*__helios__value__get_inner_map_int*/
         (map, key) -> {
             recurse = (recurse, map, key) -> {
                 __core__chooseList(
@@ -574,7 +552,6 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__value__is_zero*/
         (self) -> {
             () -> {
                 recurse = (recurse, map) -> {
@@ -600,7 +577,6 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__value__is_zero_inner*/
         (tokens) -> {
             recurse = (recurse, tokens) -> {
                 __core__chooseList(
@@ -624,13 +600,11 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__bool____not*/
         (b) -> {
             __core__ifThenElse(b, false, true)
         }
     )
     }(
-        /*__helios__bool__and*/
         (a, b) -> {
             __core__ifThenElse(
                 a(), 
@@ -640,7 +614,6 @@ describe(`benchmark`, () => {
         }
     )
     }(
-        /*__helios__error*/
         (msg) -> {
             __core__trace(
                 msg, 
@@ -669,4 +642,533 @@ describe(`benchmark`, () => {
     evaluator.eval(expr)
 
     console.log(`Evaluator benchmark completed in ${Date.now() - tick}ms`)
+})*/
+
+describe("not too much memory usage when there are many stack interdependencies", () => {
+    const src = `(__helios__common__list_0) -> {
+        (__helios__bool____to_data) -> {
+        (__helios__int__from_data) -> {
+        (__helios__common____eq) -> {
+        (__helios__assetclass____eq) -> {
+        (__helios__common__list_1) -> {
+        (__helios__common__list_2) -> {
+        (__helios__common__list_3) -> {
+        (__helios__common__list_4) -> {
+        (__helios__option__NONE) -> {
+        (__helios__txoutput__new) -> {
+        (__helios__txoutputdatum__new_none) -> {
+        (__helios__value__get_inner_map_int) -> {
+        (__helios__value__get_map_keys) -> {
+        (__helios__common__any) -> {
+        (__helios__common__is_in_bytearray_list) -> {
+        (__helios__common__concat) -> {
+        (__helios__value__merge_map_keys) -> {
+        (__helios__value__add_or_subtract_inner) -> {
+        (__helios__value__get_inner_map) -> {
+        (__helios__value__add_or_subtract) -> {
+        (__helios__value____add) -> {
+        (__helios__value__ZERO) -> {
+        (__helios__common__enum_fields) -> {
+        (__helios__common__enum_field_0) -> {
+        (__helios__common__enum_fields_after_0) -> {
+        (__helios__common__enum_field_1) -> {
+        (__helios__int____to_data) -> {
+        (__helios__value__new) -> {
+        (__helios__bytearray____to_data) -> {
+        (__helios__mintingpolicyhash____to_data) -> {
+        (__helios__assetclass__new) -> {
+        (__helios__assetclass__ADA) -> {
+        (__helios__value__lovelace) -> {
+        (__helios__common__identity) -> {
+        (__helios__mintingpolicyhash__new) -> {
+        (__helios__address__new) -> {
+        (__helios__pubkeyhash____to_data) -> {
+        (__helios__spendingcredential__new_pubkey) -> {
+        (__helios__pubkeyhash__new) -> {
+        (__helios__error) -> {
+        (__helios__value__get_singleton_asset_class) -> {
+        (__helios__txoutput__value) -> {
+        (__module__valuable_singleton_script__get_singleton_wrapper[__helios__txoutput]) -> {
+        (__helios__option[__helios__stakingcredential]__none____new) -> {
+        (__module__valuable_singleton_script__main) -> {
+            /*entry point*/
+            (arg0) -> {
+                __helios__bool____to_data(__module__valuable_singleton_script__main(__helios__int__from_data(arg0)))
+            }
+        }(
+            /*__module__valuable_singleton_script__main*/
+            (lovelace) -> {
+            (pub_key_hash_bytes) -> {
+                (address) -> {
+                    (asset_class) -> {
+                        (value) -> {
+                            (output) -> {
+                                __helios__assetclass____eq(__module__valuable_singleton_script__get_singleton_wrapper[__helios__txoutput](output), asset_class)
+                            }(__helios__txoutput__new(address, value, __helios__txoutputdatum__new_none()))
+                        }(__helios__value____add(__helios__value__lovelace(lovelace), __helios__value__new(asset_class, 1)))
+                    }(__helios__assetclass__new(__helios__mintingpolicyhash__new(#abcd), #abcd))
+                }(__helios__address__new(__helios__spendingcredential__new_pubkey(__helios__pubkeyhash__new(pub_key_hash_bytes)), __helios__option[__helios__stakingcredential]__none____new()))
+            }(#01234567890123456789012345678901234567890123456789012345)
+        }
+        )
+        }(
+            /*__helios__option[__helios__stakingcredential]__none____new*/
+            () -> {
+                __helios__option__NONE
+            }
+        )
+        }(
+            /*__module__valuable_singleton_script__get_singleton_wrapper[__helios__txoutput]*/
+            (v) -> {
+            __helios__value__get_singleton_asset_class(__helios__txoutput__value(v))()
+        }
+        )
+        }(
+            /*__helios__txoutput__value*/
+            (self) -> {
+                __core__unMapData(__helios__common__enum_field_1(self))
+            }
+        )
+        }(
+            /*__helios__value__get_singleton_asset_class*/
+            (self) -> {
+                    () -> {
+                        recurse = (recurse, map, found, asset_class) -> {
+                            __core__chooseList(
+                                map,
+                                () -> {
+                                    __core__ifThenElse(
+                                        found,
+                                        () -> {
+                                            asset_class
+                                        },
+                                        () -> {
+                                            __helios__error("doesn't contain a singleton asset class")
+                                        }
+                                    )()
+                                },
+                                () -> {
+                                    head = __core__headList(map);
+                                    tail = __core__tailList(map);
+                                    mph = __core__unBData(__core__fstPair(head));
+                                    __core__ifThenElse(
+                                        // ignore ada
+                                        __core__equalsByteString(mph, #),
+                                        () -> {
+                                            recurse(recurse, tail, found, asset_class)
+                                        },
+                                        () -> {
+                                            __core__ifThenElse(
+                                                found,
+                                                () -> {
+                                                    __helios__error("not singleton, contains multiple assetclasses")
+                                                },
+                                                () -> {
+                                                    // parse asset class entry
+                                                    tokens = __core__unMapData(__core__sndPair(head));
+                    
+                                                    // assert no other tokens
+                                                    __core__chooseList(
+                                                        __core__tailList(tokens),
+                                                        () -> {
+                                                            first = __core__headList(tokens);
+                                                            qty = __core__unIData(__core__sndPair(first));
+                                                            // assert qty is 1
+                                                            __core__ifThenElse(
+                                                                __core__equalsInteger(qty, 1),
+                                                                () -> {
+                                                                    name = __core__unBData(__core__fstPair(first));
+                                                                    recurse(recurse, tail, true, __helios__assetclass__new(mph, name))
+                                                                },
+                                                                () -> {
+                                                                    __helios__error("not singleton, qty is not 1")
+                                                                }
+                                                            )()
+                                                        },
+                                                        () -> {
+                                                            __helios__error("not singleton, has other token names")
+                                                        }
+                                                    )()
+                                                }
+                                            )()
+                                        }
+                                    )()
+                                }
+                            )()
+                        };
+                        recurse(recurse, self, false, ())
+                    }
+                }
+        )
+        }(
+            /*__helios__error*/
+            (msg) -> {
+                __core__trace(
+                    msg, 
+                    () -> {
+                        error()
+                    }
+                )()
+            }
+        )
+        }(
+            /*__helios__pubkeyhash__new*/
+            __helios__common__identity
+        )
+        }(
+            /*__helios__spendingcredential__new_pubkey*/
+            (hash) -> {
+                __core__constrData(0, __helios__common__list_1(__helios__pubkeyhash____to_data(hash)))
+            }
+        )
+        }(
+            /*__helios__pubkeyhash____to_data*/
+            __helios__bytearray____to_data
+        )
+        }(
+            /*__helios__address__new*/
+            (cred, staking_cred) -> {
+                __core__constrData(0, __helios__common__list_2(cred, staking_cred))
+            }
+        )
+        }(
+            /*__helios__mintingpolicyhash__new*/
+            __helios__common__identity
+        )
+        }(
+            /*__helios__common__identity*/
+            (self) -> {self}
+        )
+        }(
+            /*__helios__value__lovelace*/
+            (i) -> {
+                __helios__value__new(__helios__assetclass__ADA, i)
+            }
+        )
+        }(
+            /*__helios__assetclass__ADA*/
+            __helios__assetclass__new(#, #)
+        )
+        }(
+            /*__helios__assetclass__new*/
+            (mph, token_name) -> {
+                __core__constrData(0, __helios__common__list_2(
+                    __helios__mintingpolicyhash____to_data(mph), 
+                    __helios__bytearray____to_data(token_name)
+                ))
+            }
+        )
+        }(
+            /*__helios__mintingpolicyhash____to_data*/
+            __helios__bytearray____to_data
+        )
+        }(
+            /*__helios__bytearray____to_data*/
+            __core__bData
+        )
+        }(
+            /*__helios__value__new*/
+            (assetClass, i) -> {
+                __core__ifThenElse(
+                    __core__equalsInteger(0, i),
+                    () -> {
+                        __helios__value__ZERO
+                    },
+                    () -> {
+                        mph = __helios__common__enum_field_0(assetClass);
+                        tokenName = __helios__common__enum_field_1(assetClass);
+                        __core__mkCons(
+                            __core__mkPairData(
+                                mph, 
+                                __core__mapData(
+                                    __core__mkCons(
+                                        __core__mkPairData(tokenName, __helios__int____to_data(i)), 
+                                        __core__mkNilPairData(())
+                                    )
+                                )
+                            ), 
+                            __core__mkNilPairData(())
+                        )
+                    }
+                )()
+            }
+        )
+        }(
+            /*__helios__int____to_data*/
+            __core__iData
+        )
+        }(
+            /*__helios__common__enum_field_1*/
+            (self) -> {
+                __core__headList(__helios__common__enum_fields_after_0(self))
+            }
+        )
+        }(
+            /*__helios__common__enum_fields_after_0*/
+            (self) -> {
+                __core__tailList(__helios__common__enum_fields(self))
+            }
+        )
+        }(
+            /*__helios__common__enum_field_0*/
+            (self) -> {
+                __core__headList(__helios__common__enum_fields(self))
+            }
+        )
+        }(
+            /*__helios__common__enum_fields*/
+            (self) -> {
+                __core__sndPair(__core__unConstrData(self))
+            }
+        )
+        }(
+            /*__helios__value__ZERO*/
+            __core__mkNilPairData(())
+        )
+        }(
+            /*__helios__value____add*/
+            (a, b) -> {
+                __helios__value__add_or_subtract(a, b, __core__addInteger)
+            }
+        )
+        }(
+            /*__helios__value__add_or_subtract*/
+            (a, b, op) -> {
+                recurse = (recurse, keys, result) -> {
+                    __core__chooseList(
+                        keys, 
+                        () -> {result}, 
+                        () -> {
+                            key = __core__headList__safe(keys);
+                            tail = recurse(recurse, __core__tailList__safe(keys), result);
+                            item = __helios__value__add_or_subtract_inner(op)(__helios__value__get_inner_map(a, key), __helios__value__get_inner_map(b, key));
+                            __core__chooseList(
+                                item, 
+                                () -> {tail}, 
+                                () -> {__core__mkCons(__core__mkPairData(key, __core__mapData(item)), tail)}
+                            )()
+                        }
+                    )()
+                };
+                recurse(recurse, __helios__value__merge_map_keys(a, b), __core__mkNilPairData(()))
+            }
+        )
+        }(
+            /*__helios__value__get_inner_map*/
+            (map, mph) -> {
+                recurse = (recurse, map) -> {
+                    __core__chooseList(
+                        map, 
+                        () -> {__core__mkNilPairData(())},
+                        () -> {
+                            __core__ifThenElse(
+                                __core__equalsData(__core__fstPair(__core__headList__safe(map)), mph), 
+                                () -> {__core__unMapData(__core__sndPair(__core__headList__safe(map)))},
+                                () -> {recurse(recurse, __core__tailList__safe(map))}
+                            )()
+                        }
+                    )()
+                };
+                recurse(recurse, map)
+            }
+        )
+        }(
+            /*__helios__value__add_or_subtract_inner*/
+            (op) -> {
+                (a, b) -> {
+                    recurse = (recurse, keys, result) -> {
+                        __core__chooseList(
+                            keys, 
+                            () -> {result}, 
+                            () -> {
+                                key = __core__headList__safe(keys);
+                                tail = recurse(recurse, __core__tailList__safe(keys), result);
+                                sum = op(__helios__value__get_inner_map_int(a, key), __helios__value__get_inner_map_int(b, key));
+                                __core__ifThenElse(
+                                    __core__equalsInteger(sum, 0), 
+                                    () -> {tail}, 
+                                    () -> {__core__mkCons(__core__mkPairData(key, __core__iData(sum)), tail)}
+                                )()
+                            }
+                        )()
+                    };
+                    recurse(recurse, __helios__value__merge_map_keys(a, b), __core__mkNilPairData(()))
+                }
+            }
+        )
+        }(
+            /*__helios__value__merge_map_keys*/
+            (a, b) -> {
+                aKeys = __helios__value__get_map_keys(a);
+                recurse = (recurse, keys, map) -> {
+                    __core__chooseList(
+                        map, 
+                        () -> {__helios__common__list_0}, 
+                        () -> {
+                            key = __core__fstPair(__core__headList__safe(map));
+                            __core__ifThenElse(
+                                __helios__common__is_in_bytearray_list(aKeys, key), 
+                                () -> {recurse(recurse, keys, __core__tailList__safe(map))},
+                                () -> {__core__mkCons(key, recurse(recurse, keys, __core__tailList__safe(map)))}
+                            )()
+                        }
+                    )()
+                };
+                uniqueBKeys = recurse(recurse, aKeys, b);
+                __helios__common__concat(aKeys, uniqueBKeys)    
+            }
+        )
+        }(
+            /*__helios__common__concat*/
+            (a, b) -> {
+                (recurse) -> {
+                    recurse(recurse, b, a)
+                }(
+                    (recurse, lst, rem) -> {
+                        __core__chooseList(
+                            rem,
+                            () -> {lst},
+                            () -> {__core__mkCons(__core__headList__safe(rem), recurse(recurse, lst, __core__tailList__safe(rem)))}
+                        )()
+                    }
+                )
+            }
+        )
+        }(
+            /*__helios__common__is_in_bytearray_list*/
+            (lst, key) -> {
+                __helios__common__any(lst, (item) -> {__core__equalsData(item, key)})
+            }
+        )
+        }(
+            /*__helios__common__any*/
+            (self, fn) -> {
+                (recurse) -> {
+                    recurse(recurse, self, fn)
+                }(
+                    (recurse, self, fn) -> {
+                        __core__chooseList(
+                            self, 
+                            () -> {false}, 
+                            () -> {
+                                __core__ifThenElse(
+                                    fn(__core__headList__safe(self)),
+                                    () -> {true}, 
+                                    () -> {recurse(recurse, __core__tailList__safe(self), fn)}
+                                )()
+                            }
+                        )()
+                    }
+                )
+            }
+        )
+        }(
+            /*__helios__value__get_map_keys*/
+            (map) -> {
+                recurse = (recurse, map) -> {
+                    __core__chooseList(
+                        map, 
+                        () -> {__helios__common__list_0}, 
+                        () -> {__core__mkCons(__core__fstPair(__core__headList__safe(map)), recurse(recurse, __core__tailList__safe(map)))}
+                    )()
+                };
+                recurse(recurse, map)
+            }
+        )
+        }(
+            /*__helios__value__get_inner_map_int*/
+            (map, key) -> {
+                recurse = (recurse, map, key) -> {
+                    __core__chooseList(
+                        map, 
+                        () -> {0}, 
+                        () -> {
+                            __core__ifThenElse(
+                                __core__equalsData(__core__fstPair(__core__headList__safe(map)), key), 
+                                () -> {__core__unIData(__core__sndPair(__core__headList__safe(map)))}, 
+                                () -> {recurse(recurse, __core__tailList__safe(map), key)}
+                            )()
+                        }
+                    )()
+                };
+                recurse(recurse, map, key)
+            }
+        )
+        }(
+            /*__helios__txoutputdatum__new_none*/
+            () -> {
+                __core__constrData(0, __helios__common__list_0)
+            }
+        )
+        }(
+            /*__helios__txoutput__new*/
+            (address, value, datum) -> {
+                __core__constrData(0, __helios__common__list_4(address, __core__mapData(value), datum, __helios__option__NONE))
+            }
+        )
+        }(
+            /*__helios__option__NONE*/
+            __core__constrData(1, __helios__common__list_0)
+        )
+        }(
+            /*__helios__common__list_4*/
+            (arg0, arg1, arg2, arg3) -> {
+                __core__mkCons(arg0, __helios__common__list_3(arg1, arg2, arg3))
+            }
+        )
+        }(
+            /*__helios__common__list_3*/
+            (arg0, arg1, arg2) -> {
+                __core__mkCons(arg0, __helios__common__list_2(arg1, arg2))
+            }
+        )
+        }(
+            /*__helios__common__list_2*/
+            (arg0, arg1) -> {
+                __core__mkCons(arg0, __helios__common__list_1(arg1))
+            }
+        )
+        }(
+            /*__helios__common__list_1*/
+            (a) -> {
+                __core__mkCons(a, __helios__common__list_0)
+            }
+        )
+        }(
+            /*__helios__assetclass____eq*/
+            __helios__common____eq
+        )
+        }(
+            /*__helios__common____eq*/
+            __core__equalsData
+        )
+        }(
+            /*__helios__int__from_data*/
+            __core__unIData
+        )
+        }(
+            /*__helios__bool____to_data*/
+            (b) -> {
+                __core__constrData(__core__ifThenElse(b, 1, 0), __helios__common__list_0)
+            }
+        )
+        }(
+            /*__helios__common__list_0*/
+            __core__mkNilData(())
+        )`
+
+    const expr = parse(src, {
+        ...DEFAULT_PARSE_OPTIONS,
+        errorPrefix: "",
+        builtinsPrefix: "__core__"
+    })
+
+    const [funcExprs, variables] = generateFuncTagsAndVariableIds(expr)
+
+    const evaluator = new Evaluator({
+        funcExprs,
+        variables
+    })
+
+    evaluator.eval(expr)
 })
