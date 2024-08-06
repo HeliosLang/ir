@@ -61,8 +61,8 @@ export class Factorizer {
     branchInjections
 
     /**
-     * @param {Expr} root 
-     * @param {Analysis} analysis 
+     * @param {Expr} root
+     * @param {Analysis} analysis
      * @param {FactorizerOptions} options
      */
     constructor(root, analysis, options) {
@@ -90,7 +90,6 @@ export class Factorizer {
         this.injectRegularCommonExpressions()
     }
 
-    
     /**
      * @private
      * @param {Expr} expr
@@ -139,8 +138,9 @@ export class Factorizer {
     applyBranchedSubsititions() {
         this.branchInjections.forEach((entry) => {
             entry.forEach((entry) => {
-                entry.expr.args = entry.expr.args.map((a) => 
-                    this.applySubstitutions(a))
+                entry.expr.args = entry.expr.args.map((a) =>
+                    this.applySubstitutions(a)
+                )
             })
         })
     }
@@ -163,9 +163,11 @@ export class Factorizer {
                 if (dataValues.some((dv) => dv.branches.isEmpty())) {
                     this.detectRegularCommonExpression(callExprsArray)
                 } else {
-                    this.detectBranchCommonExpression(callExprsArray, dataValues)
+                    this.detectBranchCommonExpression(
+                        callExprsArray,
+                        dataValues
+                    )
                 }
-
             })
     }
 
@@ -218,16 +220,13 @@ export class Factorizer {
 
         // because each CallExpr returns the same runtime value, they can be replaced by the variable pointing to the common value
         callExprs.forEach((ce, i) => {
-            this.substitutions.set(
-                ce,
-                new NameExpr(injectedName, injectedVar)
-            )
+            this.substitutions.set(ce, new NameExpr(injectedName, injectedVar))
         })
     }
 
     /**
      * @private
-     * @param {CallExpr[]} callExprsArray 
+     * @param {CallExpr[]} callExprsArray
      * @param {DataValue[]} dataValues
      */
     detectBranchCommonExpression(callExprsArray, dataValues) {
@@ -237,9 +236,10 @@ export class Factorizer {
         ).filter((g) => g.entries.length > 1)
 
         groups.forEach((group) => {
-            this.detectBranchGroupCommonExpression(group.root, group.entries.map(
-                (i) => callExprsArray[i]
-            ))
+            this.detectBranchGroupCommonExpression(
+                group.root,
+                group.entries.map((i) => callExprsArray[i])
+            )
         })
     }
 
@@ -252,8 +252,7 @@ export class Factorizer {
         const callExpr = branch.expr // typically `ifThenElse(cond, branch1, branch2)`
 
         // TODO: this is a very bad way of detecting where to inject the common expression because it assumes everything has already been inlined
-        const branchExpr =
-            callExpr.args[branch.index + 1]
+        const branchExpr = callExpr.args[branch.index + 1]
 
         // a () -> {...} expression is expected
         if (branchExpr instanceof FuncExpr) {
@@ -277,13 +276,11 @@ export class Factorizer {
      * The last branch determines where the injections can be made
      * @private
      * @param {Branches} rootBranches
-     * @param {CallExpr[]} groupCallExprs 
+     * @param {CallExpr[]} groupCallExprs
      */
     detectBranchGroupCommonExpression(rootBranches, groupCallExprs) {
         const lastBranch =
-            rootBranches.branches[
-                rootBranches.branches.length - 1
-            ]
+            rootBranches.branches[rootBranches.branches.length - 1]
 
         const injectedId = this.commonCount
         this.commonCount++
@@ -292,11 +289,9 @@ export class Factorizer {
             `${this.options.commonSubExpressionPrefix}${injectedId}`
         )
 
-        
         const injectedVar = new Variable(injectedName)
         const firstCallExpr = groupCallExprs[0] // the first call expr is used as the common expression
-        const variables =
-            collectVariablesWithDepth(firstCallExpr)
+        const variables = collectVariablesWithDepth(firstCallExpr)
 
         // sort lower Debruijn indices first (deeper variables have lower Debruijn indices compared to `firstCallExpr`)
         variables.sort((a, b) => a[0] - b[0])
@@ -323,10 +318,7 @@ export class Factorizer {
 
         // because each CallExpr returns the same runtime value, they can be replaced by the variable pointing to the common value
         Array.from(groupCallExprs).forEach((ce, i) => {
-            this.substitutions.set(
-                ce,
-                new NameExpr(injectedName, injectedVar)
-            )
+            this.substitutions.set(ce, new NameExpr(injectedName, injectedVar))
         })
     }
 
