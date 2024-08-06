@@ -753,74 +753,65 @@ const testVector = [
             (__module__match_string__Datum[]__One____is) -> {
             (__module__match_string__Datum[]__Two__code) -> {
             (__module__match_string__main) -> {
-                /*entry point*/
                 (arg0) -> {
                     __helios__string____to_data(__module__match_string__main(__module__match_string__Datum[]__from_data(arg0)))
                 }
             }(
-                /*__module__match_string__main*/
                 (datum) -> {
-                (e0) ->
-                    {(
-            ifThenElse(
-                                            __module__match_string__Datum[]__One____is(e0),
-                                            () -> {
-                                                    (__lhs_0) -> {
-                                ""
-                            }
-                                            }, () -> {
-                                                    (d) -> {
-                                __helios__int__show(__module__match_string__Datum[]__Two__code(d))()
-                            }
-                                            }
-                                    )()
-                    )(e0)}(datum)
-            }
+                    (e0) -> {
+                        (
+                            ifThenElse(
+                                __module__match_string__Datum[]__One____is(e0),
+                                () -> {
+                                    (__lhs_0) -> {
+                                        ""
+                                    }
+                                }, 
+                                () -> {
+                                    (d) -> {
+                                        __helios__int__show(__module__match_string__Datum[]__Two__code(d))()
+                                    }
+                                }
+                            )()
+                        )(e0)
+                    }(datum)
+                }
             )
             }(
-                /*__module__match_string__Datum[]__Two__code*/
                 (self) -> {
-                                                                    __helios__int__from_data(__helios__common__enum_field_0(self))
-                                                            }
+                    __helios__int__from_data(__helios__common__enum_field_0(self))
+                }
             )
             }(
-                /*__module__match_string__Datum[]__One____is*/
                 (data) -> {
                             __helios__common__enum_tag_equals(data, 0)
                         }
             )
             }(
-                /*__module__match_string__Datum[]__from_data*/
                 __helios__common__identity
             )
             }(
-                /*__helios__common__identity*/
                 (self) -> {self}
             )
             }(
-                /*__helios__common__enum_tag_equals*/
                 (data, i) -> {
                         equalsInteger(fstPair(unConstrData(data)), i)
                     }
             )
             }(
-                /*__helios__common__enum_field_0*/
                 (self) -> {
                     headList(__helios__common__enum_fields(self))
                 }
             )
             }(
-                /*__helios__common__enum_fields*/
                 (self) -> {
                     sndPair(unConstrData(self))
                 }
             )
             }(
-                /*__helios__int__from_data*/
                 unIData
             )
             }(
-                /*__helios__int__show*/
                 (self) -> {
                     () -> {
                         decodeUtf8__safe(
@@ -847,13 +838,11 @@ const testVector = [
                 }
             )
             }(
-                /*__helios__int__show_digit*/
                 (x) -> {
                     addInteger(modInteger(x, 10), 48)
                 }
             )
             }(
-                /*__helios__string____to_data*/
                 (s) -> {
                     bData(encodeUtf8(s))
                 }
@@ -897,6 +886,179 @@ const testVector = [
             )()(arg0);
             bData(encodeUtf8(s))
         }`
+    },
+    {
+        description: "real script 4",
+        input: `
+        (arg0) -> {
+            (b) -> {
+                constrData(
+                    ifThenElse(b, 1, 0), 
+                    mkNilData(())
+                )
+            }(
+                vh = unBData(arg0);
+                (addr) -> {
+                    (a, b) -> {
+                        ifThenElse(
+                            a(),
+                            b,
+                            () -> {
+                                false
+                            }
+                        )()
+                    }(
+                        () -> {
+                            (b) -> {
+                                ifThenElse(
+                                    b,
+                                    false,
+                                    true
+                                )
+                            }(
+                                equalsInteger(
+                                    fstPair(
+                                        unConstrData(
+                                            headList(
+                                                tailList(
+                                                    sndPair(
+                                                        unConstrData(addr)
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ), 0
+                                )
+                            )
+                        }, 
+                        () -> {
+                            (e0) -> {
+                                ifThenElse(
+                                    equalsInteger(fstPair(unConstrData(e0)), 1),
+                                    () -> {
+                                        (__lhs_0) -> {
+                                            (v) -> {
+                                                equalsByteString(v, vh)
+                                            }(
+                                                unBData(
+                                                    headList(
+                                                        sndPair(
+                                                            unConstrData(__lhs_0)
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        }
+                                    },
+                                    () -> {
+                                        (_) -> {
+                                            error()
+                                        }
+                                    }
+                                )()(e0)
+                            }(
+                                headList(
+                                    sndPair(
+                                        unConstrData(addr)
+                                    )
+                                )
+                            )
+                        }
+                    )
+                }(
+                    (cred) -> {
+                        constrData(
+                            0, 
+                            mkCons(
+                                cred, 
+                                constrData(1, mkNilData(()))
+                            )
+                        )
+                    }(
+                        constrData(
+                            1,
+                            mkCons(bData(vh), mkNilData(()))
+                        )
+                    )
+                )
+            )
+        }
+        `,
+        expectedOutput: `(arg0)->{
+            (b)->{
+                constrData(
+                    ifThenElse(b,1,0),[])
+                }(
+                    vh=unBData(arg0);
+                    x0=unConstrData(
+                        constrData(
+                            0,
+                            mkCons(
+                                constrData(
+                                    1,
+                                    mkCons(
+                                        bData(vh),
+                                        []
+                                    )
+                                ),
+                                (
+                                    Constr1[]
+                                )
+                            )
+                        )
+                    );
+                    x1=sndPair(x0);
+                    ifThenElse(
+                        b=equalsInteger(
+                            fstPair(
+                                unConstrData(
+                                    headList(
+                                        tailList(
+                                            x1
+                                        )
+                                    )
+                                )
+                            ),
+                            0
+                        );
+                        ifThenElse(
+                            b,
+                            false,
+                            true
+                        ),
+                        ()->{
+                            e0=headList(x1);
+                            x2=unConstrData(e0);
+                            ifThenElse(
+                                equalsInteger(
+                                    fstPair(x2),
+                                    1
+                                ),
+                                ()->{
+                                    (__lhs_0)->{
+                                        v=unBData(
+                                            headList(
+                                                sndPair(
+                                                    x2
+                                                )
+                                            )
+                                        );
+                                        equalsByteString(v,vh)
+                                    }
+                                },
+                                ()->{
+                                    (_)->{
+                                        error()
+                                    }
+                                }
+                            )()(e0)
+                        },
+                        ()->{
+                            false
+                        }
+                    )()
+                )
+            }`
     }
 ]
 

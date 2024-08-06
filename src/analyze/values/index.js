@@ -36,6 +36,8 @@ export {
 } from "./stringify.js"
 
 /**
+ * @typedef {import("./Branch.js").Branch} Branch
+ * @typedef {import("./Branches.js").BranchesGroup} BranchesGroup
  * @typedef {import("./BranchType.js").BranchType} BranchType
  * @typedef {import("./EvalContext.js").EvalContext} EvalContext
  * @typedef {import("./Value.js").NonErrorValue} NonErrorValue

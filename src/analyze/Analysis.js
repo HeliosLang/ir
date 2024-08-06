@@ -223,6 +223,50 @@ export class Analysis {
     }
 
     /**
+     * @param {Expr} expr
+     * @returns {Option<DataValue>}
+     */
+    getSingleExprDataValue(expr) {
+        const dv = this.getExprValue(expr)
+
+        if (dv && dv.length == 1 && dv[0] instanceof DataValue) {
+            return dv[0]
+        } else if (dv && dv.length > 1) {
+            const dvv = dv.find((dvv) => dvv instanceof DataValue)
+
+            if (dvv instanceof DataValue) {
+                return dvv
+            } else {
+                return None
+            }
+        } else {
+            return None
+        }
+    }
+
+    /**
+     * @param {Expr} expr
+     * @returns {Option<FuncValue>}
+     */
+    getSingleExprFuncValue(expr) {
+        const dv = this.getExprValue(expr)
+
+        if (dv && dv.length == 1 && dv[0] instanceof FuncValue) {
+            return dv[0]
+        } else if (dv && dv.length > 1) {
+            const dvv = dv.find((dvv) => dvv instanceof FuncValue)
+
+            if (dvv instanceof FuncValue) {
+                return dvv
+            } else {
+                return None
+            }
+        } else {
+            return None
+        }
+    }
+
+    /**
      * @param {FuncExpr} fn
      * @returns {CallExpr[]}
      */

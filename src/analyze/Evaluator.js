@@ -213,7 +213,6 @@ export class Evaluator {
         let action = this.compute.pop()
 
         while (action) {
-            //console.log(`# n-compute: ${this.compute.length}, n-reduce: ${this.reduce.length}, ${Array.from(this.activeStacks.entries()).map(([tag, values]) => [tag, values.length]).reduce((prev, [tag, n]) => n > prev[1] ? [tag, n] : prev, [-1, 0])}`)
             if ("expr" in action) {
                 this.computeExpr(action.expr, action.stack)
             } else if ("collect" in action) {

@@ -11,5 +11,7 @@ export { Analyzer } from "./Analyzer.js"
 export { annotate } from "./annotate.js"
 
 /**
+ * @typedef {import("./values/index.js").Branch} Branch
+ * @typedef {import("./values/index.js").BranchesGroup} BranchesGroup
  * @typedef {import("./annotate.js").AnnotateAnalysisOptions} AnnotateAnalysisOptions
  */
