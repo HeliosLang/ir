@@ -85,7 +85,7 @@ export function parse(ir, options = DEFAULT_PARSE_OPTIONS) {
     let [raw, sourceMap] =
         typeof ir == "string" ? [ir, new Map()] : ir.toStringWithSourceMap()
 
-    const src = new Source("", raw)
+    const src = new Source(raw)
 
     const tokenizer = new Tokenizer(src, {
         sourceMap,

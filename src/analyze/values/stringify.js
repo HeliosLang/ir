@@ -47,7 +47,8 @@ export function stringifyStackValues(values, blockRecursion, valueCache) {
 
     let refs = ""
     if (stackIds.keyValues.length > 0) {
-        refs = stackIds.keyValues.map((v, i) => `Ref${i}: ${v}`).join("\n") + "\n"
+        refs =
+            stackIds.keyValues.map((v, i) => `Ref${i}: ${v}`).join("\n") + "\n"
     }
 
     const res = refs + `[${items.join(", ")}]`
@@ -64,7 +65,12 @@ export function stringifyStackValues(values, blockRecursion, valueCache) {
  * @param {Option<BiMap<string>>} stackIds_
  * @returns {string}
  */
-export function stringifyValue(value, blockRecursion = None, valueCache = None, stackIds_ = None) {
+export function stringifyValue(
+    value,
+    blockRecursion = None,
+    valueCache = None,
+    stackIds_ = None
+) {
     /**
      * @typedef {{
      *   value: Value
@@ -104,7 +110,7 @@ export function stringifyValue(value, blockRecursion = None, valueCache = None, 
     const frames = []
 
     /**
-     * Give each stringified Stack a unique ID, which is reused for repeated 
+     * Give each stringified Stack a unique ID, which is reused for repeated
      * @type {BiMap<string>}
      */
     const stackIds = stackIds_ ?? new BiMap()
@@ -245,30 +251,9 @@ export function stringifyValue(value, blockRecursion = None, valueCache = None, 
                                 return id + ": " + item
                             })
 
-                            // TODO: lookup in a cache instead
-                            const stackStr = "[" +
-                            stackEntries.join(", ") +
-                            "]"
+                            const stackStr = "[" + stackEntries.join(", ") + "]"
 
-                            // cache the StackValues themselves
-                            //stackCache?.set(value.stack.values, stackStr)
-
-                            /*const id = stackIds.getKeyByValue(stackStr)
-
-                            if (isSome(id)) {
-                                return "Fn" + value.definitionTag + "St" + id.toString()
-                            } else {*/
-                                // give the stringified StackValues a unique id for this run
-                                //const id = stackIds.add(stackStr)
-
-                                return (
-                                    "Fn" +
-                                    value.definitionTag +
-                                    //"St" + 
-                                    //id.toString() +
-                                    stackStr
-                                )
-                            //}
+                            return "Fn" + value.definitionTag + stackStr
                         }
                     })
                 }

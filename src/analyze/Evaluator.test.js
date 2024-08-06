@@ -1120,7 +1120,7 @@ describe("not too much memory usage when there are many stack interdependencies"
 
     const evaluator = new Evaluator({
         funcExprs,
-        variables,
+        variables
     })
 
     evaluator.eval(expr)

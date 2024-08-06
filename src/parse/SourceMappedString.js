@@ -134,7 +134,7 @@ export class SourceMappedString {
         if (pretty) {
             const [src, _] = this.toStringWithSourceMap()
 
-            return new Source("", src).pretty()
+            return new Source(src).pretty()
         } else {
             return this.flatten()
                 .map((p) => (typeof p.content == "string" ? p.content : ""))
