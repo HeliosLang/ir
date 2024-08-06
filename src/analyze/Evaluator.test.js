@@ -644,7 +644,7 @@ describe(`benchmark`, () => {
     console.log(`Evaluator benchmark completed in ${Date.now() - tick}ms`)
 })
 
-/*describe("not too much memory usage when there are many stack interdependencies", () => {
+describe("not too much memory usage when there are many stack interdependencies", () => {
     const src = `(__helios__common__list_0) -> {
         (__helios__bool____to_data) -> {
         (__helios__int__from_data) -> {
@@ -1121,8 +1121,7 @@ describe(`benchmark`, () => {
     const evaluator = new Evaluator({
         funcExprs,
         variables,
-        debug: true
     })
 
     evaluator.eval(expr)
-})*/
+})

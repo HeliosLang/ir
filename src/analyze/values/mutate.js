@@ -15,7 +15,7 @@ import { initValuePath } from "./loop.js"
  */
 
 /**
- *
+ * We can assume that the same input Value is mutated into the same output Value
  * @param {string[]} rootPath
  * @param {Value} root
  * @param {{
@@ -47,7 +47,12 @@ export function mutate(rootPath, root, callbacks) {
     }
 
     /**
-     * @typedef {{args: [string[], Value][], mutatedArgs: Value[], fn: (values: Value[]) => Value}} Frame
+     * @typedef {{
+     *   owner: Value
+     *   args: [string[], Value][]
+     *   mutatedArgs: Value[]
+     *   fn: (values: Value[]) => Value
+     * }} Frame
      */
 
     /**
@@ -55,11 +60,21 @@ export function mutate(rootPath, root, callbacks) {
      */
     let frames = []
 
+    /**
+     * @type {Map<Value, Value>}
+     */
+    const cache = new Map()
+
     while (true) {
         if ("compute" in state) {
             const { path, value } = state.compute
+            const cached = cache.get(value)
 
-            if (value instanceof AnyValue) {
+            if (cached) {
+                state = {
+                    reduce: cached
+                }
+            } else if (value instanceof AnyValue) {
                 state = {
                     reduce: callbacks.anyValue
                         ? callbacks.anyValue(path, value)
@@ -74,6 +89,7 @@ export function mutate(rootPath, root, callbacks) {
                 }
 
                 frames.push({
+                    owner: value,
                     args: [
                         /** @type {[string[], Value]} */ ([
                             path.concat([`${value.prefix}Cond`]),
@@ -152,6 +168,7 @@ export function mutate(rootPath, root, callbacks) {
                     }
 
                     frames.push({
+                        owner: value,
                         args: value.stack.values.values.map(([id, v]) => [
                             initValuePath(id),
                             v
@@ -223,6 +240,7 @@ export function mutate(rootPath, root, callbacks) {
                 }
 
                 frames.push({
+                    owner: value,
                     args: [[path, value.value]],
                     mutatedArgs: [],
                     fn: (values) => {
@@ -264,8 +282,12 @@ export function mutate(rootPath, root, callbacks) {
             frame.mutatedArgs.push(state.reduce)
 
             if (frame.mutatedArgs.length == frame.args.length) {
+                const v = frame.fn(frame.mutatedArgs)
+
+                cache.set(frame.owner, v)
+
                 state = {
-                    reduce: frame.fn(frame.mutatedArgs)
+                    reduce: v
                 }
             } else {
                 const nextArg = frame.args[frame.mutatedArgs.length]
