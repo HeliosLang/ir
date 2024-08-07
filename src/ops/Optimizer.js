@@ -148,7 +148,11 @@ export class Optimizer {
      * @param {Expr} root
      * @param {OptimizerOptions} options
      */
-    constructor(root, options = DEFAULT_OPTIMIZER_OPTIONS, commonSubExprCount = 0) {
+    constructor(
+        root,
+        options = DEFAULT_OPTIMIZER_OPTIONS,
+        commonSubExprCount = 0
+    ) {
         this.#root = root
 
         assertNoDuplicateExprs(root)
@@ -262,7 +266,12 @@ export class Optimizer {
      * @param {Analysis} analysis
      */
     factorizeCommon(analysis) {
-        const factorizer = new Factorizer(this.#root, analysis, this.options, this.commonSubExprCount)
+        const factorizer = new Factorizer(
+            this.#root,
+            analysis,
+            this.options,
+            this.commonSubExprCount
+        )
 
         factorizer.factorize()
 
