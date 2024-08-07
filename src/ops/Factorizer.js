@@ -1,4 +1,5 @@
 import { Word } from "@helios-lang/compiler-utils"
+import { None, expectSome } from "@helios-lang/type-utils"
 import { Analysis, Branches, DataValue } from "../analyze/index.js"
 import { CallExpr, FuncExpr, NameExpr, Variable } from "../expressions/index.js"
 import { format } from "../format/index.js"
@@ -6,7 +7,6 @@ import { collectVariablesWithDepth } from "./collect.js"
 import { collectVariables } from "./collect.js"
 import { mutate } from "./mutate.js"
 import { loop } from "./loop.js"
-import { expectSome } from "@helios-lang/type-utils"
 
 /**
  * @typedef {import("../analyze/index.js").Branch} Branch
@@ -37,7 +37,6 @@ export class Factorizer {
     options
 
     /**
-     * @private
      * @type {number}
      */
     commonCount
@@ -64,13 +63,14 @@ export class Factorizer {
      * @param {Expr} root
      * @param {Analysis} analysis
      * @param {FactorizerOptions} options
+     * @param {number} commonCount
      */
-    constructor(root, analysis, options) {
+    constructor(root, analysis, options, commonCount = 0) {
         this.root = root
         this.analysis = analysis
         this.options = options
 
-        this.commonCount = 0
+        this.commonCount = commonCount
         this.substitutions = new Map()
         this.injections = new Map()
         this.branchInjections = new Map()
@@ -172,10 +172,17 @@ export class Factorizer {
     }
 
     /**
-     * @private
+     * Returns none if the callExprs depend on different variables, making substitution/injection very difficult
      * @param {CallExpr[]} callExprs
+     * @returns {Option<{
+     *   deepest: Variable
+     *   allVars: Variable[]
+     *   injectedVar: Variable
+     *   injectedName: Word
+     *   firstCallExpr: CallExpr
+     * }>}
      */
-    detectRegularCommonExpression(callExprs) {
+    processCommonCallExprs(callExprs) {
         const injectedId = this.commonCount
         this.commonCount++
 
@@ -201,26 +208,50 @@ export class Factorizer {
             })
         ) {
             this.commonCount--
+            return None
+        }
+
+        return {
+            deepest: deepest,
+            allVars: allVars,
+            firstCallExpr: firstCallExpr,
+            injectedName: injectedName,
+            injectedVar: injectedVar
+        }
+    }
+
+    /**
+     * @private
+     * @param {CallExpr[]} callExprs
+     */
+    detectRegularCommonExpression(callExprs) {
+        const processed = this.processCommonCallExprs(callExprs)
+
+        if (!processed) {
             return
         }
 
-        const prev = this.injections.get(deepest)
+        const keyVar = processed.deepest
+        const prev = this.injections.get(keyVar)
 
         const entry = {
-            vars: allVars,
-            injected: injectedVar,
-            expr: firstCallExpr // for nested substitions we must also apply all substitutions to this expression
+            vars: processed.allVars,
+            injected: processed.injectedVar,
+            expr: processed.firstCallExpr // for nested substitions we must also apply all substitutions to this expression
         }
 
         if (prev) {
             prev.push(entry)
         } else {
-            this.injections.set(deepest, [entry])
+            this.injections.set(keyVar, [entry])
         }
 
         // because each CallExpr returns the same runtime value, they can be replaced by the variable pointing to the common value
         callExprs.forEach((ce, i) => {
-            this.substitutions.set(ce, new NameExpr(injectedName, injectedVar))
+            this.substitutions.set(
+                ce,
+                new NameExpr(processed.injectedName, processed.injectedVar)
+            )
         })
     }
 
@@ -282,32 +313,20 @@ export class Factorizer {
         const lastBranch =
             rootBranches.branches[rootBranches.branches.length - 1]
 
-        const injectedId = this.commonCount
-        this.commonCount++
+        const processed = this.processCommonCallExprs(groupCallExprs)
 
-        const injectedName = new Word(
-            `${this.options.commonSubExpressionPrefix}${injectedId}`
-        )
-
-        const injectedVar = new Variable(injectedName)
-        const firstCallExpr = groupCallExprs[0] // the first call expr is used as the common expression
-        const variables = collectVariablesWithDepth(firstCallExpr)
-
-        // sort lower Debruijn indices first (deeper variables have lower Debruijn indices compared to `firstCallExpr`)
-        variables.sort((a, b) => a[0] - b[0])
-
-        // the common expression (i.e. `firstCallExpr`) must be injected after the deepest variable on which it depends
-        const allVars = variables.map((v) => v[1])
+        if (!processed) {
+            return
+        }
 
         const keyExpr = this.resolveBranchFuncExpr(lastBranch)
-
         const prev = this.branchInjections.get(keyExpr)
 
         const entry = {
             root: rootBranches,
-            vars: allVars,
-            injected: injectedVar, // we must use this variable when creating the common expression definition, so we can avoid another pass of resolveNames()
-            expr: firstCallExpr // for nested substitions we must also apply all substitutions to this expression
+            vars: processed.allVars,
+            injected: processed.injectedVar, // we must use this variable when creating the common expression definition, so we can avoid another pass of resolveNames()
+            expr: processed.firstCallExpr // for nested substitions we must also apply all substitutions to this expression
         }
 
         if (prev) {
@@ -318,7 +337,10 @@ export class Factorizer {
 
         // because each CallExpr returns the same runtime value, they can be replaced by the variable pointing to the common value
         Array.from(groupCallExprs).forEach((ce, i) => {
-            this.substitutions.set(ce, new NameExpr(injectedName, injectedVar))
+            this.substitutions.set(
+                ce,
+                new NameExpr(processed.injectedName, processed.injectedVar)
+            )
         })
     }
 

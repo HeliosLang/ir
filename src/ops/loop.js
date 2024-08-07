@@ -89,3 +89,24 @@ export function callExprContains(expr, contained) {
 
     return found
 }
+
+/**
+ * It is very important that each NameExpr is unique so they can resolve to different Debruijn indices
+ * @param {Expr} expr
+ */
+export function assertNoDuplicateExprs(expr) {
+    /**
+     * @type {Set<Expr>}
+     */
+    const s = new Set()
+
+    loop(expr, {
+        nameExpr: (nameExpr) => {
+            if (s.has(nameExpr)) {
+                throw new Error("duplicate NameExpr " + nameExpr.name)
+            }
+
+            s.add(nameExpr)
+        }
+    })
+}

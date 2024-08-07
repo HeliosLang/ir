@@ -1028,10 +1028,9 @@ const testVector = [
                         ),
                         ()->{
                             e0=headList(x1);
-                            x2=unConstrData(e0);
                             ifThenElse(
                                 equalsInteger(
-                                    fstPair(x2),
+                                    fstPair(unConstrData(e0)),
                                     1
                                 ),
                                 ()->{
@@ -1039,7 +1038,7 @@ const testVector = [
                                         v=unBData(
                                             headList(
                                                 sndPair(
-                                                    x2
+                                                    unConstrData(__lhs_0)
                                                 )
                                             )
                                         );
@@ -1059,6 +1058,177 @@ const testVector = [
                     )()
                 )
             }`
+    },
+    {
+        description: "real script 5",
+        input: `
+        (arg0) -> {
+            (b) -> {
+                constrData(
+                    ifThenElse(b, 1, 0), 
+                    mkNilData(())
+                )
+            }(
+                vh = unBData(arg0);
+                (addr) -> {
+                    (a, b) -> {
+                        ifThenElse(
+                            a(),
+                            b,
+                            () -> {
+                                false
+                            }
+                        )()
+                    }(
+                        () -> {
+                            (b) -> {
+                                ifThenElse(b, false, true)
+                            }(
+                                self = addr;
+                                equalsInteger(
+                                    fstPair(
+                                        unConstrData(
+                                            self = self;
+                                            headList(
+                                                self = self;
+                                                tailList(
+                                                    self = self;
+                                                    sndPair(
+                                                        unConstrData(self)
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    ), 
+                                    0
+                                )
+                            )
+                        }, 
+                        () -> {
+                            (e0) -> {
+                                ifThenElse(
+                                    data = e0;
+                                    data = data;
+                                    equalsInteger(fstPair(unConstrData(data)), 1),
+                                    () -> {
+                                        (__lhs_0) -> {
+                                            (v) -> {
+                                                equalsByteString(v, vh)
+                                            }(
+                                                self = __lhs_0;
+                                                unBData(
+                                                    self = self;
+                                                    headList(
+                                                        self = self;
+                                                        sndPair(unConstrData(e0))
+                                                    )
+                                                )
+                                            )
+                                        }
+                                    },
+                                    () -> {
+                                        (_) -> {
+                                            error()
+                                        }
+                                    }
+                                )()(e0)
+                            }(
+                                self = addr;
+                                headList(
+                                    self = self;
+                                    sndPair(unConstrData(self))
+                                )
+                            )
+                        }
+                    )
+                }(
+                    vh = vh;
+                    (cred) -> {
+                        constrData(0, 
+                            arg0 = cred;
+                            mkCons(
+                                arg0, constrData(1, mkNilData(()))
+                            )
+                        )
+                    }(
+                        hash = vh;
+                        constrData(
+                            1, 
+                            a = bData(hash);
+                            mkCons(a, mkNilData(()))
+                        )
+                    )
+                )
+            )
+        }
+        `,
+        expectedOutput: `(arg0)->{
+            (b)->{
+                constrData(
+                    ifThenElse(b,1,0),
+                    []
+                )
+            }(
+                vh=unBData(arg0);
+                x0=unConstrData(
+                    constrData(
+                        0,
+                        mkCons(
+                            constrData(
+                                1,
+                                mkCons(
+                                    bData(vh),
+                                    []
+                                )
+                            ),
+                            (Constr1[])
+                        )
+                    )
+                );
+                x1=sndPair(x0);
+                ifThenElse(
+                    b=equalsInteger(
+                        fstPair(
+                            unConstrData(
+                                headList(
+                                    tailList(x1)
+                                )
+                            )
+                        ),
+                        0
+                    );
+                    ifThenElse(b,false,true),
+                    ()->{
+                        e0=headList(x1);
+                        x2=unConstrData(e0);
+                        ifThenElse(
+                            equalsInteger(
+                                fstPair(x2),
+                                1
+                            ),
+                            ()->{
+                                (__lhs_0)->{
+                                    v=unBData(
+                                        headList(
+                                            sndPair(x2)
+                                        )
+                                    );
+                                    equalsByteString(v,vh)
+                                }
+                            },
+                            ()->{
+                                (_)->{
+                                    error()
+                                }
+                            }
+                        )()(e0)
+                    },
+                    ()->{
+                        false
+                    }
+                )()
+            )
+        }`
     }
 ]
 

@@ -1,8 +1,8 @@
+import { None } from "@helios-lang/type-utils"
 import { UplcDelay, UplcLambda } from "@helios-lang/uplc"
-import { CallExpr } from "./CallExpr.js"
+import { NameExpr } from "./NameExpr.js"
 import { Scope } from "./Scope.js"
 import { Variable } from "./Variable.js"
-import { None } from "@helios-lang/type-utils"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
@@ -156,5 +156,22 @@ export class FuncExpr {
         }
 
         return term
+    }
+}
+
+/**
+ * @param {Expr} func
+ * @returns {boolean}
+ */
+export function isIdentityFunc(func) {
+    if (
+        func instanceof FuncExpr &&
+        func.args.length == 1 &&
+        func.body instanceof NameExpr &&
+        func.body.isVariable(func.args[0])
+    ) {
+        return true
+    } else {
+        return false
     }
 }
