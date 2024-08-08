@@ -37,7 +37,6 @@ import { ValueGenerator } from "../ValueGenerator.js"
  * @typedef {import("./BranchType.js").BranchType} BranchType
  * @typedef {import("./EvalContext.js").EvalContext} EvalContext
  * @typedef {import("./Value.js").Value} Value
- * @typedef {import("./Value.js").BranchableValue} BranchableValue
  * @typedef {import("./Value.js").DataLikeValue} DataLikeValue
  * @typedef {import("./Value.js").NonErrorValue} NonErrorValue
  */

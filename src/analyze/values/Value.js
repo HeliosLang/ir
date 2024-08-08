@@ -22,10 +22,6 @@ import { MaybeErrorValue } from "./MaybeErrorValue.js"
  */
 
 /**
- * @typedef {AnyValue | BranchedValue | BuiltinValue | DataValue | ErrorValue | FuncValue | LiteralValue} BranchableValue
- */
-
-/**
  * @typedef {BuiltinValue | DataValue | FuncValue | LiteralValue} NonBranchedValue
  */
 

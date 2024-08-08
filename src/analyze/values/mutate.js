@@ -1,5 +1,5 @@
 import { AnyValue } from "./AnyValue.js"
-import { BranchedValue, isBranchable } from "./BranchedValue.js"
+import { BranchedValue } from "./BranchedValue.js"
 import { BuiltinValue } from "./BuiltinValue.js"
 import { DataValue } from "./DataValue.js"
 import { ErrorValue } from "./ErrorValue.js"
@@ -113,10 +113,6 @@ export function mutate(rootPath, root, callbacks) {
                             )
                         ) {
                             throw new Error("invalid branch condition mutation")
-                        }
-
-                        if (!cases.every(isBranchable)) {
-                            throw new Error("invalid branch cases mutation")
                         }
 
                         const isSame =

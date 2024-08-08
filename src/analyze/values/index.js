@@ -1,5 +1,5 @@
 export { AnyValue } from "./AnyValue.js"
-export { isBranchable, BranchedValue } from "./BranchedValue.js"
+export { BranchedValue } from "./BranchedValue.js"
 export { Branches } from "./Branches.js"
 export { BuiltinValue } from "./BuiltinValue.js"
 export { evalBuiltin } from "./builtins.js"

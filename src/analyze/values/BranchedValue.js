@@ -1,7 +1,5 @@
-import { AnyValue } from "./AnyValue.js"
 import { branchTypeToPrefix } from "./BranchType.js"
 import { DataValue } from "./DataValue.js"
-import { ErrorValue } from "./ErrorValue.js"
 import { FuncValue } from "./FuncValue.js"
 
 /**
@@ -11,7 +9,6 @@ import { FuncValue } from "./FuncValue.js"
  * @typedef {import("./ValueI.js").ValueI} ValueI
  * @typedef {import("./Value.js").AnyDataValue} AnyDataValue
  * @typedef {import("./Value.js").Value} Value
- * @typedef {import("./Value.js").BranchableValue} BranchableValue
  * @typedef {import("./Value.js").NonBranchedValue} NonBranchedValue
  */
 
@@ -32,16 +29,15 @@ export class BranchedValue {
     condition
 
     /**
-     * None means unevaluated case
      * @readonly
-     * @type {BranchableValue[]}
+     * @type {Value[]}
      */
     cases
 
     /**
      * @param {BranchType} type
      * @param {AnyDataValue} condition
-     * @param {BranchableValue[]} cases
+     * @param {Value[]} cases
      */
     constructor(type, condition, cases) {
         this.type = type
@@ -152,20 +148,4 @@ export class BranchedValue {
  */
 function makeBranchedValueKey(prefix, condition, cases) {
     return `${prefix}(${condition}, ${cases.join(", ")})`
-}
-
-/**
- * @typedef {(vs: Value[]) => BranchedValue} Reconstructor
- */
-
-/**
- * @param {Value} value
- * @returns {value is BranchableValue}
- */
-export function isBranchable(value) {
-    if (value instanceof AnyValue || value instanceof ErrorValue) {
-        return false
-    } else {
-        return true
-    }
 }
