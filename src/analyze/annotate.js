@@ -43,7 +43,8 @@ export function annotate(analysis, options = {}) {
         } else if (expr instanceof BuiltinExpr) {
             return expr.name
         } else if (expr instanceof ParamExpr) {
-            return `param("${expr.name}", ${recurse(expr.expr, indent)})`
+            const output = analysis.getExprValue(expr, debug)
+            return `param("${expr.name}", ${recurse(expr.expr, indent)})${output ? ": " + output.toString() : ""}`
         } else if (expr instanceof NameExpr) {
             const output = analysis.getExprValue(expr, debug)
 

@@ -77,14 +77,6 @@ export function isError(value) {
 
 /**
  * @param {Value} value
- * @returns {value is (ErrorValue | AnyValue)}
- */
-export function isMaybeError(value) {
-    return value instanceof AnyValue || value instanceof ErrorValue
-}
-
-/**
- * @param {Value} value
  * @returns {value is DataLikeValue}
  */
 export function isDataLikeValue(value) {

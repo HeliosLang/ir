@@ -5,10 +5,11 @@ import {
     DataValue,
     FuncValue,
     uniqueFlattenedValues,
-    isMaybeError,
     uniqueValues,
     MaybeErrorValue,
-    BuiltinValue
+    BuiltinValue,
+    AnyValue,
+    ErrorValue
 } from "./values/index.js"
 
 /**
@@ -462,4 +463,16 @@ export class Analysis {
             }
         })
     }
+}
+
+/**
+ * @param {Value} value
+ * @returns {boolean}
+ */
+function isMaybeError(value) {
+    return (
+        (value instanceof AnyValue && !value.isNeverError) ||
+        value instanceof ErrorValue ||
+        value instanceof MaybeErrorValue
+    )
 }

@@ -17,7 +17,6 @@ export {
     isAllNonError,
     isAllMaybeNonError,
     isAnyError,
-    isMaybeError,
     flattenMaybeError,
     uniqueFlattenedValues,
     uniqueValues

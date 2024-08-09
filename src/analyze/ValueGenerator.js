@@ -92,7 +92,7 @@ export class ValueGenerator {
             console.log("Param " + id + " = " + key)
         }
 
-        return new AnyValue(id)
+        return new AnyValue(id, true)
     }
 
     /**

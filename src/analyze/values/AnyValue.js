@@ -15,10 +15,18 @@ export class AnyValue {
     id
 
     /**
-     * @param {number} id
+     * @readonly
+     * @type {boolean}
      */
-    constructor(id) {
+    isNeverError
+
+    /**
+     * @param {number} id
+     * @param {boolean} isNeverError
+     */
+    constructor(id, isNeverError = false) {
         this.id = id
+        this.isNeverError = isNeverError
     }
 
     /**
