@@ -83,7 +83,7 @@ export class ValueGenerator {
 
     /**
      * @param {string} key
-     * @returns {MaybeErrorValue}
+     * @returns {AnyValue}
      */
     genParam(key) {
         const id = this.groups.Param.add(key)
@@ -92,7 +92,7 @@ export class ValueGenerator {
             console.log("Param " + id + " = " + key)
         }
 
-        return new MaybeErrorValue(new AnyValue(id))
+        return new AnyValue(id)
     }
 
     /**

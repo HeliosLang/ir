@@ -642,11 +642,16 @@ export class Evaluator {
         /**
          * The value of the nested expr doesn't actually matter
          */
-        this.popValue()
+        const nested = this.popValue()
 
         const v = this.valueGenerator.genParam(expr.name)
 
-        this.pushValue(v, expr)
+        if (nested instanceof MaybeErrorValue || nested instanceof ErrorValue) {
+            const mv = new MaybeErrorValue(v)
+            this.pushValue(mv, expr)
+        } else {
+            this.pushValue(v, expr)
+        }
     }
 
     /**
