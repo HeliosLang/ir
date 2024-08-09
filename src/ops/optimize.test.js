@@ -10,6 +10,15 @@ import { optimize } from "./optimize.js"
  */
 const testVector = [
     {
+        description: "optimizes simple literal sum",
+        input: `() -> {
+            addInteger(1, 1)
+        }`,
+        expectedOutput: `() -> {
+            2
+        }`
+    },
+    {
         description: "unused Error branch is eliminated",
         input: `ifThenElse(false, () -> {error()}, () -> {0})()`,
         expectedOutput: "0"
@@ -21,6 +30,24 @@ const testVector = [
         }`,
         expectedOutput: `(a, b) -> {
             0
+        }`
+    },
+    {
+        description: "doesn't optimize param",
+        input: `() -> {
+            addInteger(param("literal", 1), 1)
+        }`,
+        expectedOutput: `() -> {
+            addInteger(param("literal", 1), 1)
+        }`
+    },
+    {
+        description: "optimizes expression nested in param",
+        input: `() -> {
+            addInteger(param("literal", 1), addInteger(1, 1))
+        }`,
+        expectedOutput: `() -> {
+            addInteger(param("literal", 1), 2)
         }`
     },
     {

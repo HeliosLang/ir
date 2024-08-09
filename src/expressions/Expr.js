@@ -29,6 +29,8 @@ import { Variable } from "./Variable.js"
  *
  * `toString()` isn't defined, use the `format()` function instead
  *
+ * `isEqual()` can be used for some basic optimizations
+ *
  * @typedef {{
  *   site: Site
  *   flatSize: number

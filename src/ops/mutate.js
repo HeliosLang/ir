@@ -6,6 +6,7 @@ import { ErrorExpr } from "../expressions/ErrorExpr.js"
 import { FuncExpr } from "../expressions/FuncExpr.js"
 import { LiteralExpr } from "../expressions/LiteralExpr.js"
 import { NameExpr } from "../expressions/NameExpr.js"
+import { ParamExpr } from "../expressions/ParamExpr.js"
 
 /**
  * @typedef {import("../expressions/Expr.js").Expr} Expr
@@ -21,6 +22,7 @@ import { NameExpr } from "../expressions/NameExpr.js"
  *   literalExpr?: (expr: LiteralExpr) => Expr
  *   callExpr?: (expr: CallExpr, oldExpr: CallExpr) => Expr
  *   funcExpr?: (expr: FuncExpr, oldExpr: FuncExpr) => Expr
+ *   paramExpr?: (expr: ParamExpr, oldExpr: ParamExpr) => Expr
  *   flattenDefs?: boolean
  * }} callbacks
  */
@@ -69,6 +71,28 @@ export function mutate(root, callbacks) {
                         ? callbacks.literalExpr(expr)
                         : expr
                 }
+            } else if (expr instanceof ParamExpr) {
+                state = {
+                    compute: expr.expr
+                }
+
+                frames.push({
+                    nArgs: 1,
+                    args: [expr.expr],
+                    mutatedArgs: [],
+                    fn: (exprs) => {
+                        const innerExpr = exprs[0]
+
+                        const newExpr = new ParamExpr(
+                            expr.site,
+                            expr.name,
+                            innerExpr
+                        )
+                        return callbacks.paramExpr
+                            ? callbacks.paramExpr(newExpr, expr)
+                            : newExpr
+                    }
+                })
             } else if (expr instanceof CallExpr) {
                 state = {
                     compute: expr.func
@@ -82,7 +106,7 @@ export function mutate(root, callbacks) {
                         const func = exprs[0]
                         const args = exprs.slice(1)
 
-                        let newExpr = new CallExpr(expr.site, func, args)
+                        const newExpr = new CallExpr(expr.site, func, args)
 
                         return callbacks.callExpr
                             ? callbacks.callExpr(newExpr, expr)

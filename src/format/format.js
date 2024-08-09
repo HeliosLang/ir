@@ -4,7 +4,8 @@ import {
     ErrorExpr,
     FuncExpr,
     LiteralExpr,
-    NameExpr
+    NameExpr,
+    ParamExpr
 } from "../expressions/index.js"
 
 /**
@@ -73,6 +74,8 @@ function formatInternal(expr, indent, options) {
 
     if (expr instanceof LiteralExpr) {
         return expr.value.toString()
+    } else if (expr instanceof ParamExpr) {
+        return `param("${expr.name}", ${formatInternal(expr.expr, indent, options)})`
     } else if (expr instanceof NameExpr) {
         return expr.name
     } else if (expr instanceof BuiltinExpr) {

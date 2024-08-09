@@ -92,3 +92,22 @@ export function collectVariableNameExprs(expr) {
 
     return m
 }
+
+/**
+ * @param {Expr} expr
+ * @returns {Set<string>}
+ */
+export function collectParams(expr) {
+    /**
+     * @type {Set<string>}
+     */
+    const s = new Set()
+
+    loop(expr, {
+        paramExpr: (paramExpr) => {
+            s.add(paramExpr.name)
+        }
+    })
+
+    return s
+}

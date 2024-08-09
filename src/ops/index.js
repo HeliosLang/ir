@@ -1,4 +1,8 @@
-export { collectVariables, collectVariableNameExprs } from "./collect.js"
+export {
+    collectVariables,
+    collectVariableNameExprs,
+    collectParams
+} from "./collect.js"
 export { compile, prepare } from "./compile.js"
 export { loop, callExprContains } from "./loop.js"
 export { mutate } from "./mutate.js"

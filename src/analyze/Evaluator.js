@@ -6,6 +6,7 @@ import {
     FuncExpr,
     LiteralExpr,
     NameExpr,
+    ParamExpr,
     Scope,
     Variable
 } from "../expressions/index.js"
@@ -57,7 +58,7 @@ import { makeRecursiveDataOpaque } from "./recursion.js"
  */
 
 /**
- * @typedef {ErrorExpr | LiteralExpr | NameExpr | FuncExpr | BuiltinExpr | CallExpr} AnyExpr
+ * @typedef {ErrorExpr | LiteralExpr | NameExpr | FuncExpr | BuiltinExpr | CallExpr | ParamExpr} AnyExpr
  */
 
 /**
@@ -479,6 +480,9 @@ export class Evaluator {
             expr instanceof FuncExpr
         ) {
             this.compute.push({ stack: stack, expr: expr })
+        } else if (expr instanceof ParamExpr) {
+            this.compute.push({ stack: stack, expr: expr })
+            this.pushExpr(expr.expr, stack)
         } else if (expr instanceof CallExpr) {
             this.compute.push({ stack: stack, expr: expr })
 
@@ -529,6 +533,8 @@ export class Evaluator {
             this.computeFuncExpr(expr, stack)
         } else if (expr instanceof LiteralExpr) {
             this.computeLiteralExpr(expr)
+        } else if (expr instanceof ParamExpr) {
+            this.computeParamExpr(expr)
         } else if (expr instanceof NameExpr) {
             this.computeNameExpr(expr, stack)
         } else {
@@ -624,6 +630,21 @@ export class Evaluator {
     computeNameExpr(expr, stack) {
         const id = this.getVarId(expr.variable)
         const v = stack.getValue(id)
+
+        this.pushValue(v, expr)
+    }
+
+    /**
+     * @private
+     * @param {ParamExpr} expr
+     */
+    computeParamExpr(expr) {
+        /**
+         * The value of the nested expr doesn't actually matter
+         */
+        this.popValue()
+
+        const v = this.valueGenerator.genParam(expr.name)
 
         this.pushValue(v, expr)
     }

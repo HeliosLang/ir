@@ -2,6 +2,7 @@ import {
     AnyValue,
     Branches,
     DataValue,
+    MaybeErrorValue,
     Stack,
     StackValues,
     stringifyStackValues
@@ -17,7 +18,7 @@ import { BiMap } from "./BiMap.js"
  * @typedef {{debug?: boolean}} ValueGeneratorOptions
  */
 /**
- * @typedef {"Any" | "Data" | "Stack"} ValueGeneratorGroupNames
+ * @typedef {"Any" | "Data" | "Stack" | "Param"} ValueGeneratorGroupNames
  */
 
 /**
@@ -49,7 +50,8 @@ export class ValueGenerator {
         this.groups = {
             Any: new BiMap(),
             Data: new BiMap(),
-            Stack: new BiMap()
+            Stack: new BiMap(),
+            Param: new BiMap()
         }
 
         this.stringifyCache = new Map()
@@ -77,6 +79,20 @@ export class ValueGenerator {
         }
 
         return new DataValue(id, branches)
+    }
+
+    /**
+     * @param {string} key
+     * @returns {MaybeErrorValue}
+     */
+    genParam(key) {
+        const id = this.groups.Param.add(key)
+
+        if (this.options.debug) {
+            console.log("Param " + id + " = " + key)
+        }
+
+        return new MaybeErrorValue(new AnyValue(id))
     }
 
     /**

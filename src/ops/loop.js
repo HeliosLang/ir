@@ -4,7 +4,8 @@ import {
     ErrorExpr,
     FuncExpr,
     LiteralExpr,
-    NameExpr
+    NameExpr,
+    ParamExpr
 } from "../expressions/index.js"
 
 /**
@@ -21,6 +22,7 @@ import {
  *   literalExpr?: (expr: LiteralExpr) => void
  *   callExpr?: (expr: CallExpr) => void
  *   funcExpr?: (expr: FuncExpr) => void
+ *   paramExpr?: (expr: ParamExpr) => void
  *   exit?: () => boolean
  * }} callbacks
  * @returns {void}
@@ -53,6 +55,12 @@ export function loop(root, callbacks) {
 
             if (callbacks.callExpr) {
                 callbacks.callExpr(expr)
+            }
+        } else if (expr instanceof ParamExpr) {
+            stack.push(expr.expr)
+
+            if (callbacks.paramExpr) {
+                callbacks.paramExpr(expr)
             }
         } else if (expr instanceof FuncExpr) {
             stack.push(expr.body)

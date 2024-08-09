@@ -4,7 +4,8 @@ import {
     ErrorExpr,
     FuncExpr,
     NameExpr,
-    LiteralExpr
+    LiteralExpr,
+    ParamExpr
 } from "../expressions/index.js"
 import { Analysis } from "./Analysis.js"
 
@@ -41,6 +42,8 @@ export function annotate(analysis, options = {}) {
             return `error()`
         } else if (expr instanceof BuiltinExpr) {
             return expr.name
+        } else if (expr instanceof ParamExpr) {
+            return `param("${expr.name}", ${recurse(expr.expr, indent)})`
         } else if (expr instanceof NameExpr) {
             const output = analysis.getExprValue(expr, debug)
 

@@ -28,6 +28,7 @@ import {
     FuncExpr,
     LiteralExpr,
     NameExpr,
+    ParamExpr,
     Variable,
     isIdentityFunc
 } from "../expressions/index.js"
@@ -475,6 +476,21 @@ export class Optimizer {
         }
 
         return expr
+    }
+
+    /**
+     * @param {Analysis} analysis
+     * @param {ParamExpr} expr
+     * @returns {Expr}
+     */
+    optimizeParamExpr(analysis, expr) {
+        const inner = this.optimizeInternal(analysis, expr.expr)
+
+        if (inner != expr.expr) {
+            return new ParamExpr(expr.site, expr.name, inner)
+        } else {
+            return expr
+        }
     }
 
     /**
@@ -1110,6 +1126,8 @@ export class Optimizer {
                 return expr
             } else if (expr instanceof NameExpr) {
                 return this.optimizeNameExpr(analysis, expr)
+            } else if (expr instanceof ParamExpr) {
+                return this.optimizeParamExpr(analysis, expr)
             } else if (expr instanceof BuiltinExpr) {
                 return this.optimizeBuiltinExpr(analysis, expr)
             } else if (expr instanceof CallExpr) {

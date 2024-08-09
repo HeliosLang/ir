@@ -15,16 +15,6 @@ import {
 } from "@helios-lang/compiler-utils"
 import { None } from "@helios-lang/type-utils"
 import {
-    BuiltinExpr,
-    CallExpr,
-    ErrorExpr,
-    FuncExpr,
-    LiteralExpr,
-    NameExpr,
-    Variable
-} from "../expressions/index.js"
-import { SourceMappedString } from "./SourceMappedString.js"
-import {
     UplcBool,
     UplcByteArray,
     UplcDataValue,
@@ -34,6 +24,17 @@ import {
     builtinsV2,
     decodeUplcData
 } from "@helios-lang/uplc"
+import {
+    BuiltinExpr,
+    CallExpr,
+    ErrorExpr,
+    FuncExpr,
+    LiteralExpr,
+    NameExpr,
+    ParamExpr,
+    Variable
+} from "../expressions/index.js"
+import { SourceMappedString } from "./SourceMappedString.js"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Token} Token
@@ -44,6 +45,7 @@ import {
  * @typedef {{
  *   builtinsPrefix: string
  *   errorPrefix: string
+ *   paramPrefix: string
  *   safeBuitinSuffix: string
  *   builtins: Record<string, {
  *     id: number
@@ -61,6 +63,7 @@ import {
 export const DEFAULT_PARSE_OPTIONS = {
     builtinsPrefix: "",
     errorPrefix: "",
+    paramPrefix: "",
     safeBuitinSuffix: "__safe",
     builtins: Object.fromEntries(
         builtinsV2.map((b, id) => [
@@ -105,6 +108,7 @@ export function parse(ir, options = DEFAULT_PARSE_OPTIONS) {
 }
 
 /**
+ * TODO: should this take into account the prefix?
  * @param {Word} w
  * @returns {boolean}
  */
@@ -266,6 +270,21 @@ function parseInternal(r, options) {
             }
 
             expr = new ErrorExpr(w.site)
+        } else if (
+            (m = r.matches(
+                word(options.paramPrefix + "param"),
+                group("(", { length: 2 })
+            ))
+        ) {
+            const [w, parens] = m
+
+            const f0 = parens.fields[0]
+            let s = f0.matches(strlit())
+            f0.end()
+
+            const innerExpr = parseInternal(parens.fields[1], options)
+
+            expr = new ParamExpr(w.site, s ? s.value : "", innerExpr)
         } else if ((m = r.matches(anyWord))) {
             if (expr) {
                 r.errors.syntax(m.site, "unexpected expression")

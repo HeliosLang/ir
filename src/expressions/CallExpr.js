@@ -1,4 +1,4 @@
-import { UplcBuiltin, UplcCall, UplcForce } from "@helios-lang/uplc"
+import { UplcCall, UplcForce } from "@helios-lang/uplc"
 import { Scope } from "./Scope.js"
 import { Variable } from "./Variable.js"
 
@@ -44,6 +44,9 @@ export class CallExpr {
         this.args = args
     }
 
+    /**
+     * @type {number}
+     */
     get flatSize() {
         return (
             4 +
