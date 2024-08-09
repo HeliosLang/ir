@@ -1,5 +1,5 @@
 export { collectVariables, collectVariableNameExprs } from "./collect.js"
-export { compile } from "./compile.js"
+export { compile, prepare } from "./compile.js"
 export { loop, callExprContains } from "./loop.js"
 export { mutate } from "./mutate.js"
 export { Optimizer } from "./Optimizer.js"

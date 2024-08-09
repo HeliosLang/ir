@@ -23,12 +23,24 @@ import { injectRecursiveDeps } from "./recursion.js"
  */
 
 /**
- *
  * @param {string | SourceMappedString | Expr} rawExpr
  * @param {CompileOptions} options
  * @returns {UplcProgramV2}
  */
 export function compile(rawExpr, options = {}) {
+    const expr = prepare(rawExpr, options)
+
+    const uplc = expr.toUplc()
+
+    return new UplcProgramV2(uplc, options.alt)
+}
+
+/**
+ * @param {string | SourceMappedString | Expr} rawExpr
+ * @param {CompileOptions} options
+ * @returns {Expr}
+ */
+export function prepare(rawExpr, options = {}) {
     let expr =
         typeof rawExpr == "string" || rawExpr instanceof SourceMappedString
             ? parse(rawExpr, options.parseOptions ?? DEFAULT_PARSE_OPTIONS)
@@ -44,7 +56,5 @@ export function compile(rawExpr, options = {}) {
         expr.resolveNames(new Scope(None, None))
     }
 
-    const uplc = expr.toUplc()
-
-    return new UplcProgramV2(uplc, options.alt)
+    return expr
 }
