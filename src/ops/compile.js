@@ -68,7 +68,7 @@ export function prepare(rawExpr, options = {}) {
 /**
  * Substitution optimizations are much easier if each variable has a guaranteed globally unique name
  * Assume NameExpr variables have already been resolved
- * @param {Expr} expr 
+ * @param {Expr} expr
  */
 function giveVariablesUniqueNames(expr) {
     let varNames = new Set()

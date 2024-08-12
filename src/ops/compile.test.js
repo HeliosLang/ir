@@ -124,7 +124,7 @@ describe(prepare.name, () => {
             })
         })`
 
-		const expectedOutput = `(__helios__list[__helios__int]__length) -> {
+        const expectedOutput = `(__helios__list[__helios__int]__length) -> {
     (__helios__list[__helios__int]__get) -> {
         (arg0, arg1) -> {
             (b_4) -> {
@@ -219,10 +219,10 @@ describe(prepare.name, () => {
         })()
     })
 })`
-        const expr = prepare(src, {optimize: true})
+        const expr = prepare(src, { optimize: true })
 
-        const output = format(expr, {syntacticSugar: false})
+        const output = format(expr, { syntacticSugar: false })
 
-		strictEqual(removeWhitespace(output), removeWhitespace(expectedOutput))
+        strictEqual(removeWhitespace(output), removeWhitespace(expectedOutput))
     })
 })
