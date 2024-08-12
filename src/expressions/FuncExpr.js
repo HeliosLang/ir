@@ -123,6 +123,9 @@ export class FuncExpr {
 
         // notifyFuncExpr is always set so that the all the referenced variables can easily be collected in the bodyVars set
 
+        // bodyVars must be reset so that old unused variables are purged
+        this.bodyVars.clear()
+
         this.args.forEach((arg, i) => {
             scope = new Scope(
                 scope,
