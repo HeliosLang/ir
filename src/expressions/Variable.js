@@ -11,7 +11,9 @@ import { Word } from "@helios-lang/compiler-utils"
  */
 export class Variable {
     /**
-     * @readonly
+     * Mutation of `name` is used to change the name to a globally unique name
+     * (mutation of this field is much easier and faster than creating a new Variable instance)
+     * @readwrite
      * @type {Word}
      */
     name

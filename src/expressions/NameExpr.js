@@ -21,6 +21,10 @@ export class NameExpr {
      */
     site
 
+    /**
+     * @readwrite
+     * @type {Word}
+     */
     #name
 
     /**
@@ -56,6 +60,13 @@ export class NameExpr {
      */
     get name() {
         return this.#name.toString()
+    }
+
+    /**
+     * @param {string} n
+     */
+    set name(n) {
+        this.#name = new Word(n, this.#name.site)
     }
 
     /**
