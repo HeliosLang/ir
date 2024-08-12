@@ -1265,7 +1265,7 @@ describe(optimize.name, () => {
             const expr = parse(entry.input)
 
             const optExpr = optimize(expr, {
-                commonSubExpressionPrefix: "x"
+                commonSubExprPrefix: "x"
             })
 
             strictEqual(

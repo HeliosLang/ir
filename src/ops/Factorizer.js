@@ -15,7 +15,7 @@ import { loop } from "./loop.js"
  */
 
 /**
- * @typedef {{commonSubExpressionPrefix: string}} FactorizerOptions
+ * @typedef {{commonSubExprPrefix?: string}} FactorizerOptions
  */
 
 export class Factorizer {
@@ -74,6 +74,13 @@ export class Factorizer {
         this.substitutions = new Map()
         this.injections = new Map()
         this.branchInjections = new Map()
+    }
+
+    /**
+     * @type {string}
+     */
+    get commonSubExprPrefix() {
+        return this.options.commonSubExprPrefix ?? "x"
     }
 
     /**
@@ -187,7 +194,7 @@ export class Factorizer {
         this.commonCount++
 
         const injectedName = new Word(
-            `${this.options.commonSubExpressionPrefix}${injectedId}`
+            `${this.commonSubExprPrefix}${injectedId}`
         )
         const injectedVar = new Variable(injectedName)
         const firstCallExpr = callExprs[0] //

@@ -51,9 +51,14 @@ import { Factorizer } from "./Factorizer.js"
 const INLINE_MAX_SIZE = 128
 
 /**
+ * `factorizeCommon`, `removeUnusedArgs`,
  * @typedef {{
- *   commonSubExpressionPrefix: string
+ *   commonSubExprPrefix?: string
  *   commonSubExprCount?: number
+ *   factorizeCommon?: boolean
+ *   removeUnusedArgs?: boolean
+ *   replaceUncalledArgsWithUnit?: boolean
+ *   flattenNestedFuncExprs?: boolean
  * }} OptimizerOptions
  */
 
@@ -61,7 +66,7 @@ const INLINE_MAX_SIZE = 128
  * @type {OptimizerOptions}
  */
 export const DEFAULT_OPTIMIZER_OPTIONS = {
-    commonSubExpressionPrefix: "__common"
+    commonSubExprPrefix: "__common"
 }
 
 /**
@@ -175,15 +180,25 @@ export class Optimizer {
         let analyzer = new Analyzer(this.#root)
         let analysis = analyzer.analyze()
 
-        this.removeUnusedArgs(analysis)
-        this.replaceUncalledArgsWithUnit(analysis)
-        this.factorizeCommon(analysis)
+        if (this.options.removeUnusedArgs ?? true) {
+            this.removeUnusedArgs(analysis)
+        }
+
+        if (this.options.replaceUncalledArgsWithUnit ?? true) {
+            this.replaceUncalledArgsWithUnit(analysis)
+        }
+
+        if (this.options.factorizeCommon ?? true) {
+            this.factorizeCommon(analysis)
+        }
 
         // rerun analysis
         analyzer = new Analyzer(this.#root)
         analysis = analyzer.analyze()
 
-        this.flattenNestedFuncExprs(analysis)
+        if (this.options.flattenNestedFuncExprs ?? true) {
+            this.flattenNestedFuncExprs(analysis)
+        }
 
         const expr = this.optimizeInternal(analysis, this.#root)
 
@@ -270,7 +285,10 @@ export class Optimizer {
         const factorizer = new Factorizer(
             this.#root,
             analysis,
-            this.options,
+            {
+                commonSubExprPrefix:
+                    this.options.commonSubExprPrefix ?? "__common"
+            },
             this.commonSubExprCount
         )
 

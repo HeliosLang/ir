@@ -12,6 +12,7 @@ import { injectRecursiveDeps } from "./recursion.js"
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr
  * @typedef {import("../parse/index.js").ParseOptions} ParseOptions
+ * @typedef {import("./optimize.js").OptimizeOptions} OptimizeOptions
  */
 
 /**
@@ -19,6 +20,7 @@ import { injectRecursiveDeps } from "./recursion.js"
  *   optimize?: boolean
  *   parseOptions?: ParseOptions
  *   alt?: UplcProgramV2
+ *   optimizeOptions?: OptimizeOptions
  * }} CompileOptions
  */
 
@@ -51,7 +53,7 @@ export function prepare(rawExpr, options = {}) {
     expr.resolveNames(new Scope(None, None))
 
     if (options.optimize) {
-        expr = optimize(expr)
+        expr = optimize(expr, options.optimizeOptions ?? {})
 
         expr.resolveNames(new Scope(None, None))
     }
