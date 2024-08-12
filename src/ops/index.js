@@ -6,7 +6,12 @@ export {
 export { compile, prepare } from "./compile.js"
 export { loop, callExprContains } from "./loop.js"
 export { mutate } from "./mutate.js"
-export { Optimizer } from "./Optimizer.js"
+export { Optimizer, DEFAULT_OPTIMIZER_OPTIONS } from "./Optimizer.js"
 export { optimize } from "./optimize.js"
 export { injectRecursiveDeps } from "./recursion.js"
 export { resetVariables } from "./reset.js"
+
+/**
+ * @typedef {import("./optimize.js").OptimizeOptions} OptimizeOptions
+ * @typedef {import("./Optimizer.js").OptimizerOptions} OptimizerOptions
+ */
