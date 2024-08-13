@@ -3,8 +3,10 @@ import { None, expectSome } from "@helios-lang/type-utils"
 import { Analysis, Branches, DataValue } from "../analyze/index.js"
 import { CallExpr, FuncExpr, NameExpr, Variable } from "../expressions/index.js"
 import { format } from "../format/index.js"
-import { collectVariablesWithDepth } from "./collect.js"
-import { collectVariables } from "./collect.js"
+import {
+    collectUsedVariables,
+    collectUsedVariablesWithDepth
+} from "./collect.js"
 import { mutate } from "./mutate.js"
 import { loop } from "./loop.js"
 
@@ -198,7 +200,7 @@ export class Factorizer {
         )
         const injectedVar = new Variable(injectedName)
         const firstCallExpr = callExprs[0] //
-        const variables = collectVariablesWithDepth(firstCallExpr)
+        const variables = collectUsedVariablesWithDepth(firstCallExpr)
 
         // sort lower Debruijn indices first
         variables.sort((a, b) => a[0] - b[0])
@@ -207,9 +209,10 @@ export class Factorizer {
         const allVars = variables.map((v) => v[1])
 
         // make sure the other call expressions depend on the same deepest variable
+        // TODO: it's possible that another callExpr than callExprs[0] is better
         if (
             !callExprs.slice(1).every((ce) => {
-                const vs = collectVariables(ce)
+                const vs = collectUsedVariables(ce)
 
                 return vs.has(deepest)
             })
@@ -360,57 +363,47 @@ export class Factorizer {
                 const inj = this.branchInjections.get(funcExpr)
 
                 if (inj) {
-                    inj.slice()
-                        .reverse()
-                        .forEach((entry) => {
-                            const branchExpr = funcExpr
+                    for (let i = inj.length - 1; i >= 0; i--) {
+                        const entry = inj[i]
 
-                            let body = branchExpr.body
+                        const branchExpr = funcExpr
 
-                            let foundDeepestVar = false
+                        let foundDeepestVar = false
 
-                            body = mutate(body, {
-                                funcExpr: (funcExpr) => {
-                                    if (
-                                        funcExpr.args.some(
-                                            (a) => a == entry.vars[0]
-                                        )
-                                    ) {
-                                        foundDeepestVar = true
+                        loop(branchExpr.body, {
+                            funcExpr: (funcExpr) => {
+                                if (
+                                    funcExpr.args.some(
+                                        (a) => a == entry.vars[0]
+                                    )
+                                ) {
+                                    foundDeepestVar = true
 
-                                        return new FuncExpr(
-                                            funcExpr.site,
-                                            funcExpr.args,
-                                            new CallExpr(
-                                                entry.expr.site,
-                                                new FuncExpr(
-                                                    entry.expr.site,
-                                                    [entry.injected],
-                                                    funcExpr.body
-                                                ),
-                                                [entry.expr]
-                                            )
-                                        )
-                                    } else {
-                                        return funcExpr
-                                    }
-                                }
-                            })
-
-                            if (!foundDeepestVar) {
-                                body = new CallExpr(
-                                    entry.expr.site,
-                                    new FuncExpr(
+                                    funcExpr.body = new CallExpr(
                                         entry.expr.site,
-                                        [entry.injected],
-                                        branchExpr.body
-                                    ),
-                                    [entry.expr]
-                                )
+                                        new FuncExpr(
+                                            entry.expr.site,
+                                            [entry.injected],
+                                            funcExpr.body
+                                        ),
+                                        [entry.expr]
+                                    )
+                                }
                             }
-
-                            branchExpr.body = body
                         })
+
+                        if (!foundDeepestVar) {
+                            branchExpr.body = new CallExpr(
+                                entry.expr.site,
+                                new FuncExpr(
+                                    entry.expr.site,
+                                    [entry.injected],
+                                    branchExpr.body
+                                ),
+                                [entry.expr]
+                            )
+                        }
+                    }
                 }
             }
         })

@@ -1,5 +1,5 @@
 export {
-    collectVariables,
+    collectUsedVariables,
     collectVariableNameExprs,
     collectParams
 } from "./collect.js"

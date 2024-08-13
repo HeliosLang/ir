@@ -10,7 +10,26 @@ import { loop } from "./loop.js"
  * @param {Expr} expr
  * @returns {Set<Variable>}
  */
-export function collectVariables(expr) {
+export function collectDeclaredVariables(expr) {
+    /**
+     * @type {Set<Variable>}
+     */
+    const s = new Set()
+
+    loop(expr, {
+        funcExpr: (funcExpr) => {
+            funcExpr.args.forEach((a) => s.add(a))
+        }
+    })
+
+    return s
+}
+
+/**
+ * @param {Expr} expr
+ * @returns {Set<Variable>}
+ */
+export function collectUsedVariables(expr) {
     /**
      * @type {Set<Variable>}
      */
@@ -40,7 +59,7 @@ export function collectVariables(expr) {
  * @param {Expr} expr
  * @returns {[number, Variable][]}
  */
-export function collectVariablesWithDepth(expr) {
+export function collectUsedVariablesWithDepth(expr) {
     /**
      * @type {[number, Variable][]}
      */
