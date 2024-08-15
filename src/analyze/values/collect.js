@@ -37,6 +37,26 @@ export function collectFuncValues(...values) {
 }
 
 /**
+ * @param  {Value[]} values 
+ * @returns {Set<string>}
+ */
+export function collectFuncValuesIgnoreStacks(...values) {
+    /**
+     * @type {Set<string>}
+     */
+    const s = new Set()
+
+    loopValues(values.map(v => [[], v]), {
+        skipStacks: true,
+        funcValue: (_path, funcValue) => {
+            s.add(funcValue.toString())
+        }
+    })
+
+    return s
+}
+
+/**
  * @param {StackValues} values
  * @param {Option<StackValues>} prevValues
  * @returns {[Set<string>, boolean]}

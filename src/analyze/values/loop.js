@@ -23,6 +23,7 @@ import { MaybeErrorValue } from "./MaybeErrorValue.js"
  *   literalValue?: (path: string[], value: LiteralValue) => void
  *   maybeErrorValue?: (path: string[], value: MaybeErrorValue) => void
  *   exit?: () => boolean
+ *   skipStacks?: boolean
  * }} LoopCallbacks
  */
 
@@ -76,9 +77,11 @@ export function loopValues(items, callbacks) {
             }
         } else if (value instanceof FuncValue) {
             if (!doneFns.has(value)) {
-                value.stack.values.values.forEach(([id, v]) =>
-                    stack.push([initValuePath(id), v])
-                )
+                if (!callbacks.skipStacks) {
+                    value.stack.values.values.forEach(([id, v]) =>
+                        stack.push([initValuePath(id), v])
+                    )
+                }
 
                 if (callbacks.funcValue) {
                     callbacks.funcValue(valuePath, value)

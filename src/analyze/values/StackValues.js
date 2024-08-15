@@ -55,6 +55,15 @@ export class StackValues {
     }
 
     /**
+     * @param {Set<number>} keep 
+     * @returns {StackValues}
+     */
+    filter(keep) {
+        const values = this.values.filter(([id]) => keep.has(id))
+        return new StackValues(values)
+    }
+
+    /**
      * @param {number} v
      * @returns {NonErrorValue}
      */

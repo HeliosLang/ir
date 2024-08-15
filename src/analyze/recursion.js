@@ -10,7 +10,10 @@ import {
     initValuePath,
     pathToKey,
     mutate,
-    collectNonConst
+    collectNonConst,
+    BranchedValue,
+    collectFuncValuesIgnoreStacks,
+    loopValues
 } from "./values/index.js"
 
 /**
@@ -72,5 +75,49 @@ export function makeRecursiveDataOpaque(values, valueGenerator, prevValues) {
         })
 
         return new StackValues(mutatedValues)
+    }
+}
+
+/**
+ * @param {BranchedValue} before
+ * @param {BranchedValue} after
+ * @param {string} rootPath
+ * @param {ValueGenerator} valueGenerator
+ * @returns {BranchedValue | AnyValue | MaybeErrorValue}
+ */
+export function makeNestedBranchesOpaque(before, after, rootPath, valueGenerator) {
+    const cases = after.cases
+
+    const beforeFns = collectFuncValuesIgnoreStacks(before)
+    const afterFns = collectFuncValuesIgnoreStacks(...cases)
+
+    let isBranchedRecursive = false
+    let someError = false
+
+    loopValues(cases.map(c => [[], c]), {
+        skipStacks: true,
+        branchedValue: (_path, v) => {
+            if (v.type == before.type && v.condition.toString() == before.condition.toString()) {
+                isBranchedRecursive = true
+            }
+        },
+        errorValue: (_) => {
+            someError = true
+        },
+        maybeErrorValue: (_) => {
+            someError = true
+        }
+    })
+
+    if (isBranchedRecursive && Array.from(afterFns).every(fn => beforeFns.has(fn))) {
+        const a = valueGenerator.genAny(rootPath)
+
+        if (someError) {
+            return new MaybeErrorValue(a)
+        } else {
+            return a
+        }
+    } else {
+        return after
     }
 }

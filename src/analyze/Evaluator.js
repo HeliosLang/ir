@@ -1,3 +1,4 @@
+import { removeWhitespace } from "@helios-lang/codec-utils"
 import { None, expectSome } from "@helios-lang/type-utils"
 import {
     BuiltinExpr,
@@ -10,6 +11,7 @@ import {
     Scope,
     Variable
 } from "../expressions/index.js"
+import { format } from "../format/index.js"
 import { loop } from "../ops/loop.js"
 import {
     AnyValue,
@@ -35,7 +37,7 @@ import {
 } from "./values/index.js"
 import { BiMap } from "./BiMap.js"
 import { ValueGenerator } from "./ValueGenerator.js"
-import { makeRecursiveDataOpaque } from "./recursion.js"
+import { makeNestedBranchesOpaque, makeRecursiveDataOpaque } from "./recursion.js"
 
 /**
  * @typedef {import("@helios-lang/uplc").UplcData} UplcData
@@ -223,6 +225,10 @@ export class Evaluator {
                     action.owner
                 )
             } else if ("call" in action) {
+                if (this.props.debug) {
+                    console.log(`Calling ${removeWhitespace(format(action.owner))} as ${action.call.toString()}(${action.args.map(a => a.toString()).join(", ")})`)
+                }
+
                 this.computeCallValue(
                     action.call,
                     action.args,
@@ -251,6 +257,18 @@ export class Evaluator {
         return expectSome(
             this.props.funcExprs.getValueByKey(tag),
             `invalid func tag '${tag}'`
+        )
+    }
+
+    /**
+     * Used to filter stack values
+     * @private
+     * @param {FuncExpr} fn 
+     * @returns {Set<number>}
+     */
+    getFuncBodyVarIds(fn) {
+        return new Set(
+            Array.from(fn.bodyVars).map((v) => this.getVarId(v))
         )
     }
 
@@ -504,6 +522,10 @@ export class Evaluator {
             this.props.onEvalExpr(owner, value)
         }
 
+        if (owner && this.props.debug) {
+            console.log(`${value.toString()} <= ${removeWhitespace(format(owner))}`)
+        }
+
         this.reduce.push(value)
     }
 
@@ -602,11 +624,18 @@ export class Evaluator {
      */
     computeFuncExpr(expr, stack) {
         const tag = this.getFuncTag(expr)
+
+        const bodyVarIds = this.getFuncBodyVarIds(expr)
+
+        const stackValues = stack.values.filter(bodyVarIds)
+        const filteredStack = new Stack(stackValues, stack.branches)
+
         const stackSummary = this.valueGenerator.genStackSummary(
-            stack.values,
+            stackValues,
             tag
         )
-        const v = new FuncValue(tag, stack, stackSummary)
+
+        const v = new FuncValue(tag, filteredStack, stackSummary)
 
         // don't set owner because it is confusing wrt. return value type
         this.pushValue(v, expr)
@@ -712,11 +741,13 @@ export class Evaluator {
      * @param {boolean} registerOwner
      */
     computeCallBranchedValue(fn, args, stack, owner, registerOwner) {
+        const rootPath = stringifyCall(fn, args)
+
         this.pushCollect(
             fn.nCases,
             (cases) => {
                 /**
-                 * @type {DataValue | BranchedValue}
+                 * @type {DataValue | BranchedValue | AnyValue | MaybeErrorValue}
                  */
                 let res
 
@@ -731,9 +762,10 @@ export class Evaluator {
                     res = this.valueGenerator.genData(key, stack.branches)
                 } else {
                     res = new BranchedValue(fn.type, fn.condition, cases)
+                    res = makeNestedBranchesOpaque(fn, res, rootPath, this.valueGenerator)
                 }
 
-                if (isAnyError(cases)) {
+                if (isAnyError(cases) && !(res instanceof MaybeErrorValue)) {
                     return new MaybeErrorValue(res)
                 } else {
                     return res
@@ -823,9 +855,7 @@ export class Evaluator {
                 ])
             })
 
-            const bodyVarIds = new Set(
-                Array.from(fnDef.bodyVars).map((v) => this.getVarId(v))
-            )
+            const bodyVarIds = this.getFuncBodyVarIds(fnDef)
             let stackValues = fn.stack.values.extend(varsToValues, bodyVarIds)
             stackValues = makeRecursiveDataOpaque(
                 stackValues,
@@ -873,9 +903,7 @@ export class Evaluator {
             values.push(v)
         }
 
-        // values popped like this have inverse order of the branches, so must be reversed
-        //  (reversal isn't needed when evaluating expressions and returning values, because that is push-pop-push-pop, and here it is just a single push-pop)
-        values.reverse()
+        // no reversal needed because cases are evaluated in reverse order, and popping the results of those calls again reverses the values
 
         const res = combine(values)
 

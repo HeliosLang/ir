@@ -18,6 +18,7 @@ export {
     isAllMaybeNonError,
     isAnyError,
     flattenMaybeError,
+    filterErrorAndMaybeError,
     uniqueFlattenedValues,
     uniqueValues
 } from "./Value.js" // TODO: move checks to check.js
@@ -26,6 +27,7 @@ export { mutate } from "./mutate.js"
 export {
     collectFuncTags,
     collectFuncValues,
+    collectFuncValuesIgnoreStacks,
     collectNonConst
 } from "./collect.js"
 export {
