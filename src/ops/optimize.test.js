@@ -1256,6 +1256,120 @@ const testVector = [
                 )()
             )
         }`
+    },
+    {
+        description: "don't optimize results from calling AnyValue",
+        input: `(__helios__int____to_data) -> {
+(__helios__int__is_valid_data) -> {
+(__helios__int____add) -> {
+(__helios__int____div) -> {
+(__helios__common__fold_lazy) -> {
+(__helios__int__from_data) -> {
+(__helios__list[__helios__int]__fold2_lazy[__helios__int@__helios__int]) -> {
+(__module__list_fold2_lazy__main) -> {
+    (arg0) -> {
+        __helios__int____to_data(__module__list_fold2_lazy__main(unListData(arg0)))
+    }
+}(
+    (a) -> {
+    __helios__list[__helios__int]__fold2_lazy[__helios__int@__helios__int](a)((item, sum) -> {
+        sum()(
+            (sum0, sum1) -> {
+                (callback) -> {
+                callback(
+                    addInteger(item, sum0),
+                    addInteger(item, sum1)
+                )
+            }
+            }
+        )
+    }, 0, 0)(
+        (sum0, sum1) -> {
+            __helios__int____div(addInteger(sum0, sum1), 2)
+        }
+    )
+}
+)
+}(
+    (self) -> {
+        (fn, a0, b0) -> {
+            __helios__common__fold_lazy(
+                self, 
+                (item, next) -> {
+                    fn(__helios__int__from_data(item), next)
+                },
+                (callback) -> {
+                    callback(a0, b0)
+                }
+            )
+        }
+    }
+)
+}(
+    unIData
+)
+}(
+    (self, fn, z) -> {
+        (recurse) -> {
+            recurse(recurse, self)
+        }(
+            (recurse, self) -> {
+                chooseList(
+                    self, 
+                    () -> {z}, 
+                    () -> {fn(headList__safe(self), () -> {recurse(recurse, tailList__safe(self))})}
+                )()
+            }
+        )
+    }
+)
+}(
+    quotientInteger
+)
+}(
+    addInteger
+)
+}(
+    (data) -> {
+        chooseData(data, false, false, false, true, false)
+    }
+)
+}(
+    iData
+)`,
+        expectedOutput: `(arg0)->{
+            iData(
+                a=unListData(arg0);
+                recurse=(recurse,self)->{
+                    chooseList(
+                        self,
+                        ()->{
+                            (callback)->{
+                                callback(0,0)
+                            }
+                        },
+                        ()->{
+                            item=unIData(headList__safe(self));
+                            recurse(recurse,tailList__safe(self))(
+                                (sum0,sum1)->{
+                                    (callback)->{
+                                        callback(addInteger(item,sum0),addInteger(item,sum1))
+                                    }
+                                }
+                            )
+                        }
+                    )()
+                };
+                recurse(recurse,a)(
+                    (sum0,sum1)->{
+                        quotientInteger(
+                            addInteger(sum0,sum1),
+                            2
+                        )
+                    }
+                )
+            )
+        }`
     }
 ]
 

@@ -1,7 +1,8 @@
 import { expectSome } from "@helios-lang/type-utils"
 import { CallExpr, FuncExpr, Variable } from "../expressions/index.js"
+import { loop } from "../ops/index.js"
 import { Analysis } from "./Analysis.js"
-import { collectFuncTags } from "./values/index.js"
+import { AnyValue, collectFuncTags } from "./values/index.js"
 import { Evaluator, generateFuncTagsAndVariableIds } from "./Evaluator.js"
 
 /**
@@ -90,6 +91,20 @@ export class Analyzer {
             }
         }
 
+        /**
+         * @param {Expr} expr
+         * @param {Value} value
+         */
+        const onEvalExpr = (expr, value) => {
+            const prev = exprValues.get(expr)
+
+            if (prev) {
+                prev.push(value)
+            } else {
+                exprValues.set(expr, [value])
+            }
+        }
+
         const evaluator = new Evaluator({
             funcExprs,
             variables,
@@ -97,9 +112,32 @@ export class Analyzer {
             onCallAny: (args, owner) => {
                 const s = collectFuncTags(...args)
 
-                Array.from(s).forEach((tag) => {
+                /**
+                 * @param {number} tag
+                 */
+                const onCallFuncInsideAny = (tag) => {
                     incrCallCount(tag, 2)
-                })
+
+                    /**
+                     * @param {Expr} expr
+                     */
+                    const onEvalExprInsideAny = (expr) => {
+                        onEvalExpr(expr, new AnyValue(-1))
+                    }
+
+                    // also add AnyValue | ErrorValue to each internal expression of these functions
+                    loop(expectSome(funcExprs.getValueByKey(tag)).body, {
+                        nameExpr: onEvalExprInsideAny,
+                        callExpr: onEvalExprInsideAny,
+                        funcExpr: (expr) => {
+                            onCallFuncInsideAny(
+                                expectSome(funcExprs.getKeyByValue(expr))
+                            )
+                        }
+                    })
+                }
+
+                Array.from(s).forEach(onCallFuncInsideAny)
             },
             onCallFunc: (expr, owner) => {
                 incrCallCount(expr, 1)
@@ -114,15 +152,7 @@ export class Analyzer {
                     }
                 }
             },
-            onEvalExpr: (expr, value) => {
-                const prev = exprValues.get(expr)
-
-                if (prev) {
-                    prev.push(value)
-                } else {
-                    exprValues.set(expr, [value])
-                }
-            },
+            onEvalExpr: onEvalExpr,
             onPassArg: (variable, value) => {
                 const prev = variableValues.get(variable)
 
