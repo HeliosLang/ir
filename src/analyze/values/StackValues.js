@@ -55,7 +55,7 @@ export class StackValues {
     }
 
     /**
-     * @param {Set<number>} keep 
+     * @param {Set<number>} keep
      * @returns {StackValues}
      */
     filter(keep) {

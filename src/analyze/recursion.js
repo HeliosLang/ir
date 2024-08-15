@@ -85,7 +85,12 @@ export function makeRecursiveDataOpaque(values, valueGenerator, prevValues) {
  * @param {ValueGenerator} valueGenerator
  * @returns {BranchedValue | AnyValue | MaybeErrorValue}
  */
-export function makeNestedBranchesOpaque(before, after, rootPath, valueGenerator) {
+export function makeNestedBranchesOpaque(
+    before,
+    after,
+    rootPath,
+    valueGenerator
+) {
     const cases = after.cases
 
     const beforeFns = collectFuncValuesIgnoreStacks(before)
@@ -94,22 +99,31 @@ export function makeNestedBranchesOpaque(before, after, rootPath, valueGenerator
     let isBranchedRecursive = false
     let someError = false
 
-    loopValues(cases.map(c => [[], c]), {
-        skipStacks: true,
-        branchedValue: (_path, v) => {
-            if (v.type == before.type && v.condition.toString() == before.condition.toString()) {
-                isBranchedRecursive = true
+    loopValues(
+        cases.map((c) => [[], c]),
+        {
+            skipStacks: true,
+            branchedValue: (_path, v) => {
+                if (
+                    v.type == before.type &&
+                    v.condition.toString() == before.condition.toString()
+                ) {
+                    isBranchedRecursive = true
+                }
+            },
+            errorValue: (_) => {
+                someError = true
+            },
+            maybeErrorValue: (_) => {
+                someError = true
             }
-        },
-        errorValue: (_) => {
-            someError = true
-        },
-        maybeErrorValue: (_) => {
-            someError = true
         }
-    })
+    )
 
-    if (isBranchedRecursive && Array.from(afterFns).every(fn => beforeFns.has(fn))) {
+    if (
+        isBranchedRecursive &&
+        Array.from(afterFns).every((fn) => beforeFns.has(fn))
+    ) {
         const a = valueGenerator.genAny(rootPath)
 
         if (someError) {

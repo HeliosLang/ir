@@ -37,7 +37,10 @@ import {
 } from "./values/index.js"
 import { BiMap } from "./BiMap.js"
 import { ValueGenerator } from "./ValueGenerator.js"
-import { makeNestedBranchesOpaque, makeRecursiveDataOpaque } from "./recursion.js"
+import {
+    makeNestedBranchesOpaque,
+    makeRecursiveDataOpaque
+} from "./recursion.js"
 
 /**
  * @typedef {import("@helios-lang/uplc").UplcData} UplcData
@@ -226,7 +229,9 @@ export class Evaluator {
                 )
             } else if ("call" in action) {
                 if (this.props.debug) {
-                    console.log(`Calling ${removeWhitespace(format(action.owner))} as ${action.call.toString()}(${action.args.map(a => a.toString()).join(", ")})`)
+                    console.log(
+                        `Calling ${removeWhitespace(format(action.owner))} as ${action.call.toString()}(${action.args.map((a) => a.toString()).join(", ")})`
+                    )
                 }
 
                 this.computeCallValue(
@@ -263,13 +268,11 @@ export class Evaluator {
     /**
      * Used to filter stack values
      * @private
-     * @param {FuncExpr} fn 
+     * @param {FuncExpr} fn
      * @returns {Set<number>}
      */
     getFuncBodyVarIds(fn) {
-        return new Set(
-            Array.from(fn.bodyVars).map((v) => this.getVarId(v))
-        )
+        return new Set(Array.from(fn.bodyVars).map((v) => this.getVarId(v)))
     }
 
     /**
@@ -523,7 +526,9 @@ export class Evaluator {
         }
 
         if (owner && this.props.debug) {
-            console.log(`${value.toString()} <= ${removeWhitespace(format(owner))}`)
+            console.log(
+                `${value.toString()} <= ${removeWhitespace(format(owner))}`
+            )
         }
 
         this.reduce.push(value)
@@ -762,7 +767,12 @@ export class Evaluator {
                     res = this.valueGenerator.genData(key, stack.branches)
                 } else {
                     res = new BranchedValue(fn.type, fn.condition, cases)
-                    res = makeNestedBranchesOpaque(fn, res, rootPath, this.valueGenerator)
+                    res = makeNestedBranchesOpaque(
+                        fn,
+                        res,
+                        rootPath,
+                        this.valueGenerator
+                    )
                 }
 
                 if (isAnyError(cases) && !(res instanceof MaybeErrorValue)) {

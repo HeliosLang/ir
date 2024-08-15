@@ -37,7 +37,7 @@ export function collectFuncValues(...values) {
 }
 
 /**
- * @param  {Value[]} values 
+ * @param  {Value[]} values
  * @returns {Set<string>}
  */
 export function collectFuncValuesIgnoreStacks(...values) {
@@ -46,12 +46,15 @@ export function collectFuncValuesIgnoreStacks(...values) {
      */
     const s = new Set()
 
-    loopValues(values.map(v => [[], v]), {
-        skipStacks: true,
-        funcValue: (_path, funcValue) => {
-            s.add(funcValue.toString())
+    loopValues(
+        values.map((v) => [[], v]),
+        {
+            skipStacks: true,
+            funcValue: (_path, funcValue) => {
+                s.add(funcValue.toString())
+            }
         }
-    })
+    )
 
     return s
 }

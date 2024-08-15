@@ -170,11 +170,15 @@ export function flattenMaybeError(values) {
 }
 
 /**
- * @param {Value[]} values 
+ * @param {Value[]} values
  * @returns {NonErrorValue[]}
  */
 export function filterErrorAndMaybeError(values) {
-    return flattenMaybeError(/** @type {MaybeNonErrorValue[]} */ (values.filter(v => !(v instanceof ErrorValue))))
+    return flattenMaybeError(
+        /** @type {MaybeNonErrorValue[]} */ (
+            values.filter((v) => !(v instanceof ErrorValue))
+        )
+    )
 }
 
 /**

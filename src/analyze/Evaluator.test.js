@@ -1120,7 +1120,7 @@ describe("not too much memory usage when there are many stack interdependencies"
 })
 
 describe("no infinite branch-recursion", () => {
-	const src =`
+    const src = `
 data = param("data", #);
 fold = (self, fn, z) -> {
     recurse = (recurse, self, z) -> {
