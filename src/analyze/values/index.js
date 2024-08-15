@@ -26,6 +26,7 @@ export { initValuePath, loopValues, pathToKey } from "./loop.js"
 export { mutate } from "./mutate.js"
 export {
     collectFuncTags,
+    collectFuncTagsIgnoreStacks,
     collectFuncValues,
     collectFuncValuesIgnoreStacks,
     collectNonConst

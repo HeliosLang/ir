@@ -1190,3 +1190,94 @@ fold2 = (self) -> {
 
     evaluator.eval(expr)
 })
+
+describe("no infinite branched recursion 2", () => {
+    const src = `fold = (self, fn, z) -> {
+	(recurse) -> {
+		recurse(recurse, self, z)
+	}(
+		(recurse, self, z) -> {
+			chooseList(
+				self, 
+				() -> {z}, 
+				() -> {recurse(recurse, tailList__safe(self), fn(z, headList__safe(self)))}
+			)()
+		}
+	)
+};
+fold2 = (self) -> {
+	(fn, a0, b0) -> {
+		fold(
+			self,
+			(prev, item) -> {
+				prev(
+					(a, b) -> {
+						fn(a, b, unIData(item))
+					}
+				)
+			},
+			(callback) -> {
+				callback(a0, b0)
+			}
+		)
+	}
+};
+fold3 = (self) -> {
+	(fn, a0, b0, c0) -> {
+		fold(
+			self,
+			(prev, item) -> {
+				prev(
+					(a, b, c) -> {
+						fn(a, b, c, unListData(item))
+					}
+				)
+			},
+			(callback) -> {
+				callback(a0, b0, c0)
+			}
+		)
+	}
+};
+(a) -> {
+	fold3(a)((s0, s1, s2, item_) -> {
+		fold2(item_)((s0, s1, item) -> {
+			(callback) -> {
+				callback(
+					addInteger(s0, item),
+					addInteger(s1, item)
+				)
+			}
+		}, s0, s1)(
+			(inner_sum0, inner_sum1) -> {
+				(callback) -> {
+				callback(
+					inner_sum0,
+					inner_sum1,
+					0
+				)
+			}
+			}
+		)
+	}, 0, 0, 0)(
+		(sum0, __lhs_1, __lhs_2) -> {
+			sum0
+		}
+	)
+}`
+
+    const expr = parse(src, {
+        ...DEFAULT_PARSE_OPTIONS,
+        errorPrefix: "",
+        builtinsPrefix: ""
+    })
+
+    const [funcExprs, variables] = generateFuncTagsAndVariableIds(expr)
+
+    const evaluator = new Evaluator({
+        funcExprs,
+        variables
+    })
+
+    evaluator.eval(expr)
+})

@@ -22,6 +22,29 @@ export function collectFuncTags(...values) {
 }
 
 /**
+ * @param  {Value[]} values
+ * @returns {Set<number>}
+ */
+export function collectFuncTagsIgnoreStacks(...values) {
+    /**
+     * @type {Set<number>}
+     */
+    const s = new Set()
+
+    loopValues(
+        values.map((v) => [[], v]),
+        {
+            skipStacks: true,
+            funcValue: (_path, funcValue) => {
+                s.add(funcValue.definitionTag)
+            }
+        }
+    )
+
+    return s
+}
+
+/**
  * @param {Value[]} values
  * @returns {FuncValue[]}
  */

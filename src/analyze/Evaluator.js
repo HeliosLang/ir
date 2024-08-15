@@ -767,12 +767,22 @@ export class Evaluator {
                     res = this.valueGenerator.genData(key, stack.branches)
                 } else {
                     res = new BranchedValue(fn.type, fn.condition, cases)
-                    res = makeNestedBranchesOpaque(
+
+                    const res_ = makeNestedBranchesOpaque(
                         fn,
                         res,
                         rootPath,
                         this.valueGenerator
                     )
+
+                    if (
+                        !(res_ instanceof BranchedValue) &&
+                        this.props.onCallAny
+                    ) {
+                        this.props.onCallAny([res], None)
+                    }
+
+                    res = res_
                 }
 
                 if (isAnyError(cases) && !(res instanceof MaybeErrorValue)) {

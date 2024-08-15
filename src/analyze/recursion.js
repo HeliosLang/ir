@@ -12,8 +12,8 @@ import {
     mutate,
     collectNonConst,
     BranchedValue,
-    collectFuncValuesIgnoreStacks,
-    loopValues
+    loopValues,
+    collectFuncTagsIgnoreStacks
 } from "./values/index.js"
 
 /**
@@ -93,8 +93,9 @@ export function makeNestedBranchesOpaque(
 ) {
     const cases = after.cases
 
-    const beforeFns = collectFuncValuesIgnoreStacks(before)
-    const afterFns = collectFuncValuesIgnoreStacks(...cases)
+    // We must collect func tags here, not func value keys, because stack summaries can change
+    const beforeFns = collectFuncTagsIgnoreStacks(before)
+    const afterFns = collectFuncTagsIgnoreStacks(...cases)
 
     let isBranchedRecursive = false
     let someError = false
