@@ -130,9 +130,11 @@ export class Analyzer {
                         nameExpr: onEvalExprInsideAny,
                         callExpr: onEvalExprInsideAny,
                         funcExpr: (expr) => {
-                            onCallFuncInsideAny(
-                                expectSome(funcExprs.getKeyByValue(expr))
+                            const tag = expectSome(
+                                funcExprs.getKeyByValue(expr)
                             )
+
+                            incrCallCount(tag, 2)
                         }
                     })
                 }

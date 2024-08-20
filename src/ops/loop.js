@@ -115,6 +115,34 @@ export function assertNoDuplicateExprs(expr) {
             }
 
             s.add(nameExpr)
+        },
+        callExpr: (callExpr) => {
+            if (s.has(callExpr)) {
+                throw new Error("duplicate CallExpr")
+            }
+
+            s.add(callExpr)
+        },
+        funcExpr: (funcExpr) => {
+            if (s.has(funcExpr)) {
+                throw new Error("duplicate FuncExpr")
+            }
+
+            s.add(funcExpr)
+        },
+        errorExpr: (errorExpr) => {
+            if (s.has(errorExpr)) {
+                throw new Error("duplicate ErrorExpr")
+            }
+
+            s.add(errorExpr)
+        },
+        paramExpr: (paramExpr) => {
+            if (s.has(paramExpr)) {
+                throw new Error("duplicate ParamExpr")
+            }
+
+            s.add(paramExpr)
         }
     })
 }
