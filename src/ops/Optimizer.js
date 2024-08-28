@@ -548,13 +548,13 @@ export class Optimizer {
 
                 if (
                     a instanceof LiteralExpr &&
-                    a.value instanceof UplcInt &&
+                    a.value.kind == "int" &&
                     a.value.value == 0n
                 ) {
                     return b
                 } else if (
                     b instanceof LiteralExpr &&
-                    b.value instanceof UplcInt &&
+                    b.value.kind == "int" &&
                     b.value.value == 0n
                 ) {
                     return a
@@ -567,7 +567,7 @@ export class Optimizer {
 
                 if (
                     b instanceof LiteralExpr &&
-                    b.value instanceof UplcInt &&
+                    b.value.kind == "int" &&
                     b.value.value == 0n
                 ) {
                     return a
@@ -580,13 +580,13 @@ export class Optimizer {
 
                 if (
                     a instanceof LiteralExpr &&
-                    a.value instanceof UplcInt &&
+                    a.value.kind == "int" &&
                     a.value.value == 1n
                 ) {
                     return b
                 } else if (
                     b instanceof LiteralExpr &&
-                    b.value instanceof UplcInt &&
+                    b.value.kind == "int" &&
                     b.value.value == 1n
                 ) {
                     return a
@@ -599,7 +599,7 @@ export class Optimizer {
 
                 if (
                     b instanceof LiteralExpr &&
-                    b.value instanceof UplcInt &&
+                    b.value.kind == "int" &&
                     b.value.value == 1n
                 ) {
                     return a
@@ -612,7 +612,7 @@ export class Optimizer {
 
                 if (
                     b instanceof LiteralExpr &&
-                    b.value instanceof UplcInt &&
+                    b.value.kind == "int" &&
                     b.value.value == 1n
                 ) {
                     return a
@@ -625,13 +625,13 @@ export class Optimizer {
 
                 if (
                     a instanceof LiteralExpr &&
-                    a.value instanceof UplcByteArray &&
+                    a.value.kind == "bytes" &&
                     a.value.bytes.length == 0
                 ) {
                     return b
                 } else if (
                     b instanceof LiteralExpr &&
-                    b.value instanceof UplcByteArray &&
+                    b.value.kind == "bytes" &&
                     b.value.bytes.length == 0
                 ) {
                     return a
@@ -644,13 +644,13 @@ export class Optimizer {
 
                 if (
                     a instanceof LiteralExpr &&
-                    a.value instanceof UplcString &&
+                    a.value.kind == "string" &&
                     a.value.string == ""
                 ) {
                     return b
                 } else if (
                     b instanceof LiteralExpr &&
-                    b.value instanceof UplcString &&
+                    b.value.kind == "string" &&
                     b.value.string == ""
                 ) {
                     return a
@@ -675,7 +675,7 @@ export class Optimizer {
                 const [cond, a, b] = args
 
                 if (cond instanceof LiteralExpr) {
-                    if (!(cond.value instanceof UplcBool)) {
+                    if (cond.value.kind != "bool") {
                         throw new Error("unexpected")
                     }
 
@@ -713,12 +713,9 @@ export class Optimizer {
             case "chooseUnit": {
                 const [a, b] = args
 
-                if (a instanceof LiteralExpr && a.value instanceof UplcUnit) {
+                if (a instanceof LiteralExpr && a.value.kind == "unit") {
                     return b
-                } else if (
-                    b instanceof LiteralExpr &&
-                    b.value instanceof UplcUnit
-                ) {
+                } else if (b instanceof LiteralExpr && b.value.kind == "unit") {
                     return a
                 }
 
@@ -737,7 +734,7 @@ export class Optimizer {
                 const [lst, a, b] = args
 
                 if (lst instanceof LiteralExpr) {
-                    if (!(lst.value instanceof UplcList)) {
+                    if (lst.value.kind != "list") {
                         throw new Error("unexpected")
                     }
 
@@ -760,12 +757,12 @@ export class Optimizer {
                 const [cond, C, M, L, I, B] = args
 
                 if (cond instanceof LiteralExpr) {
-                    if (!(cond.value instanceof UplcDataValue)) {
+                    if (cond.value.kind != "data") {
                         throw new Error("unexpected")
                     }
 
                     if (
-                        cond.value.value instanceof ConstrData &&
+                        cond.value.value.kind == "constr" &&
                         !analysis.expectsError(M) &&
                         !analysis.expectsError(L) &&
                         !analysis.expectsError(I) &&
@@ -773,7 +770,7 @@ export class Optimizer {
                     ) {
                         return C
                     } else if (
-                        cond.value.value instanceof MapData &&
+                        cond.value.value.kind == "map" &&
                         !analysis.expectsError(C) &&
                         !analysis.expectsError(L) &&
                         !analysis.expectsError(I) &&
@@ -781,7 +778,7 @@ export class Optimizer {
                     ) {
                         return M
                     } else if (
-                        cond.value.value instanceof ListData &&
+                        cond.value.value.kind == "list" &&
                         !analysis.expectsError(C) &&
                         !analysis.expectsError(M) &&
                         !analysis.expectsError(I) &&
@@ -789,7 +786,7 @@ export class Optimizer {
                     ) {
                         return L
                     } else if (
-                        cond.value.value instanceof IntData &&
+                        cond.value.value.kind == "int" &&
                         !analysis.expectsError(C) &&
                         !analysis.expectsError(M) &&
                         !analysis.expectsError(L) &&
@@ -797,7 +794,7 @@ export class Optimizer {
                     ) {
                         return I
                     } else if (
-                        cond.value.value instanceof ByteArrayData &&
+                        cond.value.value.kind == "bytes" &&
                         !analysis.expectsError(C) &&
                         !analysis.expectsError(M) &&
                         !analysis.expectsError(L) &&

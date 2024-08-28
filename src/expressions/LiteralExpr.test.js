@@ -1,6 +1,7 @@
 import { strictEqual } from "node:assert"
 import { describe, it } from "node:test"
-import { isRight } from "@helios-lang/type-utils"
+import { equalsBytes, hexToBytes } from "@helios-lang/codec-utils"
+import { isRight, isString } from "@helios-lang/type-utils"
 import {
     UplcBool,
     UplcByteArray,
@@ -12,10 +13,11 @@ import {
 } from "@helios-lang/uplc"
 import { compile } from "../ops/index.js"
 import { LiteralExpr } from "./LiteralExpr.js"
-import { equalsBytes, hexToBytes } from "@helios-lang/codec-utils"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
+ * @typedef {import("@helios-lang/uplc").CekResult} CekResult
+ * @typedef {import("@helios-lang/uplc").UplcValue} UplcValue
  */
 
 /**
@@ -27,6 +29,20 @@ const site = {
     column: 0
 }
 
+/**
+ * TODO: move this function into the uplc package, so it can be easily imported by other test-suites
+ * @param {CekResult} actual
+ * @param {UplcValue} expected
+ */
+function expectValue(actual, expected) {
+    strictEqual(
+        isRight(actual.result) &&
+            !isString(actual.result.right) &&
+            actual.result.right.isEqual(expected),
+        true
+    )
+}
+
 describe(LiteralExpr.name, () => {
     it("evaluates 0 correctly (ast)", () => {
         const program = compile(new LiteralExpr(new UplcInt(0), site), {
@@ -35,12 +51,7 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        strictEqual(
-            isRight(res.result) &&
-                res.result.right instanceof UplcInt &&
-                res.result.right.value == 0n,
-            true
-        )
+        expectValue(res, new UplcInt(0n))
     })
 
     it("evaluates 0 correctly (parsed)", () => {
@@ -48,12 +59,7 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        strictEqual(
-            isRight(res.result) &&
-                res.result.right instanceof UplcInt &&
-                res.result.right.value == 0n,
-            true
-        )
+        expectValue(res, new UplcInt(0n))
     })
 
     it("evaluates #abcd correctly (ast)", () => {
@@ -64,12 +70,7 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        strictEqual(
-            isRight(res.result) &&
-                res.result.right instanceof UplcByteArray &&
-                equalsBytes(res.result.right.bytes, hexToBytes("abcd")),
-            true
-        )
+        expectValue(res, new UplcByteArray("abcd"))
     })
 
     it("evaluates #abcd correctly (parsed)", () => {
@@ -77,12 +78,7 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        strictEqual(
-            isRight(res.result) &&
-                res.result.right instanceof UplcByteArray &&
-                equalsBytes(res.result.right.bytes, hexToBytes("abcd")),
-            true
-        )
+        expectValue(res, new UplcByteArray("abcd"))
     })
 
     it('evaluates "abcd" correctly (ast)', () => {
@@ -92,12 +88,7 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        strictEqual(
-            isRight(res.result) &&
-                res.result.right instanceof UplcString &&
-                res.result.right.value == "abcd",
-            true
-        )
+        expectValue(res, new UplcString("abcd"))
     })
 
     it('evaluates "abcd" correctly (parsed)', () => {
@@ -105,12 +96,7 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        strictEqual(
-            isRight(res.result) &&
-                res.result.right instanceof UplcString &&
-                res.result.right.value == "abcd",
-            true
-        )
+        expectValue(res, new UplcString("abcd"))
     })
 
     it("evaluates 'true' correctly (ast)", () => {
@@ -120,12 +106,7 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        strictEqual(
-            isRight(res.result) &&
-                res.result.right instanceof UplcBool &&
-                res.result.right.value,
-            true
-        )
+        expectValue(res, new UplcBool(true))
     })
 
     it("evaluates 'false' correctly (parsed)", () => {
@@ -133,12 +114,7 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        strictEqual(
-            isRight(res.result) &&
-                res.result.right instanceof UplcBool &&
-                !res.result.right.value,
-            true
-        )
+        expectValue(res, new UplcBool(false))
     })
 
     it("evaluates empty list correctly (ast)", () => {
@@ -149,12 +125,7 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        strictEqual(
-            isRight(res.result) &&
-                res.result.right instanceof UplcList &&
-                res.result.right.items.length == 0,
-            true
-        )
+        expectValue(res, new UplcList(UplcType.data(), []))
     })
 
     it("evaluates pair of 0 and # correctly (ast)", () => {
@@ -168,14 +139,6 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        strictEqual(
-            isRight(res.result) &&
-                res.result.right instanceof UplcPair &&
-                res.result.right.first instanceof UplcInt &&
-                res.result.right.first.value == 0n &&
-                res.result.right.second instanceof UplcByteArray &&
-                res.result.right.second.bytes.length == 0,
-            true
-        )
+        expectValue(res, new UplcPair(new UplcInt(0n), new UplcByteArray([])))
     })
 })

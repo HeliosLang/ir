@@ -1,7 +1,6 @@
 import { strictEqual } from "node:assert"
 import { describe, it } from "node:test"
-import { isLeft, isRight } from "@helios-lang/type-utils"
-import { UplcInt } from "@helios-lang/uplc"
+import { isLeft, isRight, isString } from "@helios-lang/type-utils"
 import { compile } from "../ops/index.js"
 import { ErrorExpr } from "./ErrorExpr.js"
 
@@ -24,7 +23,8 @@ describe(ErrorExpr.name, () => {
 
         strictEqual(
             isRight(res.result) &&
-                res.result.right instanceof UplcInt &&
+                !isString(res.result.right) &&
+                res.result.right.kind == "int" &&
                 res.result.right.value == 0n,
             true
         )

@@ -33,7 +33,7 @@ export class LiteralValue {
      * @type {boolean}
      */
     get bool() {
-        if (!(this.value instanceof UplcBool)) {
+        if (this.value.kind != "bool") {
             throw new Error("unexpected")
         }
 
@@ -44,7 +44,7 @@ export class LiteralValue {
      * @type {number[]}
      */
     get bytes() {
-        if (!(this.value instanceof UplcByteArray)) {
+        if (this.value.kind != "bytes") {
             throw new Error("expected bytes")
         }
 
@@ -55,7 +55,7 @@ export class LiteralValue {
      * @type {UplcData}
      */
     get data() {
-        if (!(this.value instanceof UplcDataValue)) {
+        if (this.value.kind != "data") {
             throw new Error("expected data")
         }
 
@@ -66,7 +66,7 @@ export class LiteralValue {
      * @type {bigint}
      */
     get int() {
-        if (!(this.value instanceof UplcInt)) {
+        if (this.value.kind != "int") {
             throw new Error("expected int")
         }
 
@@ -77,7 +77,7 @@ export class LiteralValue {
      * @type {UplcValue[]}
      */
     get items() {
-        if (!(this.value instanceof UplcList)) {
+        if (this.value.kind != "list") {
             throw new Error("expected list")
         }
 

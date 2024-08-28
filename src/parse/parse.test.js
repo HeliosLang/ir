@@ -1,14 +1,7 @@
 import { strictEqual, throws } from "node:assert"
 import { describe, it } from "node:test"
 import { bytesToHex, equalsBytes, hexToBytes } from "@helios-lang/codec-utils"
-import {
-    IntData,
-    UplcBool,
-    UplcByteArray,
-    UplcDataValue,
-    UplcInt,
-    UplcUnit
-} from "@helios-lang/uplc"
+import { IntData } from "@helios-lang/uplc"
 import {
     BuiltinExpr,
     CallExpr,
@@ -42,7 +35,7 @@ describe(parse.name, () => {
 
         strictEqual(
             expr instanceof LiteralExpr &&
-                expr.value instanceof UplcBool &&
+                expr.value.kind == "bool" &&
                 expr.value.value === true,
             true
         )
@@ -53,7 +46,7 @@ describe(parse.name, () => {
 
         strictEqual(
             expr instanceof LiteralExpr &&
-                expr.value instanceof UplcBool &&
+                expr.value.kind == "bool" &&
                 expr.value.value === false,
             true
         )
@@ -71,7 +64,7 @@ describe(parse.name, () => {
         strictEqual(
             expr instanceof FuncExpr &&
                 expr.body instanceof LiteralExpr &&
-                expr.body.value instanceof UplcBool &&
+                expr.body.value.kind == "bool" &&
                 expr.body.value.value === false,
             true
         )
@@ -103,8 +96,8 @@ describe(parse.name, () => {
 
         strictEqual(
             expr instanceof LiteralExpr &&
-                expr.value instanceof UplcDataValue &&
-                expr.value.value instanceof IntData &&
+                expr.value.kind == "data" &&
+                expr.value.value.kind == "int" &&
                 expr.value.value.value == testData.value,
             true
         )
@@ -157,7 +150,7 @@ describe(parse.name, () => {
 
         strictEqual(
             expr instanceof LiteralExpr &&
-                expr.value instanceof UplcInt &&
+                expr.value.kind == "int" &&
                 expr.value.value === -100n,
             true
         )
@@ -168,7 +161,7 @@ describe(parse.name, () => {
 
         strictEqual(
             expr instanceof LiteralExpr &&
-                expr.value instanceof UplcInt &&
+                expr.value.kind == "int" &&
                 expr.value.value === -100n,
             true
         )
@@ -179,7 +172,7 @@ describe(parse.name, () => {
 
         strictEqual(
             expr instanceof LiteralExpr &&
-                expr.value instanceof UplcInt &&
+                expr.value.kind == "int" &&
                 expr.value.value === -100n,
             true
         )
@@ -189,7 +182,7 @@ describe(parse.name, () => {
         const expr = parse("()")
 
         strictEqual(
-            expr instanceof LiteralExpr && expr.value instanceof UplcUnit,
+            expr instanceof LiteralExpr && expr.value.kind == "unit",
             true
         )
     })
@@ -211,7 +204,7 @@ describe(parse.name, () => {
 
         strictEqual(
             expr instanceof LiteralExpr &&
-                expr.value instanceof UplcByteArray &&
+                expr.value.kind == "bytes" &&
                 equalsBytes(expr.value.bytes, hexToBytes("abcd")),
             true
         )

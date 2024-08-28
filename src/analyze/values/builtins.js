@@ -109,7 +109,7 @@ function evalLiteralCondBranchingBuiltin(name, cond, args) {
                 throw new Error("unexpected")
             }
 
-            if (cond.value instanceof UplcString) {
+            if (cond.value.kind == "string") {
                 return args[0]
             } else {
                 return new ErrorValue()
@@ -119,7 +119,7 @@ function evalLiteralCondBranchingBuiltin(name, cond, args) {
                 throw new Error("unexpected")
             }
 
-            if (cond.value instanceof UplcUnit) {
+            if (cond.value.kind == "unit") {
                 return args[0]
             } else {
                 return new ErrorValue()
@@ -129,7 +129,7 @@ function evalLiteralCondBranchingBuiltin(name, cond, args) {
                 throw new Error("unexpected")
             }
 
-            if (cond.value instanceof UplcBool) {
+            if (cond.value.kind == "bool") {
                 if (cond.value.value) {
                     return args[0]
                 } else {
@@ -143,7 +143,7 @@ function evalLiteralCondBranchingBuiltin(name, cond, args) {
                 throw new Error("unexpected")
             }
 
-            if (cond.value instanceof UplcList) {
+            if (cond.value.kind == "list") {
                 if (cond.value.items.length == 0) {
                     return args[0]
                 } else {
@@ -157,19 +157,20 @@ function evalLiteralCondBranchingBuiltin(name, cond, args) {
                 throw new Error("unexpected")
             }
 
-            if (cond.value instanceof UplcDataValue) {
-                if (cond.value.value instanceof ConstrData) {
-                    return args[0]
-                } else if (cond.value.value instanceof MapData) {
-                    return args[1]
-                } else if (cond.value.value instanceof ListData) {
-                    return args[2]
-                } else if (cond.value.value instanceof IntData) {
-                    return args[3]
-                } else if (cond.value.value instanceof ByteArrayData) {
-                    return args[4]
-                } else {
-                    throw new Error("unhandled data type")
+            if (cond.value.kind == "data") {
+                switch (cond.value.value.kind) {
+                    case "constr":
+                        return args[0]
+                    case "map":
+                        return args[1]
+                    case "list":
+                        return args[2]
+                    case "int":
+                        return args[3]
+                    case "bytes":
+                        return args[4]
+                    default:
+                        throw new Error("unhandled data type")
                 }
             } else {
                 return new ErrorValue()
@@ -221,7 +222,7 @@ function evalIdentityBuiltin(name, args) {
     switch (name) {
         case "trace": {
             if (a instanceof LiteralValue) {
-                if (a.value instanceof UplcString) {
+                if (a.value.kind == "string") {
                     return b
                 } else {
                     return new ErrorValue()
@@ -234,7 +235,7 @@ function evalIdentityBuiltin(name, args) {
         }
         case "chooseUnit": {
             if (a instanceof LiteralValue) {
-                if (a.value instanceof UplcUnit) {
+                if (a.value.kind == "unit") {
                     return b
                 } else {
                     return new ErrorValue()
