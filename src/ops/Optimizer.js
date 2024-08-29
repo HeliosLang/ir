@@ -691,13 +691,16 @@ export class Optimizer {
                     cond.func instanceof BuiltinExpr &&
                     cond.func.name == "nullList"
                 ) {
+                    const id = builtinsV2.findIndex(
+                        (b) => b.name == "chooseList"
+                    )
                     const newExpr = new CallExpr(
                         expr.site,
                         new BuiltinExpr(
                             "chooseList",
-                            builtinsV2.findIndex((b) => b.name == "chooseList"),
+                            id,
                             true,
-                            1,
+                            builtinsV2[id].forceCount,
                             expr.site
                         ),
                         [cond.args[0], a, b]
@@ -915,15 +918,17 @@ export class Optimizer {
                     b.func instanceof BuiltinExpr &&
                     b.func.name == "iData"
                 ) {
+                    const id = builtinsV2.findIndex(
+                        (b) => b.name == "equalsInteger"
+                    )
+
                     const newExpr = new CallExpr(
                         expr.site,
                         new BuiltinExpr(
                             "equalsInteger",
-                            builtinsV2.findIndex(
-                                (b) => b.name == "equalsInteger"
-                            ),
+                            id,
                             false,
-                            0,
+                            builtinsV2[id].forceCount,
                             expr.site
                         ),
                         [a.args[0], b.args[0]]
@@ -940,15 +945,17 @@ export class Optimizer {
                     b.func instanceof BuiltinExpr &&
                     b.func.name == "bData"
                 ) {
+                    const id = builtinsV2.findIndex(
+                        (b) => b.name == "equalsByteString"
+                    )
+
                     const newExpr = new CallExpr(
                         expr.site,
                         new BuiltinExpr(
                             "equalsByteString",
-                            builtinsV2.findIndex(
-                                (b) => b.name == "equalsByteString"
-                            ),
+                            id,
                             false,
-                            0,
+                            builtinsV2[id].forceCount,
                             expr.site
                         ),
                         [a.args[0], b.args[0]]
