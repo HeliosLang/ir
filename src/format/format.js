@@ -1,3 +1,4 @@
+import { bytesToHex } from "@helios-lang/codec-utils"
 import {
     BuiltinExpr,
     CallExpr,
@@ -9,6 +10,7 @@ import {
 } from "../expressions/index.js"
 
 /**
+ * @typedef {import("@helios-lang/uplc").UplcData} UplcData
  * @typedef {import("../expressions/index.js").Expr} Expr
  */
 
@@ -19,6 +21,7 @@ import {
  *   errorPrefix?: string
  *   tab?: string
  *   syntacticSugar?: boolean
+ *   uplcDataLiterals?: boolean
  * }} PartialFormatOptions
  */
 
@@ -29,6 +32,7 @@ import {
  *   errorPrefix?: string
  *   tab: string
  *   syntacticSugar?: boolean
+ *   uplcDataLiterals?: boolean
  * }} FormatOptions
  */
 
@@ -37,7 +41,8 @@ import {
  */
 const DEFAULT_FORMAT_OPTIONS = {
     safeBuiltinSuffix: "__safe",
-    tab: "    "
+    tab: "    ",
+    uplcDataLiterals: true
 }
 
 /**
@@ -64,6 +69,52 @@ function isAssignmentLike(expr) {
 }
 
 /**
+ * @param {UplcData[]} items
+ * @param {FormatOptions} options
+ * @returns {string}
+ */
+function formatDataList(items, options) {
+    if (items.length == 0) {
+        return `${options.builtinsPrefix ?? ""}mkNilData(())`
+    } else {
+        return `${options.builtinsPrefix ?? ""}mkCons(${formatData(items[0], options)}, ${formatDataList(items.slice(1), options)})`
+    }
+}
+
+/**
+ * @param {[UplcData, UplcData][]} pairs
+ * @param {FormatOptions} options
+ * @returns {string}
+ */
+function formatDataMap(pairs, options) {
+    if (pairs.length == 0) {
+        return `${options.builtinsPrefix ?? ""}mkNilPairData(())`
+    } else {
+        return `${options.builtinsPrefix ?? ""}mkCons(${options.builtinsPrefix ?? ""}mkPairData(${formatData(pairs[0][0], options)}, ${formatData(pairs[0][1], options)}), ${formatDataMap(pairs.slice(1), options)})`
+    }
+}
+
+/**
+ * @param {UplcData} d
+ * @param {FormatOptions} options
+ * @returns {string}
+ */
+function formatData(d, options) {
+    switch (d.kind) {
+        case "bytes":
+            return `${options.builtinsPrefix ?? ""}bData(#${bytesToHex(d.bytes)})`
+        case "int":
+            return `${options.builtinsPrefix ?? ""}iData(${d.value.toString()})`
+        case "constr":
+            return `${options.builtinsPrefix ?? ""}constrData(${d.tag}, ${formatDataList(d.fields, options)})`
+        case "list":
+            return `${options.builtinsPrefix ?? ""}listData(${formatDataList(d.items, options)})`
+        case "map":
+            return `${options.builtinsPrefix ?? ""}mapData(${formatDataMap(d.list, options)})`
+    }
+}
+
+/**
  * @param {Expr} expr
  * @param {string} indent
  * @param {FormatOptions} options
@@ -73,7 +124,17 @@ function formatInternal(expr, indent, options) {
     const syntacticSugar = options.syntacticSugar ?? true
 
     if (expr instanceof LiteralExpr) {
-        return expr.value.toString()
+        if (expr.value.kind == "data" && !(options.uplcDataLiterals ?? true)) {
+            return formatData(expr.value.value, options)
+        } else if (
+            expr.value.kind == "list" &&
+            !(options.uplcDataLiterals ?? true) &&
+            expr.value.length == 0
+        ) {
+            return `${options.builtinsPrefix ?? ""}mkNilData(())`
+        } else {
+            return expr.value.toString()
+        }
     } else if (expr instanceof ParamExpr) {
         return `param("${expr.name}", ${formatInternal(expr.expr, indent, options)})`
     } else if (expr instanceof NameExpr) {
