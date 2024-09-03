@@ -23,7 +23,7 @@ export function branchesAreEqual(a, b) {
     return (
         a.expr == b.expr &&
         a.type == b.type &&
-        a.condition.toString() == b.condition.toString() &&
+        a.condition.isEqual(b.condition) &&
         a.index == b.index
     )
 }

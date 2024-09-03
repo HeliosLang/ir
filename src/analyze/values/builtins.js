@@ -1,20 +1,7 @@
 import { expectSome } from "@helios-lang/type-utils"
-import {
-    ByteArrayData,
-    ConstrData,
-    IntData,
-    ListData,
-    MapData,
-    UplcBool,
-    UplcByteArray,
-    UplcDataValue,
-    UplcInt,
-    UplcList,
-    UplcString,
-    UplcUnit,
-    builtinsV2Map
-} from "@helios-lang/uplc"
+import { UplcByteArray, UplcInt, builtinsV2Map } from "@helios-lang/uplc"
 import { CallExpr } from "../../expressions/index.js"
+import { ValueGenerator } from "../ValueGenerator.js"
 import { AnyValue } from "./AnyValue.js"
 import { BranchedValue } from "./BranchedValue.js"
 import { BuiltinValue } from "./BuiltinValue.js"
@@ -31,7 +18,6 @@ import {
     isDataLikeValue,
     isNonLiteralDataLikeValue
 } from "./Value.js"
-import { ValueGenerator } from "../ValueGenerator.js"
 
 /**
  * @typedef {import("./BranchType.js").BranchType} BranchType
@@ -58,7 +44,6 @@ export function evalBuiltin(expr, builtin, args, stack, ctx) {
 }
 
 /**
- *
  * @param {string} name
  * @returns {name is BranchType}
  */
@@ -66,6 +51,10 @@ function isBranchingBuiltin(name) {
     return ["ifThenElse", "chooseList", "chooseData"].includes(name)
 }
 
+/**
+ * @param {string} name
+ * @returns {boolean}
+ */
 function isIdentityBuiltin(name) {
     return ["chooseUnit", "trace"].includes(name)
 }
@@ -196,6 +185,7 @@ function evalDataCondBranchingBuiltin(expr, name, cond, args, stack, ctx) {
     } else {
         args = /** @type {NonErrorValue[]} */ (args).map((a, i) => {
             if (a instanceof FuncValue || a instanceof BranchedValue) {
+                // TODO: should this be moved into the ValueI interface?
                 return a.addBranch({
                     expr: expr,
                     type: /** @type {any} */ (name),
@@ -207,7 +197,7 @@ function evalDataCondBranchingBuiltin(expr, name, cond, args, stack, ctx) {
             }
         })
 
-        return new BranchedValue(name, cond, args)
+        return new BranchedValue(name, cond, args, expr)
     }
 }
 

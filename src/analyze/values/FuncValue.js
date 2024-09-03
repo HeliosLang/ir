@@ -1,4 +1,3 @@
-import { None, isNone } from "@helios-lang/type-utils"
 import { Branches } from "./Branches.js"
 import { Stack } from "./Stack.js"
 /**
@@ -55,6 +54,18 @@ export class FuncValue {
     }
 
     /**
+     * @param {Branches} branches
+     * @returns {FuncValue}
+     */
+    withBranches(branches) {
+        return new FuncValue(
+            this.definitionTag,
+            this.stack.withBranches(branches),
+            this.stackSummary
+        )
+    }
+
+    /**
      * @param {Set<number>} s
      */
     collectFuncTags(s) {
@@ -95,6 +106,18 @@ export class FuncValue {
      */
     isDataLike(anyAsFuncOnly) {
         return false
+    }
+
+    /**
+     * @param {ValueI} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return (
+            other instanceof FuncValue &&
+            this.definitionTag == other.definitionTag &&
+            this.stackSummary == other.stackSummary
+        )
     }
 
     /**

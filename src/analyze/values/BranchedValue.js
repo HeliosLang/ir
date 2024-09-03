@@ -1,4 +1,6 @@
+import { CallExpr } from "../../expressions/index.js"
 import { branchTypeToPrefix } from "./BranchType.js"
+import { Branches } from "./Branches.js"
 import { DataValue } from "./DataValue.js"
 import { FuncValue } from "./FuncValue.js"
 
@@ -35,14 +37,23 @@ export class BranchedValue {
     cases
 
     /**
+     * Needed so we can reconstruct all the Branch details in this.withBranches()
+     * @readonly
+     * @type {CallExpr}
+     */
+    expr
+
+    /**
      * @param {BranchType} type
      * @param {AnyDataValue} condition
      * @param {Value[]} cases
+     * @param {CallExpr} expr
      */
-    constructor(type, condition, cases) {
+    constructor(type, condition, cases, expr) {
         this.type = type
         this.condition = condition
         this.cases = cases
+        this.expr = expr
 
         if (this.cases.every((v) => v instanceof DataValue)) {
             throw new Error("shouldn't be pure DataValue")
@@ -78,7 +89,8 @@ export class BranchedValue {
                 } else {
                     return v
                 }
-            })
+            }),
+            this.expr
         )
     }
 
@@ -122,6 +134,25 @@ export class BranchedValue {
     }
 
     /**
+     * @param {ValueI} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        if (
+            other instanceof BranchedValue &&
+            this.type == other.type &&
+            this.condition.isEqual(other.condition)
+        ) {
+            return (
+                this.nCases == other.nCases &&
+                this.cases.every((c, i) => c.isEqual(other.cases[i]))
+            )
+        } else {
+            return false
+        }
+    }
+
+    /**
      * @returns {boolean}
      */
     isLiteral() {
@@ -136,6 +167,31 @@ export class BranchedValue {
             this.prefix,
             this.condition.toString(),
             this.cases.map((c) => c.toString())
+        )
+    }
+
+    /**
+     * @param {Branches} branches
+     * @returns {BranchedValue}
+     */
+    withBranches(branches) {
+        return new BranchedValue(
+            this.type,
+            this.condition,
+            this.cases.map((c, i) => {
+                /**
+                 * @type {Branch}
+                 */
+                const b = {
+                    expr: this.expr,
+                    type: this.type,
+                    condition: this.condition,
+                    index: i - 1
+                }
+
+                return c.withBranches(branches.prependBranch(b))
+            }),
+            this.expr
         )
     }
 }

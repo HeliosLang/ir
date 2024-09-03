@@ -12,6 +12,7 @@ import { Analysis } from "./Analysis.js"
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr
  * @typedef {import("../format/index.js").FormatOptions} FormatOptions
+ * @typedef {import("./values/index.js").Value} Value
  */
 
 /**
@@ -19,6 +20,14 @@ import { Analysis } from "./Analysis.js"
  *   debug?: boolean
  * }} AnnotateAnalysisOptions
  */
+
+/**
+ * @param {Value} v
+ * @returns {string}
+ */
+function annotateValue(v) {
+    return v.toString()
+}
 
 /**
  * @param {Analysis} analysis
@@ -49,7 +58,7 @@ export function annotate(analysis, options = {}) {
             const output = analysis.getExprValue(expr, debug)
 
             if (output) {
-                return `${expr.name}: ${output.map((o) => o.toString()).join("|")}`
+                return `${expr.name}: ${output.map((o) => annotateValue(o)).join("|")}`
             } else {
                 return expr.name
             }
@@ -74,14 +83,14 @@ export function annotate(analysis, options = {}) {
                     const v = analysis.getVariableValues(a)
 
                     if (v) {
-                        return `${a.name}: ${v.map((vv) => vv.toString()).join("|")}`
+                        return `${a.name}: ${v.map((vv) => annotateValue(vv)).join("|")}`
                     } else {
                         return a.name
                     }
                 })
                 .join(
                     ", "
-                )})${countStr} -> ${output ? output.map((o) => o.toString()).join("|") + " " : ""}{\n${innerIndent}${recurse(expr.body, innerIndent)}\n${indent}}`
+                )})${countStr} -> ${output ? output.map((o) => annotateValue(o)).join("|") + " " : ""}{\n${innerIndent}${recurse(expr.body, innerIndent)}\n${indent}}`
         } else if (expr instanceof CallExpr) {
             if (
                 expr.func instanceof FuncExpr &&
@@ -101,7 +110,7 @@ export function annotate(analysis, options = {}) {
                         ? expr.func.args[0].name
                         : ""
 
-                const parens = `(${isGlobalDef ? `\n${indent}${TAB}/* ${globalDef} */` : ""}${expr.args.map((a) => `\n${indent}${TAB}${recurse(a, indent + TAB)}`).join(",")}${expr.args.length > 0 || isGlobalDef ? `\n${indent}` : ""})${output ? `: ${output.map((o) => o.toString()).join("|")}` : ""}`
+                const parens = `(${isGlobalDef ? `\n${indent}${TAB}/* ${globalDef} */` : ""}${expr.args.map((a) => `\n${indent}${TAB}${recurse(a, indent + TAB)}`).join(",")}${expr.args.length > 0 || isGlobalDef ? `\n${indent}` : ""})${output ? `: ${output.map((o) => annotateValue(o)).join("|")}` : ""}`
 
                 if (
                     expr.func instanceof NameExpr ||

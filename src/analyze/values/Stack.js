@@ -78,7 +78,7 @@ export class Stack {
      * @returns {NonErrorValue}
      */
     getValue(v) {
-        return this.values.getValue(v)
+        return this.values.getValue(v).withBranches(this.branches)
     }
 
     /**
@@ -90,5 +90,15 @@ export class Stack {
         }
 
         return this.#isLiteral
+    }
+
+    /**
+     * @param {Branches} branches
+     * @returns {Stack}
+     */
+    withBranches(branches) {
+        const stack = new Stack(this.values, branches)
+        stack.#isLiteral = this.#isLiteral
+        return stack
     }
 }

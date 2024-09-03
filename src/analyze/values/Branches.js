@@ -76,6 +76,14 @@ export class Branches {
     }
 
     /**
+     * @param {Branch} branch
+     * @returns {Branches}
+     */
+    prependBranch(branch) {
+        return new Branches([branch].concat(this.branches))
+    }
+
+    /**
      *
      * @param {Branches} root
      * @returns {boolean}

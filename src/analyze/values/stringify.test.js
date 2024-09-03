@@ -74,7 +74,8 @@ describe(stringifyValue.name, () => {
                     new Stack(StackValues.empty(), Branches.empty()),
                     0
                 )
-            ]
+            ],
+            /** @type {any} */ (null)
         )
 
         const summary = stringifyValue(value, { tag: 0, maxDepth: 0 })
@@ -97,7 +98,8 @@ describe(stringifyValue.name, () => {
                     new Stack(StackValues.empty(), Branches.empty()),
                     0
                 )
-            ]
+            ],
+            /** @type {any} */ (null)
         )
 
         const summary = stringifyValue(value, { tag: 1, maxDepth: 0 })
@@ -138,7 +140,8 @@ describe(stringifyValue.name, () => {
                                     ),
                                     0
                                 )
-                            ]
+                            ],
+                            /** @type {any} */ (null)
                         )
                     ]
                 ]),
@@ -196,7 +199,8 @@ describe(stringifyValue.name, () => {
                                     ),
                                     0
                                 )
-                            ]
+                            ],
+                            /** @type {any} */ (null)
                         )
                     ]
                 ]),

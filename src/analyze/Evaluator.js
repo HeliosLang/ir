@@ -186,11 +186,13 @@ export class Evaluator {
     evalFuncValue(fn) {
         const def = this.getFuncDef(fn)
 
+        const branches = Branches.empty()
+
         const args = def.args.map((a) => {
             const id = this.getVarId(a)
             const key = pathToKey(initValuePath(id))
 
-            return this.valueGenerator.genData(key, Branches.empty())
+            return this.valueGenerator.genData(key, branches)
         })
 
         this.computeCallFuncValue(fn, args, def, false)
@@ -764,9 +766,15 @@ export class Evaluator {
                         new BuiltinValue(fn.type, false),
                         [/** @type {Value} */ (fn.condition)].concat(cases)
                     )
+                    // inner case branches don't matter
                     res = this.valueGenerator.genData(key, stack.branches)
                 } else {
-                    res = new BranchedValue(fn.type, fn.condition, cases)
+                    res = new BranchedValue(
+                        fn.type,
+                        fn.condition,
+                        cases,
+                        fn.expr
+                    )
 
                     const res_ = makeNestedBranchesOpaque(
                         fn,
@@ -794,6 +802,7 @@ export class Evaluator {
             registerOwner ? owner : None
         )
 
+        // case values already have correct branch due to BranchedValue creation during evaluation of builtin call
         fn.cases.forEach((c) => {
             this.pushCall(c, args, stack, owner, false)
         })
@@ -826,6 +835,7 @@ export class Evaluator {
      * @param {boolean} registerOwner
      */
     computeCallBuiltinValue(builtin, args, stack, owner, registerOwner) {
+        // internally the stack.branches will be given to any resulting DataValues
         const result = evalBuiltin(
             owner,
             builtin,
@@ -866,7 +876,7 @@ export class Evaluator {
                 const v = args[i]
 
                 if (this.props.onPassArg) {
-                    this.props.onPassArg(a, args[i])
+                    this.props.onPassArg(a, v)
                 }
 
                 return /** @type {[number, NonErrorValue]} */ ([
@@ -874,15 +884,6 @@ export class Evaluator {
                     v
                 ])
             })
-
-            const bodyVarIds = this.getFuncBodyVarIds(fnDef)
-            let stackValues = fn.stack.values.extend(varsToValues, bodyVarIds)
-            stackValues = makeRecursiveDataOpaque(
-                stackValues,
-                this.valueGenerator,
-                this.getActiveStack(fn.definitionTag)
-            )
-            const stack = new Stack(stackValues, fn.stack.branches)
 
             this.pushCollect(
                 1,
@@ -895,6 +896,14 @@ export class Evaluator {
                 registerOwner ? callExprOwner : None
             )
 
+            const bodyVarIds = this.getFuncBodyVarIds(fnDef)
+            let stackValues = fn.stack.values.extend(varsToValues, bodyVarIds)
+            stackValues = makeRecursiveDataOpaque(
+                stackValues,
+                this.valueGenerator,
+                this.getActiveStack(fn.definitionTag)
+            )
+            const stack = new Stack(stackValues, fn.stack.branches)
             this.pushExpr(fnDef.body, stack)
 
             // set any value and set the stack

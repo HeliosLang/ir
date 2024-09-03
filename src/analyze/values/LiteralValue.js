@@ -1,10 +1,4 @@
-import {
-    UplcBool,
-    UplcByteArray,
-    UplcDataValue,
-    UplcInt,
-    UplcList
-} from "@helios-lang/uplc"
+import { Branches } from "./Branches.js"
 
 /**
  * @typedef {import("@helios-lang/uplc").UplcData} UplcData
@@ -117,6 +111,14 @@ export class LiteralValue {
     }
 
     /**
+     * @param {ValueI} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return other instanceof LiteralValue && this.value.isEqual(other.value)
+    }
+
+    /**
      * @returns {boolean}
      */
     isLiteral() {
@@ -128,5 +130,13 @@ export class LiteralValue {
      */
     toString() {
         return this.value.toString()
+    }
+
+    /**
+     * @param {Branches} branches
+     * @returns {LiteralValue}
+     */
+    withBranches(branches) {
+        return this
     }
 }

@@ -1,3 +1,4 @@
+import { Branches } from "./Branches.js"
 import { FuncValue } from "./FuncValue.js"
 
 /**
@@ -46,6 +47,14 @@ export class ErrorValue {
     }
 
     /**
+     * @param {ValueI} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return other instanceof ErrorValue
+    }
+
+    /**
      * @returns {boolean}
      */
     isLiteral() {
@@ -57,5 +66,13 @@ export class ErrorValue {
      */
     toString() {
         return `Error`
+    }
+
+    /**
+     * @param {Branches} branches
+     * @returns {ErrorValue}
+     */
+    withBranches(branches) {
+        return this
     }
 }

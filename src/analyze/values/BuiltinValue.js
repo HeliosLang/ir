@@ -1,3 +1,5 @@
+import { Branches } from "./Branches.js"
+
 /**
  * @typedef {import("./ValueI.js").ValueI} ValueI
  */
@@ -60,6 +62,18 @@ export class BuiltinValue {
     }
 
     /**
+     * @param {ValueI} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        return (
+            other instanceof BuiltinValue &&
+            this.name == other.name &&
+            this.safe === other.safe
+        )
+    }
+
+    /**
      * @returns {boolean}
      */
     isLiteral() {
@@ -75,5 +89,13 @@ export class BuiltinValue {
         } else {
             return this.name
         }
+    }
+
+    /**
+     * @param {Branches} branches
+     * @returns {BuiltinValue}
+     */
+    withBranches(branches) {
+        return this
     }
 }

@@ -1,3 +1,5 @@
+import { Branches } from "./Branches.js"
+
 /**
  * @typedef {import("./ValueI.js").ValueI} ValueI
  */
@@ -62,6 +64,22 @@ export class AnyValue {
     }
 
     /**
+     * @param {ValueI} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        if (other instanceof AnyValue) {
+            if (this.id == -1) {
+                return false
+            } else {
+                return this.id == other.id
+            }
+        } else {
+            return false
+        }
+    }
+
+    /**
      * @returns {boolean}
      */
     isLiteral() {
@@ -73,5 +91,13 @@ export class AnyValue {
      */
     toString() {
         return `Any${this.id}`
+    }
+
+    /**
+     * @param {Branches} branches
+     * @returns {AnyValue}
+     */
+    withBranches(branches) {
+        return this
     }
 }

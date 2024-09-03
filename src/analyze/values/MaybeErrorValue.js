@@ -1,6 +1,6 @@
-import { None } from "@helios-lang/type-utils"
-import { AnyValue } from "./AnyValue.js"
 import { FuncValue } from "./FuncValue.js"
+import { Branches } from "./Branches.js"
+import { DataValue } from "./DataValue.js"
 
 /**
  * @typedef {import("./ValueI.js").ValueI} ValueI
@@ -64,6 +64,18 @@ export class MaybeErrorValue {
     }
 
     /**
+     * @param {ValueI} other
+     * @returns {boolean}
+     */
+    isEqual(other) {
+        if (other instanceof MaybeErrorValue) {
+            return this.value.isEqual(other.value)
+        } else {
+            return false
+        }
+    }
+
+    /**
      *
      * @returns {boolean}
      */
@@ -76,6 +88,14 @@ export class MaybeErrorValue {
      */
     toString() {
         return makeMaybeErrorKey(this.value.toString())
+    }
+
+    /**
+     * @param {Branches} branches
+     * @returns {MaybeErrorValue}
+     */
+    withBranches(branches) {
+        return new MaybeErrorValue(this.value.withBranches(branches))
     }
 }
 

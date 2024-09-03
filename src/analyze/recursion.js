@@ -107,7 +107,7 @@ export function makeNestedBranchesOpaque(
             branchedValue: (_path, v) => {
                 if (
                     v.type == before.type &&
-                    v.condition.toString() == before.condition.toString()
+                    v.condition.isEqual(before.condition)
                 ) {
                     isBranchedRecursive = true
                 }

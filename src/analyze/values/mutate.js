@@ -121,7 +121,12 @@ export function mutate(rootPath, root, callbacks) {
 
                         const v = isSame
                             ? value
-                            : new BranchedValue(value.type, condition, cases)
+                            : new BranchedValue(
+                                  value.type,
+                                  condition,
+                                  cases,
+                                  value.expr
+                              )
 
                         return callbacks.branchedValue
                             ? callbacks.branchedValue(path, v)
