@@ -186,7 +186,7 @@ export class BranchedValue {
                     expr: this.expr,
                     type: this.type,
                     condition: this.condition,
-                    index: i - 1
+                    index: i
                 }
 
                 return c.withBranches(branches.prependBranch(b))

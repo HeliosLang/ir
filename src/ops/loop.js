@@ -79,23 +79,23 @@ export function loop(root, callbacks) {
 }
 
 /**
- * @param {CallExpr} expr
- * @param {CallExpr} contained
+ * @param {Expr} expr
+ * @param {CallExpr[]} contained
  * @returns {boolean}
  */
-export function callExprContains(expr, contained) {
-    let found = false
+export function containsCallExprs(expr, contained) {
+    const s = new Set(contained)
 
     loop(expr, {
         callExpr: (callExpr) => {
-            if (callExpr == contained) {
-                found = true
+            if (s.has(callExpr)) {
+                s.delete(callExpr)
             }
         },
-        exit: () => found
+        exit: () => s.size == 0
     })
 
-    return found
+    return s.size == 0
 }
 
 /**

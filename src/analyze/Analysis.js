@@ -1,6 +1,6 @@
 import { None, expectSome, isNone } from "@helios-lang/type-utils"
 import { CallExpr, FuncExpr, NameExpr, Variable } from "../expressions/index.js"
-import { callExprContains, collectVariableNameExprs } from "../ops/index.js"
+import { containsCallExprs, collectVariableNameExprs } from "../ops/index.js"
 import {
     DataValue,
     FuncValue,
@@ -169,7 +169,7 @@ export class Analysis {
                             if (contained == ce) {
                                 return false
                             } else {
-                                return callExprContains(ce, contained)
+                                return containsCallExprs(ce, [contained])
                             }
                         })
                     })

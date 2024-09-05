@@ -8,7 +8,7 @@ import {
     collectUsedVariablesWithDepth
 } from "./collect.js"
 import { mutate } from "./mutate.js"
-import { loop } from "./loop.js"
+import { containsCallExprs, loop } from "./loop.js"
 
 /**
  * @typedef {import("../analyze/index.js").Branch} Branch
@@ -183,6 +183,10 @@ export class Factorizer {
     /**
      * Returns none if the callExprs depend on different variables, making substitution/injection very difficult
      * @param {CallExpr[]} callExprs
+     * @param {Option<Expr>} parentExpr - if parentExpr isn't None, all callExprs are checked to be contained within the parentExpr,
+     *   if not a None result is returned.
+     *   This is important because common branches only indicate the execution path is the same,
+     *   but due to lazy values (eg.  callbacks) this can give a completely picture than the actual AST
      * @returns {Option<{
      *   deepest: Variable
      *   allVars: Variable[]
@@ -191,7 +195,11 @@ export class Factorizer {
      *   firstCallExpr: CallExpr
      * }>}
      */
-    processCommonCallExprs(callExprs) {
+    processCommonCallExprs(callExprs, parentExpr = None) {
+        if (parentExpr && !containsCallExprs(parentExpr, callExprs)) {
+            return None
+        }
+
         const injectedId = this.commonCount
         this.commonCount++
 
@@ -322,14 +330,14 @@ export class Factorizer {
     detectBranchGroupCommonExpression(rootBranches, groupCallExprs) {
         const lastBranch =
             rootBranches.branches[rootBranches.branches.length - 1]
+        const keyExpr = this.resolveBranchFuncExpr(lastBranch)
 
-        const processed = this.processCommonCallExprs(groupCallExprs)
+        const processed = this.processCommonCallExprs(groupCallExprs, keyExpr)
 
         if (!processed) {
             return
         }
 
-        const keyExpr = this.resolveBranchFuncExpr(lastBranch)
         const prev = this.branchInjections.get(keyExpr)
 
         const entry = {
@@ -359,14 +367,12 @@ export class Factorizer {
      */
     injectBranchedCommonExpressions() {
         loop(this.root, {
-            funcExpr: (funcExpr) => {
-                const inj = this.branchInjections.get(funcExpr)
+            funcExpr: (branchExpr) => {
+                const inj = this.branchInjections.get(branchExpr)
 
                 if (inj) {
                     for (let i = inj.length - 1; i >= 0; i--) {
                         const entry = inj[i]
-
-                        const branchExpr = funcExpr
 
                         let foundDeepestVar = false
 
