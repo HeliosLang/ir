@@ -96,7 +96,7 @@ export class NameExpr {
      */
     copy(notifyCopy, varMap) {
         const variable = this.#variable
-            ? varMap.get(this.#variable) ?? this.#variable
+            ? (varMap.get(this.#variable) ?? this.#variable)
             : this.#variable
 
         const newExpr = new NameExpr(this.#name, variable)
