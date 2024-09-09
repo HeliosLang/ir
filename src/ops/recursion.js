@@ -28,7 +28,7 @@ import { resetVariables } from "./reset.js"
 
 /**
  * @typedef {{
- *   allDeps: Set<string>
+ *   allDeps: Set<Variable>
  *   defs: DeconstructedDef[]
  * }} DefGroup
  */
@@ -100,23 +100,26 @@ function linkDirectDeps(defs, dummyVariable) {
     // create the dependency graph
     defs.forEach((def) => {
         /**
-         * @type {Set<string>}
+         * @type {Set<Variable>}
          */
         const deps = new Set()
 
         loop(def.value, {
             nameExpr: (nameExpr) => {
                 if (nameExpr.variable == dummyVariable) {
-                    if (defs.some((d) => d.name.name.value == nameExpr.name)) {
-                        deps.add(nameExpr.name)
+                    // scope name resolution failed, lookup by name
+                    const d = defs.find(d => d.name.name.value == nameExpr.name)
+
+                    if (d) {
+                        deps.add(d.name)
                     }
                 } else if (defsMap.has(nameExpr.variable)) {
-                    deps.add(nameExpr.name)
+                    deps.add(nameExpr.variable)
                 }
             }
         })
 
-        def.directDeps = Array.from(deps)
+        def.directDeps = deps
     })
 }
 
@@ -125,8 +128,11 @@ function linkDirectDeps(defs, dummyVariable) {
  */
 function linkAllDeps(defs) {
     defs.forEach((def) => {
+        /**
+         * @type {Set<Variable>}
+         */
         const allDeps = new Set()
-        let stack = def.directDeps.slice()
+        let stack = Array.from(def.directDeps)
 
         let head = stack.pop()
 
@@ -134,11 +140,11 @@ function linkAllDeps(defs) {
             if (!allDeps.has(head)) {
                 allDeps.add(head)
 
-                if (head != def.name.name.value) {
-                    const d = defs.find((d) => d.name.name.value == head)
+                if (head != def.name) {
+                    const d = defs.find((d) => d.name == head)
 
                     if (d) {
-                        stack = stack.concat(d.directDeps)
+                        stack = stack.concat(Array.from(d.directDeps))
                     }
                 }
             }
@@ -162,7 +168,7 @@ function groupDefsByDeps(defs) {
     const groups = []
 
     defs.forEach((def) => {
-        if (!def.allDeps.has(def.name.name.value)) {
+        if (!def.allDeps.has(def.name)) {
             groups.push({
                 defs: [def],
                 allDeps: def.allDeps
@@ -211,7 +217,7 @@ function dumpGroups(groups) {
 function getGroupRecursiveDeps(group, site) {
     if (
         group.defs.length == 1 &&
-        !group.allDeps.has(group.defs[0].name.name.value)
+        !group.allDeps.has(group.defs[0].name)
     ) {
         return []
     } else {
@@ -228,7 +234,7 @@ function getGroupRecursiveDeps(group, site) {
  */
 function orderDefsByDeps(groups) {
     /**
-     * @type {Set<string>}
+     * @type {Set<Variable>}
      */
     const done = new Set()
 
@@ -252,7 +258,7 @@ function orderDefsByDeps(groups) {
             if (Array.from(g.allDeps).every((dep) => done.has(dep))) {
                 defs = defs.concat(g.defs)
                 g.defs.forEach((def) => {
-                    done.add(def.name.name.value)
+                    done.add(def.name)
                     def.recursiveDeps = getGroupRecursiveDeps(g, def.callSite)
                 })
                 doneGroups.add(i)
@@ -265,10 +271,10 @@ function orderDefsByDeps(groups) {
             // take the next group which has all defs as its own deps, and all other deps have already been done
             const i = groups.findIndex((g) => {
                 return (
-                    g.defs.every((d) => g.allDeps.has(d.name.name.value)) &&
+                    g.defs.every((d) => g.allDeps.has(d.name)) &&
                     Array.from(g.allDeps).every(
                         (d) =>
-                            g.defs.some((def) => def.name.name.value == d) ||
+                            g.defs.some((def) => def.name == d) ||
                             done.has(d)
                     )
                 )
@@ -283,7 +289,7 @@ function orderDefsByDeps(groups) {
 
             defs = defs.concat(g.defs)
             g.defs.forEach((def) => {
-                done.add(def.name.name.value)
+                done.add(def.name)
                 def.recursiveDeps = getGroupRecursiveDeps(g, def.callSite)
             })
         }
