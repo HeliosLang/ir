@@ -2,6 +2,7 @@ import { Word } from "@helios-lang/compiler-utils"
 import { None } from "@helios-lang/type-utils"
 import { UplcProgramV2 } from "@helios-lang/uplc"
 import { Scope } from "../expressions/index.js"
+import { format } from "../format/index.js"
 import {
     SourceMappedString,
     parse,
@@ -36,7 +37,15 @@ export function compile(rawExpr, options = {}) {
 
     const uplc = expr.toUplc()
 
-    return new UplcProgramV2(uplc, options.alt)
+    return new UplcProgramV2(uplc, {
+        alt: options.alt,
+        ir: () =>
+            format(expr, {
+                builtinsPrefix: "__core__",
+                syntacticSugar: true,
+                uplcDataLiterals: false
+            })
+    })
 }
 
 /**

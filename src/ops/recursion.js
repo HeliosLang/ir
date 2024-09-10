@@ -108,7 +108,9 @@ function linkDirectDeps(defs, dummyVariable) {
             nameExpr: (nameExpr) => {
                 if (nameExpr.variable == dummyVariable) {
                     // scope name resolution failed, lookup by name
-                    const d = defs.find(d => d.name.name.value == nameExpr.name)
+                    const d = defs.find(
+                        (d) => d.name.name.value == nameExpr.name
+                    )
 
                     if (d) {
                         deps.add(d.name)
@@ -215,10 +217,7 @@ function dumpGroups(groups) {
  * @returns {Variable[]} - unique variables every time this function is called
  */
 function getGroupRecursiveDeps(group, site) {
-    if (
-        group.defs.length == 1 &&
-        !group.allDeps.has(group.defs[0].name)
-    ) {
+    if (group.defs.length == 1 && !group.allDeps.has(group.defs[0].name)) {
         return []
     } else {
         return group.defs
@@ -274,8 +273,7 @@ function orderDefsByDeps(groups) {
                     g.defs.every((d) => g.allDeps.has(d.name)) &&
                     Array.from(g.allDeps).every(
                         (d) =>
-                            g.defs.some((def) => def.name == d) ||
-                            done.has(d)
+                            g.defs.some((def) => def.name == d) || done.has(d)
                     )
                 )
             })
