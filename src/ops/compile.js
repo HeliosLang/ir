@@ -43,7 +43,7 @@ export function compile(rawExpr, options = {}) {
             format(expr, {
                 builtinsPrefix: "__core__",
                 syntacticSugar: true,
-                uplcDataLiterals: false
+                uplcDataLiterals: false // use function calls for literals, because many literals don't have a serializable representation
             })
     })
 }

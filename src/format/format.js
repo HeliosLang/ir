@@ -11,6 +11,7 @@ import {
 
 /**
  * @typedef {import("@helios-lang/uplc").UplcData} UplcData
+ * @typedef {import("@helios-lang/uplc").UplcValue} UplcValue
  * @typedef {import("../expressions/index.js").Expr} Expr
  */
 
@@ -73,11 +74,11 @@ function isAssignmentLike(expr) {
  * @param {FormatOptions} options
  * @returns {string}
  */
-function formatDataList(items, options) {
+function formatUplcDataList(items, options) {
     if (items.length == 0) {
         return `${options.builtinsPrefix ?? ""}mkNilData(())`
     } else {
-        return `${options.builtinsPrefix ?? ""}mkCons(${formatData(items[0], options)}, ${formatDataList(items.slice(1), options)})`
+        return `${options.builtinsPrefix ?? ""}mkCons(${formatUplcData(items[0], options)}, ${formatUplcDataList(items.slice(1), options)})`
     }
 }
 
@@ -86,11 +87,11 @@ function formatDataList(items, options) {
  * @param {FormatOptions} options
  * @returns {string}
  */
-function formatDataMap(pairs, options) {
+function formatUplcDataMap(pairs, options) {
     if (pairs.length == 0) {
         return `${options.builtinsPrefix ?? ""}mkNilPairData(())`
     } else {
-        return `${options.builtinsPrefix ?? ""}mkCons(${options.builtinsPrefix ?? ""}mkPairData(${formatData(pairs[0][0], options)}, ${formatData(pairs[0][1], options)}), ${formatDataMap(pairs.slice(1), options)})`
+        return `${options.builtinsPrefix ?? ""}mkCons(${options.builtinsPrefix ?? ""}mkPairData(${formatUplcData(pairs[0][0], options)}, ${formatUplcData(pairs[0][1], options)}), ${formatUplcDataMap(pairs.slice(1), options)})`
     }
 }
 
@@ -99,18 +100,94 @@ function formatDataMap(pairs, options) {
  * @param {FormatOptions} options
  * @returns {string}
  */
-function formatData(d, options) {
+function formatUplcData(d, options) {
     switch (d.kind) {
         case "bytes":
             return `${options.builtinsPrefix ?? ""}bData(#${bytesToHex(d.bytes)})`
         case "int":
             return `${options.builtinsPrefix ?? ""}iData(${d.value.toString()})`
         case "constr":
-            return `${options.builtinsPrefix ?? ""}constrData(${d.tag}, ${formatDataList(d.fields, options)})`
+            return `${options.builtinsPrefix ?? ""}constrData(${d.tag}, ${formatUplcDataList(d.fields, options)})`
         case "list":
-            return `${options.builtinsPrefix ?? ""}listData(${formatDataList(d.items, options)})`
+            return `${options.builtinsPrefix ?? ""}listData(${formatUplcDataList(d.items, options)})`
         case "map":
-            return `${options.builtinsPrefix ?? ""}mapData(${formatDataMap(d.list, options)})`
+            return `${options.builtinsPrefix ?? ""}mapData(${formatUplcDataMap(d.list, options)})`
+    }
+}
+
+/**
+ * @param {import("@helios-lang/uplc").UplcValue} v
+ * @param {FormatOptions} options
+ * @returns {string}
+ */
+function formatUplcValue(v, options) {
+    switch (v.kind) {
+        case "bool":
+            return v.value.toString()
+        case "bytes":
+            return `#${bytesToHex(v.bytes)}`
+        case "data":
+            return formatUplcData(v.value, options)
+        case "int":
+            return `${v.value.toString()}`
+        case "string":
+            return `"${v.value}"`
+        case "unit":
+            return `()`
+        case "pair":
+            if (
+                v.first.kind == "int" &&
+                v.second.kind == "list" &&
+                v.second.isDataList()
+            ) {
+                const fields = v.second.items.map((item) => {
+                    if (item.kind == "data") {
+                        return item.value
+                    } else {
+                        throw new Error("expected all data items")
+                    }
+                })
+                return `${options.builtinsPrefix ?? ""}unConstrData(${options.builtinsPrefix ?? ""}constrData(${v.first.value}, ${formatUplcDataList(fields, options)}))`
+            } else if (v.first.kind == "data" && v.second.kind == "data") {
+                return `${options.builtinsPrefix ?? ""}mkPairData(${(formatUplcData(v.first.value, options), formatUplcData(v.second.value, options))})`
+            } else {
+                throw new Error(
+                    `can't deserialize pair(${v.first.kind}, ${v.second.kind})`
+                )
+            }
+        case "list":
+            if (v.isDataList()) {
+                const items = v.items.map((item) => {
+                    if (item.kind == "data") {
+                        return item.value
+                    } else {
+                        throw new Error("expected all data items")
+                    }
+                })
+
+                return formatUplcDataList(items, options)
+            } else if (v.isDataMap()) {
+                /**
+                 * @type {[UplcData, UplcData][]}
+                 */
+                const items = v.items.map((item) => {
+                    if (
+                        item.kind == "pair" &&
+                        item.first.kind == "data" &&
+                        item.second.kind == "data"
+                    ) {
+                        return [item.first.value, item.second.value]
+                    } else {
+                        throw new Error("expected all data pairs")
+                    }
+                })
+
+                return formatUplcDataMap(items, options)
+            } else {
+                throw new Error("primitive list unsupported")
+            }
+        default:
+            throw new Error(`formatting of ${v.kind} literal unsupported`)
     }
 }
 
@@ -124,16 +201,10 @@ function formatInternal(expr, indent, options) {
     const syntacticSugar = options.syntacticSugar ?? true
 
     if (expr instanceof LiteralExpr) {
-        if (expr.value.kind == "data" && !(options.uplcDataLiterals ?? true)) {
-            return formatData(expr.value.value, options)
-        } else if (
-            expr.value.kind == "list" &&
-            !(options.uplcDataLiterals ?? true) &&
-            expr.value.length == 0
-        ) {
-            return `${options.builtinsPrefix ?? ""}mkNilData(())`
-        } else {
+        if (options.uplcDataLiterals ?? true) {
             return expr.value.toString()
+        } else {
+            return formatUplcValue(expr.value, options)
         }
     } else if (expr instanceof ParamExpr) {
         return `param("${expr.name}", ${formatInternal(expr.expr, indent, options)})`

@@ -1,0 +1,11 @@
+{
+    "name": "@helios-lang/ir-tests",
+    "type": "module",
+    "scripts": {
+        "test": "node --test"
+    },
+    "devDependencies": {
+        "@types/node": "^20.14.8",
+        "@helios-lang/ir": "file:../"
+    }
+}

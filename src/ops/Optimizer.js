@@ -59,6 +59,9 @@ const INLINE_MAX_SIZE = 128
  *   removeUnusedArgs?: boolean
  *   replaceUncalledArgsWithUnit?: boolean
  *   flattenNestedFuncExprs?: boolean
+ *   inlineSimpleExprs?: boolean
+ *   inlineSingleUseFuncExprs?: boolean
+ *   inlineErrorFreeSingleUserCallExprs?: boolean
  * }} OptimizerOptions
  */
 
@@ -1030,11 +1033,15 @@ export class Optimizer {
             args.forEach((a, i) => {
                 const v = variables[i]
 
-                if (a instanceof NameExpr || a instanceof BuiltinExpr) {
+                if (
+                    (this.options.inlineSimpleExprs ?? true) &&
+                    (a instanceof NameExpr || a instanceof BuiltinExpr)
+                ) {
                     // inline all NameExprs
                     unused.add(i)
                     this.inline(v, a)
                 } else if (
+                    (this.options.inlineSingleUseFuncExprs ?? true) &&
                     a instanceof FuncExpr &&
                     (analysis.countVariableReferences(v) == 1 ||
                         a.flatSize <= INLINE_MAX_SIZE)
@@ -1043,6 +1050,7 @@ export class Optimizer {
                     unused.add(i)
                     this.inline(v, a)
                 } else if (
+                    (this.options.inlineErrorFreeSingleUserCallExprs ?? true) &&
                     a instanceof CallExpr &&
                     analysis.countVariableReferences(v) == 1 &&
                     !analysis.expectsError(a)

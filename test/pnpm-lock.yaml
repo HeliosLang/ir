@@ -7,29 +7,13 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@helios-lang/codec-utils':
-        specifier: ^0.1.32
-        version: 0.1.34
-      '@helios-lang/compiler-utils':
-        specifier: ^0.1.53
-        version: 0.1.54
-      '@helios-lang/type-utils':
-        specifier: ^0.1.20
-        version: 0.1.21
-      '@helios-lang/uplc':
-        specifier: ^0.3.5
-        version: 0.3.5
     devDependencies:
+      '@helios-lang/ir':
+        specifier: file:../
+        version: file:..
       '@types/node':
         specifier: ^20.14.8
         version: 20.16.5
-      prettier:
-        specifier: ^3.3.2
-        version: 3.3.3
-      typescript:
-        specifier: ^5.5.2
-        version: 5.5.4
 
 packages:
 
@@ -48,6 +32,9 @@ packages:
   '@helios-lang/era@0.1.2':
     resolution: {integrity: sha512-zthxic/tg/zpnEHX27n1ij/jGpXNq23B/cJRB3ZuTqbD2+54XzcKbqx2INFgGSZJCYBLiKYpmctKFBn+zrNftw==}
 
+  '@helios-lang/ir@file:..':
+    resolution: {directory: .., type: directory}
+
   '@helios-lang/type-utils@0.1.21':
     resolution: {integrity: sha512-z12O84kEwVzqYmcYL+SWCaZNIkmF4cDvKFOtL3KiR6pwl8KngqiQk8MnBEyG06FUMKxCSknWayPGIYzM2HcqBw==}
 
@@ -56,16 +43,6 @@ packages:
 
   '@types/node@20.16.5':
     resolution: {integrity: sha512-VwYCweNo3ERajwy0IUlqqcyZ8/A7Zwa9ZP3MnENWcB11AejO+tLy3pu850goUW2FC/IJMdZUfKpX/yxL1gymCA==}
-
-  prettier@3.3.3:
-    resolution: {integrity: sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==}
-    engines: {node: '>=14'}
-    hasBin: true
-
-  typescript@5.5.4:
-    resolution: {integrity: sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==}
-    engines: {node: '>=14.17'}
-    hasBin: true
 
   undici-types@6.19.8:
     resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
@@ -90,6 +67,13 @@ snapshots:
 
   '@helios-lang/era@0.1.2': {}
 
+  '@helios-lang/ir@file:..':
+    dependencies:
+      '@helios-lang/codec-utils': 0.1.34
+      '@helios-lang/compiler-utils': 0.1.54
+      '@helios-lang/type-utils': 0.1.21
+      '@helios-lang/uplc': 0.3.5
+
   '@helios-lang/type-utils@0.1.21': {}
 
   '@helios-lang/uplc@0.3.5':
@@ -104,9 +88,5 @@ snapshots:
   '@types/node@20.16.5':
     dependencies:
       undici-types: 6.19.8
-
-  prettier@3.3.3: {}
-
-  typescript@5.5.4: {}
 
   undici-types@6.19.8: {}

@@ -27,17 +27,20 @@ export function stringifyCall(fn, args) {
 }
 
 /**
- * Bottleneck of an evaluation, caching is important
  * @param {StackValues} values
  * @param {BlockRecursionProps} blockRecursion - not optional because it is almost always needed when stringifying stacks
- * @param {Map<Value, string>} valueCache
  * @returns {string}
  */
-export function stringifyStackValues(values, blockRecursion, valueCache) {
+export function stringifyStackValues(values, blockRecursion) {
     /**
      * @type {BiMap<string>}
      */
     const stackIds = new BiMap()
+
+    /**
+     * @type {Map<Value, string>}
+     */
+    const valueCache = new Map()
 
     const items = values.values.map(([id, v]) => {
         const item = stringifyValue(v, blockRecursion, valueCache, stackIds)
@@ -45,13 +48,15 @@ export function stringifyStackValues(values, blockRecursion, valueCache) {
         return `${id}: ${item}`
     })
 
+    const itemsStr = `[${items.join(", ")}]`
+
     let refs = ""
     if (stackIds.keyValues.length > 0) {
         refs =
             stackIds.keyValues.map((v, i) => `Ref${i}: ${v}`).join("\n") + "\n"
     }
 
-    const res = refs + `[${items.join(", ")}]`
+    const res = refs + itemsStr
 
     return res
 }
@@ -118,9 +123,10 @@ export function stringifyValue(
     while (true) {
         if ("compute" in state) {
             const { value, depth } = state.compute
-            const cached = valueCache?.get(value)
 
-            if (cached) {
+            let cached
+
+            if ((cached = valueCache?.get(value))) {
                 state = {
                     reduce: {
                         item: cached

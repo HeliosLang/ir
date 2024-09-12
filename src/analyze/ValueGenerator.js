@@ -2,8 +2,6 @@ import {
     AnyValue,
     Branches,
     DataValue,
-    MaybeErrorValue,
-    Stack,
     StackValues,
     stringifyStackValues
 } from "./values/index.js"
@@ -37,12 +35,6 @@ export class ValueGenerator {
     groups
 
     /**
-     * @private
-     * @type {Map<number, Map<Value, string>>}
-     */
-    stringifyCache
-
-    /**
      * @param {ValueGeneratorOptions} options
      */
     constructor(options = {}) {
@@ -52,8 +44,6 @@ export class ValueGenerator {
             Data: new BiMap(),
             Stack: new BiMap()
         }
-
-        this.stringifyCache = new Map()
     }
 
     /**
@@ -105,14 +95,10 @@ export class ValueGenerator {
      * @returns {number}
      */
     genStackSummary(values, blockRecursionTag) {
-        const key = stringifyStackValues(
-            values,
-            {
-                tag: blockRecursionTag,
-                maxDepth: 0
-            },
-            this.getStringifyValueCache(blockRecursionTag)
-        )
+        const key = stringifyStackValues(values, {
+            tag: blockRecursionTag,
+            maxDepth: 0
+        })
 
         const id = this.groups.Stack.add(key)
 
@@ -121,27 +107,6 @@ export class ValueGenerator {
         }
 
         return id
-    }
-
-    /**
-     * @param {number} blockRecursionTag
-     * @returns {Map<Value, string>}
-     */
-    getStringifyValueCache(blockRecursionTag) {
-        const cache = this.stringifyCache.get(blockRecursionTag)
-
-        if (cache) {
-            return cache
-        } else {
-            /**
-             * @type {Map<Value, string>}
-             */
-            const cache = new Map()
-
-            this.stringifyCache.set(blockRecursionTag, cache)
-
-            return cache
-        }
     }
 }
 
