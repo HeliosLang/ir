@@ -1,6 +1,6 @@
 import { strictEqual } from "node:assert"
 import { describe } from "node:test"
-import { DEFAULT_PARSE_OPTIONS, compile } from "@helios-lang/ir"
+import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
 import { UplcDataValue, UplcProgramV2, decodeUplcData } from "@helios-lang/uplc"
 import { isLeft, isRight } from "@helios-lang/type-utils"
 

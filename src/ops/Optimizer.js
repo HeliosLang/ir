@@ -51,18 +51,16 @@ import { Factorizer } from "./Factorizer.js"
 const INLINE_MAX_SIZE = 128
 
 /**
- * `factorizeCommon`, `removeUnusedArgs`,
- * @typedef {{
- *   commonSubExprPrefix?: string
- *   commonSubExprCount?: number
- *   factorizeCommon?: boolean
- *   removeUnusedArgs?: boolean
- *   replaceUncalledArgsWithUnit?: boolean
- *   flattenNestedFuncExprs?: boolean
- *   inlineSimpleExprs?: boolean
- *   inlineSingleUseFuncExprs?: boolean
- *   inlineErrorFreeSingleUserCallExprs?: boolean
- * }} OptimizerOptions
+ * @typedef {Object} OptimizerOptions - detailed options for optimizing the compiled on-chain code
+ * @property{string} [commonSubExprPrefix="__common"]
+ * @property{number} [commonSubExprCount=0] - for internal use
+ * @property{boolean} [factorizeCommon=true] - optimizes redundant expressions (Beta)
+ * @property{boolean} [removeUnusedArgs=true]
+ * @property{boolean} [replaceUncalledArgsWithUnit=true]
+ * @property{boolean} [flattenNestedFuncExprs=true]
+ * @property{boolean} [inlineSimpleExprs=true]
+ * @property{boolean} [inlineSingleUseFuncExprs=true]
+ * @property{boolean} [inlineErrorFreeSingleUserCallExprs=true]
  */
 
 /**
@@ -149,6 +147,8 @@ export class Optimizer {
     options
 
     /**
+     * After optimizing, this value reflects the number of common sub-expressions were factorized,
+     * given that the `factorizeCommon` option was enabled.
      * @type {number}
      */
     commonSubExprCount
