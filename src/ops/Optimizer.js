@@ -54,6 +54,7 @@ const INLINE_MAX_SIZE = 128
  * @typedef {Object} OptimizerOptions - detailed options for optimizing the compiled on-chain code
  * @property{string} [commonSubExprPrefix="__common"]
  * @property{number} [commonSubExprCount=0] - for internal use
+ * @property{boolean} [keepTracing=false] - keep print() statements in the code, instead of optimizing them out
  * @property{boolean} [factorizeCommon=true] - optimizes redundant expressions (Beta)
  * @property{boolean} [removeUnusedArgs=true]
  * @property{boolean} [replaceUncalledArgsWithUnit=true]
@@ -730,8 +731,10 @@ export class Optimizer {
             case "trace": {
                 const [a, b] = args
 
-                if (!analysis.expectsError(a)) {
-                    return b
+                if (!(this.options.keepTracing ?? false)) {
+                    if (!analysis.expectsError(a)) {
+                        return b
+                    }
                 }
 
                 break
