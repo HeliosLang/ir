@@ -1,12 +1,12 @@
 import { strictEqual } from "node:assert"
-import { test} from "node:test"
+import { test } from "node:test"
 import { isLeft, isRight } from "@helios-lang/type-utils"
 import { UplcDataValue, UplcProgramV2, decodeUplcData } from "@helios-lang/uplc"
 import { DEFAULT_PARSE_OPTIONS, compile, format } from "../src/index.js"
 import { bytesToHex } from "@helios-lang/codec-utils"
 
 test("PBG::fund_policy::main", () => {
-	const src = `(__DATUM_OR_REDEEMER, __REDEEMER_OR_CONTEXT) -> {
+    const src = `(__DATUM_OR_REDEEMER, __REDEEMER_OR_CONTEXT) -> {
     main = (__MIXED, __CONTEXT) -> {
         (__helios__error) -> {
 (__helios__common__enum_tag_equals) -> {
@@ -3861,8 +3861,7 @@ __core__ifThenElse(
 }(
     /*__helios__spendingcredential__validator__cast*/
     (data) -> {
-        __core__trace(data, () -> {__helios__common__assert_constr_index(data, 1)})()
-        //__helios__common__assert_constr_index(data, 1)
+        __helios__common__assert_constr_index(data, 1)
     }
 )
 }(
@@ -5309,4 +5308,3 @@ __core__ifThenElse(
 
     strictEqual(evalProgram(uplcProgram0), evalProgram(uplcProgram1))
 })
-
