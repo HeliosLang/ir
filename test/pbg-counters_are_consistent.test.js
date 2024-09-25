@@ -1,10 +1,10 @@
 import { strictEqual } from "node:assert"
-import { describe } from "node:test"
+import { test } from "node:test"
 import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
 import { UplcDataValue, UplcProgramV2, decodeUplcData } from "@helios-lang/uplc"
 import { isLeft, isRight } from "@helios-lang/type-utils"
 
-describe("PBG::counters_are_consistent()", () => {
+test("PBG::Vault::counters_are_consistent()", () => {
     const src = `(__CONTEXT) -> {
     sort = (self_2, comp_2) -> {
         recurse_3 = (recurse_2, lst_3) -> {
