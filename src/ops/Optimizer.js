@@ -1,8 +1,5 @@
 import { None } from "@helios-lang/type-utils"
-import {
-    UplcUnit,
-    builtinsV2
-} from "@helios-lang/uplc"
+import { UplcUnit, builtinsV2 } from "@helios-lang/uplc"
 import {
     Analysis,
     Analyzer,

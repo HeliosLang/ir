@@ -1,11 +1,11 @@
-import { describe, it } from "node:test";
-import { UplcBool } from "@helios-lang/uplc";
+import { strictEqual } from "node:assert"
+import { describe, it } from "node:test"
+import { expectLeft } from "@helios-lang/type-utils"
+import { UplcBool } from "@helios-lang/uplc"
 import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
-import { strictEqual } from "node:assert";
-import { expectLeft } from "@helios-lang/type-utils";
 
 describe("Source mapping", () => {
-    it("correct info site",() => {
+    it("correct info site", () => {
         const src = `(b) -> {
             __core__ifThenElse(
                 b,
@@ -36,7 +36,7 @@ describe("Source mapping", () => {
         strictEqual(siteFalse?.line, 7)
         strictEqual(siteFalse?.column, 33)
     })
-    
+
     it("correct stack trace", () => {
         const src = `() -> {
             fn3 = () -> {
