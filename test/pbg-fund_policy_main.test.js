@@ -5302,7 +5302,7 @@ __core__ifThenElse(
         if (isRight(res.result)) {
             return "result: " + res.result.right.toString()
         } else if (isLeft(res.result)) {
-            return "error: " + res.result.left.error
+            return "error"
         }
     }
 

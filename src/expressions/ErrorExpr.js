@@ -9,7 +9,7 @@ import { Scope } from "./Scope.js"
  */
 
 /**
- * Intermediate Representation error call (with optional literal error message)
+ * Intermediate Representation error call
  * @internal
  * @implements {Expr}
  */
@@ -21,18 +21,10 @@ export class ErrorExpr {
     site
 
     /**
-     * @readonly
-     * @type {string}
-     */
-    message
-
-    /**
      * @param {Site} site
-     * @param {string} message
      */
-    constructor(site, message = "") {
+    constructor(site) {
         this.site = site
-        this.message = message
     }
 
     /**
@@ -60,7 +52,7 @@ export class ErrorExpr {
      * @returns {Expr}
      */
     copy(notifyCopy) {
-        const newExpr = new ErrorExpr(this.site, this.message)
+        const newExpr = new ErrorExpr(this.site)
 
         notifyCopy(this, newExpr)
 
@@ -71,6 +63,6 @@ export class ErrorExpr {
      * @returns {UplcTerm}
      */
     toUplc() {
-        return new UplcError(this.message, this.site)
+        return new UplcError(this.site)
     }
 }

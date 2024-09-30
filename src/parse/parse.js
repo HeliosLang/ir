@@ -86,7 +86,7 @@ export const DEFAULT_PARSE_OPTIONS = {
  */
 export function parse(ir, options = DEFAULT_PARSE_OPTIONS) {
     let [raw, sourceMap] =
-        typeof ir == "string" ? [ir, new Map()] : ir.toStringWithSourceMap()
+        typeof ir == "string" ? [ir, undefined] : ir.toStringWithSourceMap()
 
     const src = new Source(raw)
 

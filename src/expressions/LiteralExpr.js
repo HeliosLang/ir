@@ -69,6 +69,6 @@ export class LiteralExpr {
      * @returns {UplcConst}
      */
     toUplc() {
-        return new UplcConst(this.value)
+        return new UplcConst(this.value, this.site)
     }
 }
