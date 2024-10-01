@@ -1,3 +1,5 @@
+import { TokenSite } from "@helios-lang/compiler-utils"
+import { None } from "@helios-lang/type-utils"
 import { UplcConst } from "@helios-lang/uplc"
 import { Scope } from "./Scope.js"
 import { Variable } from "./Variable.js"
@@ -69,6 +71,8 @@ export class LiteralExpr {
      * @returns {UplcConst}
      */
     toUplc() {
-        return new UplcConst(this.value, this.site)
+        const s = TokenSite.isDummy(this.site) ? None : this.site
+
+        return new UplcConst(this.value, s)
     }
 }

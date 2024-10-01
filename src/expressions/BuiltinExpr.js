@@ -1,3 +1,5 @@
+import { TokenSite } from "@helios-lang/compiler-utils"
+import { None } from "@helios-lang/type-utils"
 import { UplcBuiltin, UplcForce } from "@helios-lang/uplc"
 import { Scope } from "./Scope.js"
 import { Variable } from "./Variable.js"
@@ -91,14 +93,19 @@ export class BuiltinExpr {
      */
     resolveNames(scope) {}
 
+    /**
+     * @returns {UplcTerm}
+     */
     toUplc() {
+        const s = TokenSite.isDummy(this.site) ? None : this.site
+
         /**
          * @type {UplcTerm}
          */
-        let term = new UplcBuiltin(this.id, this.site)
+        let term = new UplcBuiltin(this.id, s)
 
         for (let i = 0; i < this.nForce; i++) {
-            term = new UplcForce(term, this.site)
+            term = new UplcForce(term, s)
         }
 
         return term

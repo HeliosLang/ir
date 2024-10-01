@@ -1,3 +1,4 @@
+import { TokenSite } from "@helios-lang/compiler-utils"
 import { None } from "@helios-lang/type-utils"
 import { UplcDelay, UplcLambda } from "@helios-lang/uplc"
 import { NameExpr } from "./NameExpr.js"
@@ -149,12 +150,16 @@ export class FuncExpr {
     toUplc() {
         let term = this.body.toUplc()
 
-        if (this.args.length == 0) {
+        const nArgs = this.args.length
+
+        const s = TokenSite.isDummy(this.site) ? None : this.site
+
+        if (nArgs == 0) {
             // a zero-arg func is turned into a UplcDelay term
-            term = new UplcDelay(term, this.site)
+            term = new UplcDelay(term, s)
         } else {
-            for (let i = this.args.length - 1; i >= 0; i--) {
-                term = new UplcLambda(term, this.args[i].toString(), this.site)
+            for (let i = nArgs - 1; i >= 0; i--) {
+                term = new UplcLambda(term, this.args[i].toString(), s)
             }
         }
 

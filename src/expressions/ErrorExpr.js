@@ -1,3 +1,5 @@
+import { TokenSite } from "@helios-lang/compiler-utils"
+import { None } from "@helios-lang/type-utils"
 import { UplcError } from "@helios-lang/uplc"
 import { Scope } from "./Scope.js"
 
@@ -63,6 +65,8 @@ export class ErrorExpr {
      * @returns {UplcTerm}
      */
     toUplc() {
-        return new UplcError(this.site)
+        const s = TokenSite.isDummy(this.site) ? None : this.site
+
+        return new UplcError(s)
     }
 }
