@@ -1,6 +1,6 @@
 {
     "name": "@helios-lang/ir",
-    "version": "0.1.46",
+    "version": "0.1.47",
     "description": "Helios-lang intermediate representation",
     "main": "src/index.js",
     "types": "types/index.d.ts",
