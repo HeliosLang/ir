@@ -159,7 +159,7 @@ export class FuncExpr {
             term = new UplcDelay(term, s)
         } else {
             for (let i = nArgs - 1; i >= 0; i--) {
-                term = new UplcLambda(term, this.args[i].toString(), s)
+                term = new UplcLambda(term, this.args[i].toString(true), s)
             }
         }
 

@@ -23,22 +23,24 @@ export class NameExpr {
     site
 
     /**
-     * @readwrite
-     * @type {Word}
-     */
-    #name
-
-    /**
      * Cached debruijn index
      * @type {Option<number>}
      */
     index
 
     /**
+     * @private
+     * @readwrite
+     * @type {Word}
+     */
+    _name
+
+    /**
      * Cached variable
+     * @private
      * @type {Option<Variable>}
      */
-    #variable
+    _variable
 
     /**
      * @param {Word} name
@@ -51,23 +53,23 @@ export class NameExpr {
             throw new Error("unexpected")
         }
 
-        this.#name = name
         this.index = null
-        this.#variable = variable
+        this._name = name
+        this._variable = variable
     }
 
     /**
      * @type {string}
      */
     get name() {
-        return this.#name.toString()
+        return this._name.toString()
     }
 
     /**
      * @param {string} n
      */
     set name(n) {
-        this.#name = new Word(n, this.#name.site)
+        this._name = new Word(n, this._name.site)
     }
 
     /**
@@ -75,10 +77,10 @@ export class NameExpr {
      * @type {Variable}
      */
     get variable() {
-        if (!this.#variable) {
+        if (!this._variable) {
             throw new Error(`variable should be set (name: ${this.name})`)
         } else {
-            return this.#variable
+            return this._variable
         }
     }
 
@@ -96,11 +98,11 @@ export class NameExpr {
      * @returns {NameExpr}
      */
     copy(notifyCopy, varMap) {
-        const variable = this.#variable
-            ? (varMap.get(this.#variable) ?? this.#variable)
-            : this.#variable
+        const variable = this._variable
+            ? (varMap.get(this._variable) ?? this._variable)
+            : this._variable
 
-        const newExpr = new NameExpr(this.#name, variable)
+        const newExpr = new NameExpr(this._name, variable)
 
         notifyCopy(this, newExpr)
 
@@ -135,13 +137,13 @@ export class NameExpr {
      * @param {Scope} scope
      */
     resolveNames(scope) {
-        if (this.#variable == null || this.isParam()) {
-            ;[this.index, this.#variable] = scope.get(this.#name)
+        if (this._variable == null || this.isParam()) {
+            ;[this.index, this._variable] = scope.get(this._name)
         } else {
             try {
-                ;[this.index, this.#variable] = scope.get(this.#variable)
+                ;[this.index, this._variable] = scope.get(this._variable)
             } catch (_e) {
-                ;[this.index, this.#variable] = scope.get(this.#name)
+                ;[this.index, this._variable] = scope.get(this._name)
             }
         }
     }
@@ -152,11 +154,17 @@ export class NameExpr {
     toUplc() {
         const s = TokenSite.isDummy(this.site) ? None : this.site
 
+        // prefer the alias if it is available (only used for debugging anyway, not for name resolution)
+        let name = this.name
+        if (this._variable && this._variable.name.site.alias) {
+            name = this._variable.name.site.alias
+        }
+
         if (!this.index) {
             // use a dummy index (for program size calculation)
-            return new UplcVar(0, this.name, s)
+            return new UplcVar(0, name, s)
         } else {
-            return new UplcVar(this.index, this.name, s)
+            return new UplcVar(this.index, name, s)
         }
     }
 }

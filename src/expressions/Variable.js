@@ -55,9 +55,16 @@ export class Variable {
     }
 
     /**
+     * @param {boolean} preferAlias
      * @returns {string}
      */
-    toString() {
-        return this.name.toString()
+    toString(preferAlias = false) {
+        const alias = this.name.site.alias
+
+        if (alias && preferAlias) {
+            return alias
+        } else {
+            return this.name.toString()
+        }
     }
 }
