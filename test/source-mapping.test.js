@@ -100,7 +100,6 @@ describe("Source mapping", () => {
 
         strictEqual(res.logs.length, 0)
 
-        console.log(callSites)
         try {
             throw new UplcRuntimeError(err.error, err.callSites)
         } catch (err) {
@@ -117,19 +116,19 @@ describe("Source mapping", () => {
                 strictEqual(lines[2].trim(), "at fn1 (helios:unknown:11:20)")
                 strictEqual(
                     lines[3].trim(),
-                    "at <anonymous> (helios:unknown:13:16)"
+                    "at <anonymous> (helios:unknown:13:16) [fn1=(delay (force fn2))]"
                 )
                 strictEqual(
                     lines[4].trim(),
-                    "at <anonymous> (helios:unknown:10:17) [fn1=(delay (force fn2))]"
+                    "at <anonymous> (helios:unknown:10:17) [fn2=(delay (force fn3))]"
                 )
                 strictEqual(
                     lines[5].trim(),
-                    "at <anonymous> (helios:unknown:7:17) [fn2=(delay (force fn3))]"
+                    'at <anonymous> (helios:unknown:7:17) [fn3=(delay (force [[(force (builtin 28)) (con string "my error")] (delay (error))]))]'
                 )
                 strictEqual(
                     lines[6].trim(),
-                    'at <anonymous> (helios:unknown:2:17) [fn3=(delay (force [[(force (builtin 28)) (con string "my error")] (delay (error))]))]'
+                    "at <anonymous> (helios:unknown:2:17)"
                 )
                 match(lines[7], /source-mapping.test.js/)
             } else {
