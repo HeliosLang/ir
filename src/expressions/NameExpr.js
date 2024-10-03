@@ -153,7 +153,7 @@ export class NameExpr {
         const s = TokenSite.isDummy(this.site) ? None : this.site
 
         if (!this.index) {
-            // use a dummy index (for size calculation)
+            // use a dummy index (for program size calculation)
             return new UplcVar(0, this.name, s)
         } else {
             return new UplcVar(this.index, this.name, s)

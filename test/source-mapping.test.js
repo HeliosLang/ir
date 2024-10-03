@@ -1,7 +1,7 @@
-import { strictEqual } from "node:assert"
+import { match, strictEqual } from "node:assert"
 import { describe, it } from "node:test"
-import { expectLeft } from "@helios-lang/type-utils"
-import { UplcBool } from "@helios-lang/uplc"
+import { expectLeft, expectSome } from "@helios-lang/type-utils"
+import { UplcRuntimeError, UplcBool } from "@helios-lang/uplc"
 import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
 
 describe("Source mapping", () => {
@@ -66,36 +66,77 @@ describe("Source mapping", () => {
         const err = expectLeft(res.result)
 
         strictEqual(err.error, "my error")
-        strictEqual(err.callSites.length, 7)
+        const callSites = err.callSites.filter((cs) => !!cs.site)
 
-        const cs0 = err.callSites[0]
-        strictEqual(cs0.line, 1)
-        strictEqual(cs0.column, 16)
+        strictEqual(callSites.length, 7)
 
-        const cs1 = err.callSites[1]
-        strictEqual(cs1.line, 6)
-        strictEqual(cs1.column, 16)
+        const cs0 = callSites[0]
+        strictEqual(cs0.site?.line, 1)
+        strictEqual(cs0.site?.column, 16)
 
-        const cs2 = err.callSites[2]
-        strictEqual(cs2.line, 9)
-        strictEqual(cs2.column, 16)
+        const cs1 = callSites[1]
+        strictEqual(cs1.site?.line, 6)
+        strictEqual(cs1.site?.column, 16)
 
-        const cs3 = err.callSites[3]
-        strictEqual(cs3.line, 12)
-        strictEqual(cs3.column, 15)
+        const cs2 = callSites[2]
+        strictEqual(cs2.site?.line, 9)
+        strictEqual(cs2.site?.column, 16)
 
-        const cs4 = err.callSites[4]
-        strictEqual(cs4.line, 10)
-        strictEqual(cs4.column, 19)
+        const cs3 = callSites[3]
+        strictEqual(cs3.site?.line, 12)
+        strictEqual(cs3.site?.column, 15)
 
-        const cs5 = err.callSites[5]
-        strictEqual(cs5.line, 7)
-        strictEqual(cs5.column, 19)
+        const cs4 = callSites[4]
+        strictEqual(cs4.site?.line, 10)
+        strictEqual(cs4.site?.column, 19)
 
-        const cs6 = err.callSites[6]
-        strictEqual(cs6.line, 4)
-        strictEqual(cs6.column, 18)
+        const cs5 = callSites[5]
+        strictEqual(cs5.site?.line, 7)
+        strictEqual(cs5.site?.column, 19)
+
+        const cs6 = callSites[6]
+        strictEqual(cs6.site?.line, 4)
+        strictEqual(cs6.site?.column, 18)
 
         strictEqual(res.logs.length, 0)
+
+        console.log(callSites)
+        try {
+            throw new UplcRuntimeError(err.error, err.callSites)
+        } catch (err) {
+            if (err instanceof Error) {
+                const stack = expectSome(err.stack)
+
+                // in Node the error message is part of the stack itself, so we ignore it for the sake of the test (checking the err.message field directly instead)
+                strictEqual(err.message, "my error")
+
+                const lines = stack.split("\n").slice(1)
+
+                strictEqual(lines[0].trim(), "at fn3 (helios:unknown:5:19)")
+                strictEqual(lines[1].trim(), "at fn2 (helios:unknown:8:20)")
+                strictEqual(lines[2].trim(), "at fn1 (helios:unknown:11:20)")
+                strictEqual(
+                    lines[3].trim(),
+                    "at <anonymous> (helios:unknown:13:16)"
+                )
+                strictEqual(
+                    lines[4].trim(),
+                    "at <anonymous> (helios:unknown:10:17) [fn1=(delay (force fn2))]"
+                )
+                strictEqual(
+                    lines[5].trim(),
+                    "at <anonymous> (helios:unknown:7:17) [fn2=(delay (force fn3))]"
+                )
+                strictEqual(
+                    lines[6].trim(),
+                    'at <anonymous> (helios:unknown:2:17) [fn3=(delay (force [[(force (builtin 28)) (con string "my error")] (delay (error))]))]'
+                )
+                match(lines[7], /source-mapping.test.js/)
+            } else {
+                throw new Error(
+                    "expected an instance of Error, got " + err.toString()
+                )
+            }
+        }
     })
 })

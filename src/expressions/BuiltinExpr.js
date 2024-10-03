@@ -16,6 +16,7 @@ import { Variable } from "./Variable.js"
  */
 export class BuiltinExpr {
     /**
+     * Builtin name without builtinsPrefix and without safeBuiltinSuffix
      * @readonly
      * @type {string}
      */
@@ -102,7 +103,7 @@ export class BuiltinExpr {
         /**
          * @type {UplcTerm}
          */
-        let term = new UplcBuiltin(this.id, s)
+        let term = new UplcBuiltin(this.id, this.name, s)
 
         for (let i = 0; i < this.nForce; i++) {
             term = new UplcForce(term, s)
