@@ -159,6 +159,7 @@ export class FuncExpr {
             term = new UplcDelay(term, s)
         } else {
             for (let i = nArgs - 1; i >= 0; i--) {
+                // TODO: only give the site if i == 0?
                 term = new UplcLambda(term, this.args[i].toString(true), s)
             }
         }

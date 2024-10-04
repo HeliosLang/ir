@@ -189,7 +189,7 @@ function parseInternal(r, options) {
 
             const bodyExpr = parseInternal(braces.fields[0], options)
 
-            expr = new FuncExpr(parens.site, args, bodyExpr)
+            expr = new FuncExpr(arrow.site, args, bodyExpr)
         } else if ((m = r.matches(group("(")))) {
             if (!expr) {
                 if (m.fields.length == 1) {
