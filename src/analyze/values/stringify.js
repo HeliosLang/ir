@@ -1,4 +1,4 @@
-import { None, isSome } from "@helios-lang/type-utils"
+import { None } from "@helios-lang/type-utils"
 import { BiMap } from "../BiMap.js"
 import { AnyValue } from "./AnyValue.js"
 import { BranchedValue } from "./BranchedValue.js"

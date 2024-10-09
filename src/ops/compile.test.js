@@ -1,11 +1,10 @@
 import { deepEqual, strictEqual } from "node:assert"
 import { describe, it } from "node:test"
 import { removeWhitespace } from "@helios-lang/codec-utils"
+import { UplcDataValue, decodeUplcData } from "@helios-lang/uplc"
 import { format } from "../format/index.js"
 import { DEFAULT_PARSE_OPTIONS } from "../parse/index.js"
-import { prepare } from "./compile.js"
-import { compile } from "./compile.js"
-import { UplcDataValue, decodeUplcData } from "@helios-lang/uplc"
+import { compile, prepare } from "./compile.js"
 
 describe(prepare.name, () => {
     it("real script 1", () => {

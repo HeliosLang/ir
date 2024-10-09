@@ -18,8 +18,8 @@ import {
     Variable,
     isIdentityFunc
 } from "../expressions/index.js"
-import { loop, assertNoDuplicateExprs } from "./loop.js"
 import { Factorizer } from "./Factorizer.js"
+import { loop, assertNoDuplicateExprs } from "./loop.js"
 
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr

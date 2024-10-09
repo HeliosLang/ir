@@ -10,8 +10,8 @@ import {
     LiteralExpr,
     NameExpr
 } from "../expressions/index.js"
-import { parse } from "./parse.js"
 import { $ } from "./SourceMappedString.js"
+import { parse } from "./parse.js"
 
 /**
  * @typedef {import("./parse.js").ParseOptions} ParseOptions

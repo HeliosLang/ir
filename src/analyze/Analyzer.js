@@ -20,22 +20,24 @@ import { Evaluator, generateFuncTagsAndVariableIds } from "./Evaluator.js"
 export class Analyzer {
     /**
      * An Evaluator can only run once per expression
+     * @private
      * @type {Expr}
      */
-    #root
+    _root
 
     /**
+     * @private
      * @type {AnalyzerOptions}
      */
-    #options
+    _options
 
     /**
      * @param {Expr} expr
      * @param {AnalyzerOptions} options
      */
     constructor(expr, options = {}) {
-        this.#root = expr
-        this.#options = options
+        this._root = expr
+        this._options = options
     }
 
     /**
@@ -63,10 +65,10 @@ export class Analyzer {
         const variableValues = new Map()
 
         const [funcExprs, variables] = generateFuncTagsAndVariableIds(
-            this.#root
+            this._root
         )
 
-        if (this.#options.debug) {
+        if (this._options.debug) {
             variables.keyValues.forEach((v, i) =>
                 console.log(`Var ${i}: ${v.name}`)
             )
@@ -108,7 +110,7 @@ export class Analyzer {
         const evaluator = new Evaluator({
             funcExprs,
             variables,
-            debug: this.#options.debug,
+            debug: this._options.debug,
             onCallAny: (args, owner) => {
                 const s = collectFuncTags(...args)
 
@@ -166,7 +168,7 @@ export class Analyzer {
             }
         })
 
-        evaluator.eval(this.#root)
+        evaluator.eval(this._root)
 
         return new Analysis({
             callCount: callCount,
@@ -174,7 +176,7 @@ export class Analyzer {
             funcCallExprs: funcCallExprs,
             funcDefinitions: funcExprs.keyValues,
             funcExprTags: funcExprs.valueKeys,
-            rootExpr: this.#root,
+            rootExpr: this._root,
             variableValues: variableValues
         })
     }

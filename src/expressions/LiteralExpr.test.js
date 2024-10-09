@@ -1,6 +1,5 @@
 import { strictEqual } from "node:assert"
 import { describe, it } from "node:test"
-import { equalsBytes, hexToBytes } from "@helios-lang/codec-utils"
 import { isRight, isString } from "@helios-lang/type-utils"
 import {
     UplcBool,

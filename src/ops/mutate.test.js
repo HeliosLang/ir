@@ -1,9 +1,9 @@
 import { strictEqual } from "node:assert"
 import { describe, it } from "node:test"
 import { Word } from "@helios-lang/compiler-utils"
+import { CallExpr, ErrorExpr, NameExpr } from "../expressions/index.js"
 import { format } from "../format/index.js"
 import { parse, DEFAULT_PARSE_OPTIONS } from "../parse/index.js"
-import { CallExpr, ErrorExpr, NameExpr } from "../expressions/index.js"
 import { mutate } from "./mutate.js"
 
 /**

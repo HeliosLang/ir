@@ -7,8 +7,8 @@ import {
     collectUsedVariables,
     collectUsedVariablesWithDepth
 } from "./collect.js"
-import { mutate } from "./mutate.js"
 import { containsCallExprs, loop } from "./loop.js"
+import { mutate } from "./mutate.js"
 
 /**
  * @typedef {import("../analyze/index.js").Branch} Branch
@@ -47,19 +47,19 @@ export class Factorizer {
      * @private
      * @type {Map<CallExpr, NameExpr>}
      */
-    substitutions
+    _substitutions
 
     /**
      * @private
      * @type {Map<Variable, {vars: Variable[], injected: Variable, expr: CallExpr}[]>}
      */
-    injections
+    _injections
 
     /**
      * @private
      * @type {Map<FuncExpr, {root: Branches, vars: Variable[], injected: Variable, expr: CallExpr}[]>}
      */
-    branchInjections
+    _branchInjections
 
     /**
      * @param {Expr} root
@@ -73,9 +73,9 @@ export class Factorizer {
         this.options = options
 
         this.commonCount = commonCount
-        this.substitutions = new Map()
-        this.injections = new Map()
-        this.branchInjections = new Map()
+        this._substitutions = new Map()
+        this._injections = new Map()
+        this._branchInjections = new Map()
     }
 
     /**
@@ -107,7 +107,7 @@ export class Factorizer {
     applySubstitutions = (expr) => {
         return mutate(expr, {
             callExpr: (callExpr, oldCallExpr) => {
-                const nameExpr = this.substitutions.get(oldCallExpr)
+                const nameExpr = this._substitutions.get(oldCallExpr)
 
                 if (nameExpr) {
                     return nameExpr
@@ -116,11 +116,11 @@ export class Factorizer {
                 }
             },
             funcExpr: (funcExpr, oldFuncExpr) => {
-                const old = this.branchInjections.get(oldFuncExpr)
+                const old = this._branchInjections.get(oldFuncExpr)
 
                 if (old) {
-                    this.branchInjections.set(funcExpr, old)
-                    this.branchInjections.delete(oldFuncExpr)
+                    this._branchInjections.set(funcExpr, old)
+                    this._branchInjections.delete(oldFuncExpr)
                 }
 
                 return funcExpr
@@ -132,7 +132,7 @@ export class Factorizer {
      * @private
      */
     applyRegularSubstitutions() {
-        this.injections.forEach((entry) => {
+        this._injections.forEach((entry) => {
             entry.forEach((entry) => {
                 entry.expr.args = entry.expr.args.map((a) =>
                     this.applySubstitutions(a)
@@ -145,7 +145,7 @@ export class Factorizer {
      * @private
      */
     applyBranchedSubsititions() {
-        this.branchInjections.forEach((entry) => {
+        this._branchInjections.forEach((entry) => {
             entry.forEach((entry) => {
                 entry.expr.args = entry.expr.args.map((a) =>
                     this.applySubstitutions(a)
@@ -250,7 +250,7 @@ export class Factorizer {
         }
 
         const keyVar = processed.deepest
-        const prev = this.injections.get(keyVar)
+        const prev = this._injections.get(keyVar)
 
         const entry = {
             vars: processed.allVars,
@@ -261,12 +261,12 @@ export class Factorizer {
         if (prev) {
             prev.push(entry)
         } else {
-            this.injections.set(keyVar, [entry])
+            this._injections.set(keyVar, [entry])
         }
 
         // because each CallExpr returns the same runtime value, they can be replaced by the variable pointing to the common value
         callExprs.forEach((ce, i) => {
-            this.substitutions.set(
+            this._substitutions.set(
                 ce,
                 new NameExpr(processed.injectedName, processed.injectedVar)
             )
@@ -338,7 +338,7 @@ export class Factorizer {
             return
         }
 
-        const prev = this.branchInjections.get(keyExpr)
+        const prev = this._branchInjections.get(keyExpr)
 
         const entry = {
             root: rootBranches,
@@ -350,12 +350,12 @@ export class Factorizer {
         if (prev) {
             prev.push(entry)
         } else {
-            this.branchInjections.set(keyExpr, [entry])
+            this._branchInjections.set(keyExpr, [entry])
         }
 
         // because each CallExpr returns the same runtime value, they can be replaced by the variable pointing to the common value
         Array.from(groupCallExprs).forEach((ce, i) => {
-            this.substitutions.set(
+            this._substitutions.set(
                 ce,
                 new NameExpr(processed.injectedName, processed.injectedVar)
             )
@@ -368,7 +368,7 @@ export class Factorizer {
     injectBranchedCommonExpressions() {
         loop(this.root, {
             funcExpr: (branchExpr) => {
-                const inj = this.branchInjections.get(branchExpr)
+                const inj = this._branchInjections.get(branchExpr)
 
                 if (inj) {
                     for (let i = inj.length - 1; i >= 0; i--) {
@@ -421,14 +421,14 @@ export class Factorizer {
     injectRegularCommonExpressions() {
         this.root = mutate(this.root, {
             funcExpr: (funcExpr) => {
-                if (funcExpr.args.some((a) => this.injections.has(a))) {
+                if (funcExpr.args.some((a) => this._injections.has(a))) {
                     /**
                      * @type {{vars: Variable[], injected: Variable, expr: CallExpr}[]}
                      */
                     let funcInjections = []
 
                     funcExpr.args.forEach((a) => {
-                        const inj = this.injections.get(a)
+                        const inj = this._injections.get(a)
 
                         if (inj) {
                             funcInjections = funcInjections.concat(inj)

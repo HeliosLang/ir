@@ -33,9 +33,10 @@ export class Stack {
 
     /**
      * Lazily calculated
+     * @private
      * @type {Option<boolean>}
      */
-    #isLiteral
+    _isLiteral
 
     /**
      * @param {StackValues} values
@@ -44,7 +45,7 @@ export class Stack {
     constructor(values, branches) {
         this.values = values
         this.branches = branches
-        this.#isLiteral = None
+        this._isLiteral = None
     }
 
     /**
@@ -53,7 +54,7 @@ export class Stack {
      */
     addBranch(branch) {
         const stack = new Stack(this.values, this.branches.addBranch(branch))
-        stack.#isLiteral = this.#isLiteral
+        stack._isLiteral = this._isLiteral
         return stack
     }
 
@@ -85,11 +86,11 @@ export class Stack {
      * @returns {boolean}
      */
     isLiteral() {
-        if (isNone(this.#isLiteral)) {
-            this.#isLiteral = this.values.isLiteral()
+        if (isNone(this._isLiteral)) {
+            this._isLiteral = this.values.isLiteral()
         }
 
-        return this.#isLiteral
+        return this._isLiteral
     }
 
     /**
@@ -98,7 +99,7 @@ export class Stack {
      */
     withBranches(branches) {
         const stack = new Stack(this.values, branches)
-        stack.#isLiteral = this.#isLiteral
+        stack._isLiteral = this._isLiteral
         return stack
     }
 }

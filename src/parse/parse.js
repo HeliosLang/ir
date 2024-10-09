@@ -8,7 +8,6 @@ import {
     byteslit,
     group,
     intlit,
-    oneOf,
     strlit,
     symbol,
     word

@@ -1,5 +1,4 @@
-import { Word } from "@helios-lang/compiler-utils"
-import { CallExpr, FuncExpr, Variable } from "../expressions/index.js"
+import { CallExpr, FuncExpr } from "../expressions/index.js"
 
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr

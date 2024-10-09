@@ -1,8 +1,8 @@
 import { strictEqual } from "node:assert"
 import { test } from "node:test"
-import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
-import { UplcDataValue, UplcProgramV2, decodeUplcData } from "@helios-lang/uplc"
 import { isLeft, isRight } from "@helios-lang/type-utils"
+import { UplcDataValue, UplcProgramV2, decodeUplcData } from "@helios-lang/uplc"
+import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
 
 test("PBG::Vault::counters_are_consistent()", () => {
     const src = `(__CONTEXT) -> {

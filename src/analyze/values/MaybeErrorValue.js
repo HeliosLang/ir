@@ -1,6 +1,5 @@
 import { FuncValue } from "./FuncValue.js"
 import { Branches } from "./Branches.js"
-import { DataValue } from "./DataValue.js"
 
 /**
  * @typedef {import("./ValueI.js").ValueI} ValueI

@@ -1,9 +1,8 @@
+import { strictEqual } from "node:assert"
 import { describe, it } from "node:test"
 import { CallExpr, FuncExpr } from "../expressions/index.js"
 import { parse } from "../parse/index.js"
 import { Analyzer } from "./Analyzer.js"
-import { strictEqual } from "node:assert"
-import { annotate } from "./annotate.js"
 
 describe(Analyzer.name, () => {
     it("evaluates both passes", () => {

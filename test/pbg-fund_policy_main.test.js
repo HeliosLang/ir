@@ -2,8 +2,7 @@ import { strictEqual } from "node:assert"
 import { test } from "node:test"
 import { isLeft, isRight } from "@helios-lang/type-utils"
 import { UplcDataValue, UplcProgramV2, decodeUplcData } from "@helios-lang/uplc"
-import { DEFAULT_PARSE_OPTIONS, compile, format } from "../src/index.js"
-import { bytesToHex } from "@helios-lang/codec-utils"
+import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
 
 test("PBG::fund_policy::main", () => {
     const src = `(__DATUM_OR_REDEEMER, __REDEEMER_OR_CONTEXT) -> {
