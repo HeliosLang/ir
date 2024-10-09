@@ -18,8 +18,8 @@ importers:
         specifier: ^0.1.25
         version: 0.1.25
       '@helios-lang/uplc':
-        specifier: ^0.5.0
-        version: 0.5.0
+        specifier: ^0.5.2
+        version: 0.5.2
     devDependencies:
       '@types/node':
         specifier: ^20.14.8
@@ -51,8 +51,8 @@ packages:
   '@helios-lang/type-utils@0.1.25':
     resolution: {integrity: sha512-tOqyBWtaI6n/xhfaZr8cnL+Syv0X5whbxpzPLayfDwllI9el54fQ4P4e8CUUm2ls8WNSAgC9razCd2Q3qnMwlA==}
 
-  '@helios-lang/uplc@0.5.0':
-    resolution: {integrity: sha512-5Ui7r6r3+DBJGB07awl1SzLlxoeavoQxF7NZqn1oR4zvW2oi35/ybuLE6HWPcl6OcPmJyXDzpmuqlL5wR4mIKA==}
+  '@helios-lang/uplc@0.5.2':
+    resolution: {integrity: sha512-TZV49boAwdaQSZOI/BHY1uW7a7bZEO9wY/upPVgg1NR8skJ6W2HtsfGgQRAka6doSwHcIYQSdoN7aFfOqEKrhA==}
 
   '@types/node@20.16.5':
     resolution: {integrity: sha512-VwYCweNo3ERajwy0IUlqqcyZ8/A7Zwa9ZP3MnENWcB11AejO+tLy3pu850goUW2FC/IJMdZUfKpX/yxL1gymCA==}
@@ -92,7 +92,7 @@ snapshots:
 
   '@helios-lang/type-utils@0.1.25': {}
 
-  '@helios-lang/uplc@0.5.0':
+  '@helios-lang/uplc@0.5.2':
     dependencies:
       '@helios-lang/cbor': 0.2.0
       '@helios-lang/codec-utils': 0.2.0
