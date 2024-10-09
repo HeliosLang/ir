@@ -122,6 +122,9 @@ export function stringifyValue(
 
     while (true) {
         if ("compute" in state) {
+            /**
+             * @type {ComputeItem}
+             */
             const { value, depth } = state.compute
 
             let cached

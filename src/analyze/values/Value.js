@@ -250,6 +250,9 @@ function flattenValues(values) {
  * @returns {Value[]}
  */
 function flattenValue(v) {
+    /**
+     * @type {Value[]}
+     */
     let result = []
 
     if (v instanceof MaybeErrorValue && v.value) {

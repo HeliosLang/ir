@@ -11,6 +11,7 @@ import { StackValues } from "./StackValues.js"
 import { initValuePath } from "./loop.js"
 
 /**
+ * @typedef {import("./Value.js").NonErrorValue} NonErrorValue
  * @typedef {import("./Value.js").Value} Value
  */
 
@@ -67,6 +68,9 @@ export function mutate(rootPath, root, callbacks) {
 
     while (true) {
         if ("compute" in state) {
+            /**
+             * @type {{path: string[], value: Value}}
+             */
             const { path, value } = state.compute
             const cached = cache.get(value)
 
@@ -159,6 +163,9 @@ export function mutate(rootPath, root, callbacks) {
                             : value
                     }
                 } else {
+                    /**
+                     * @type {[number, NonErrorValue]}
+                     */
                     const first = value.stack.values.values[0]
 
                     state = {

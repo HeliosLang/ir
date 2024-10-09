@@ -83,6 +83,10 @@ export class Scope {
         return [index, variable]
     }
 
+    /**
+     * @private
+     * @param {Variable} variable
+     */
     notifyFuncExprInternal(variable) {
         if (this.options.notifyFuncExpr) {
             this.options.notifyFuncExpr(variable)

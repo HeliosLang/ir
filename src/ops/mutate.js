@@ -47,6 +47,9 @@ export function mutate(root, callbacks) {
 
     while (true) {
         if ("compute" in state) {
+            /**
+             * @type {Expr}
+             */
             const expr = state.compute
 
             if (expr instanceof BuiltinExpr) {
