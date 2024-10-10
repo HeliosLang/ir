@@ -205,7 +205,7 @@ export class SourceMappedString {
 /**
  * Shorthand for `new SourceMappedString()`, which can also be used with template string literals
  * This is used very frequently by the code generation of the higher-level language
- * @param {string | TemplateStringsArray | SourceMappedString[]} content
+ * @param {string | TemplateStringsArray | SourceMappedStringI[]} content
  * @param {...(Site | string | SourceMappedStringI | SourceMappedStringI[] | null | number)} args
  * @returns {SourceMappedStringI}
  */

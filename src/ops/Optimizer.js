@@ -37,17 +37,17 @@ import { loop, assertNoDuplicateExprs } from "./loop.js"
 const INLINE_MAX_SIZE = 128
 
 /**
- * @typedef {Object} OptimizerOptions - detailed options for optimizing the compiled on-chain code
- * @property{string} [commonSubExprPrefix="__common"]
- * @property{number} [commonSubExprCount=0] - for internal use
- * @property{boolean} [keepTracing=false] - keep print() statements in the code, instead of optimizing them out
- * @property{boolean} [factorizeCommon=true] - optimizes redundant expressions (Beta)
- * @property{boolean} [removeUnusedArgs=true]
- * @property{boolean} [replaceUncalledArgsWithUnit=true]
- * @property{boolean} [flattenNestedFuncExprs=true]
- * @property{boolean} [inlineSimpleExprs=true]
- * @property{boolean} [inlineSingleUseFuncExprs=true]
- * @property{boolean} [inlineErrorFreeSingleUserCallExprs=true]
+ * @typedef {object} OptimizerOptions - detailed options for optimizing the compiled on-chain code
+ * @property {string} [commonSubExprPrefix="__common"]
+ * @property {number} [commonSubExprCount=0] - for internal use
+ * @property {boolean} [keepTracing=false] - keep print() statements in the code, instead of optimizing them out
+ * @property {boolean} [factorizeCommon=true] - optimizes redundant expressions (Beta)
+ * @property {boolean} [removeUnusedArgs=true]
+ * @property {boolean} [replaceUncalledArgsWithUnit=true]
+ * @property {boolean} [flattenNestedFuncExprs=true]
+ * @property {boolean} [inlineSimpleExprs=true]
+ * @property {boolean} [inlineSingleUseFuncExprs=true]
+ * @property {boolean} [inlineErrorFreeSingleUserCallExprs=true]
  */
 
 /**

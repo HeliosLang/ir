@@ -3,11 +3,7 @@ import { None } from "@helios-lang/type-utils"
 import { UplcProgramV2 } from "@helios-lang/uplc"
 import { Scope } from "../expressions/index.js"
 import { format } from "../format/index.js"
-import {
-    SourceMappedString,
-    parse,
-    DEFAULT_PARSE_OPTIONS
-} from "../parse/index.js"
+import { parse, DEFAULT_PARSE_OPTIONS } from "../parse/index.js"
 import { loop } from "./loop.js"
 import { optimize } from "./optimize.js"
 import { injectRecursiveDeps } from "./recursion.js"
@@ -16,6 +12,7 @@ import { injectRecursiveDeps } from "./recursion.js"
  * @typedef {import("@helios-lang/uplc").UplcProgramV2I} UplcProgramV2I
  * @typedef {import("../expressions/index.js").Expr} Expr
  * @typedef {import("../parse/index.js").ParseOptions} ParseOptions
+ * @typedef {import("../parse/index.js").SourceMappedStringI} SourceMappedStringI
  * @typedef {import("./optimize.js").OptimizeOptions} OptimizeOptions
  */
 
@@ -29,7 +26,7 @@ import { injectRecursiveDeps } from "./recursion.js"
  */
 
 /**
- * @param {string | SourceMappedString | Expr} rawExpr
+ * @param {string | SourceMappedStringI | Expr} rawExpr
  * @param {CompileOptions} options
  * @returns {UplcProgramV2I}
  */
@@ -50,13 +47,13 @@ export function compile(rawExpr, options = {}) {
 }
 
 /**
- * @param {string | SourceMappedString | Expr} rawExpr
+ * @param {string | SourceMappedStringI | Expr} rawExpr
  * @param {CompileOptions} options
  * @returns {Expr}
  */
 export function prepare(rawExpr, options = {}) {
     let expr =
-        typeof rawExpr == "string" || rawExpr instanceof SourceMappedString
+        typeof rawExpr == "string" || "content" in rawExpr
             ? parse(rawExpr, options.parseOptions ?? DEFAULT_PARSE_OPTIONS)
             : rawExpr
 
