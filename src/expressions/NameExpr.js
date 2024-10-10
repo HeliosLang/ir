@@ -1,19 +1,29 @@
 import { TokenSite, Word } from "@helios-lang/compiler-utils"
 import { None } from "@helios-lang/type-utils"
 import { UplcVar } from "@helios-lang/uplc"
-import { Scope } from "./Scope.js"
-import { Variable } from "./Variable.js"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
+ * @typedef {import("@helios-lang/compiler-utils").WordI} WordI
  * @typedef {import("@helios-lang/uplc").UplcTerm} UplcTerm
  * @typedef {import("./Expr.js").Expr} Expr
  * @typedef {import("./Expr.js").NotifyCopy} NotifyCopy
+ * @typedef {import("./Scope.js").ScopeI} ScopeI
+ * @typedef {import("./Variable.js").VariableI} VariableI
+ */
+
+/**
+ * @typedef {Expr & {
+ *   index: Option<number>
+ *   name: string
+ *   variable: VariableI
+ *   isVariable(ref: VariableI): boolean
+ * }} NameExprI
  */
 
 /**
  * Intermediate Representation variable reference expressions
- * @implements {Expr}
+ * @implements {NameExprI}
  */
 export class NameExpr {
     /**
@@ -31,20 +41,20 @@ export class NameExpr {
     /**
      * @private
      * @readwrite
-     * @type {Word}
+     * @type {WordI}
      */
     _name
 
     /**
      * Cached variable
      * @private
-     * @type {Option<Variable>}
+     * @type {Option<VariableI>}
      */
     _variable
 
     /**
-     * @param {Word} name
-     * @param {Option<Variable>} variable
+     * @param {WordI} name
+     * @param {Option<VariableI>} variable
      */
     constructor(name, variable = null) {
         this.site = name.site
@@ -74,7 +84,7 @@ export class NameExpr {
 
     /**
      * isVariable() should be used to check if a IRNameExpr.variable is equal to a IRVariable (includes special handling of "__core*")
-     * @type {Variable}
+     * @type {VariableI}
      */
     get variable() {
         if (!this._variable) {
@@ -94,8 +104,8 @@ export class NameExpr {
     /**
      * Used when inlining
      * @param {NotifyCopy} notifyCopy
-     * @param {Map<Variable, Variable>} varMap
-     * @returns {NameExpr}
+     * @param {Map<VariableI, VariableI>} varMap
+     * @returns {NameExprI}
      */
     copy(notifyCopy, varMap) {
         const variable = this._variable
@@ -114,6 +124,7 @@ export class NameExpr {
      * @returns {boolean}
      */
     isEqual(other) {
+        // TODO: give NameExpr a `kind` field
         return other instanceof NameExpr && this.name == other.name
     }
 
@@ -126,7 +137,7 @@ export class NameExpr {
     }
 
     /**
-     * @param {Variable} ref
+     * @param {VariableI} ref
      * @returns {boolean}
      */
     isVariable(ref) {
@@ -134,7 +145,7 @@ export class NameExpr {
     }
 
     /**
-     * @param {Scope} scope
+     * @param {ScopeI} scope
      */
     resolveNames(scope) {
         if (this._variable == null || this.isParam()) {

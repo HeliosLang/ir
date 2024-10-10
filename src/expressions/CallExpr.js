@@ -1,14 +1,14 @@
 import { TokenSite } from "@helios-lang/compiler-utils"
 import { None } from "@helios-lang/type-utils"
 import { UplcCall, UplcForce } from "@helios-lang/uplc"
-import { Scope } from "./Scope.js"
-import { Variable } from "./Variable.js"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
  * @typedef {import("@helios-lang/uplc").UplcTerm} UplcTerm
  * @typedef {import("./Expr.js").Expr} Expr
  * @typedef {import("./Expr.js").NotifyCopy} NotifyCopy
+ * @typedef {import("./Scope.js").ScopeI} ScopeI
+ * @typedef {import("./Variable.js").VariableI} VariableI
  */
 
 /**
@@ -58,7 +58,7 @@ export class CallExpr {
     }
 
     /**
-     * @param {Scope} scope
+     * @param {ScopeI} scope
      */
     resolveNamesInArgs(scope) {
         for (let argExpr of this.args) {
@@ -67,7 +67,7 @@ export class CallExpr {
     }
 
     /**
-     * @param {Scope} scope
+     * @param {ScopeI} scope
      */
     resolveNames(scope) {
         this.func.resolveNames(scope)
@@ -92,7 +92,7 @@ export class CallExpr {
 
     /**
      * @param {NotifyCopy} notifyCopy
-     * @param {Map<Variable, Variable>} varMap
+     * @param {Map<VariableI, VariableI>} varMap
      * @returns {CallExpr}
      */
     copy(notifyCopy, varMap) {

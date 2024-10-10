@@ -1,14 +1,10 @@
-import {
-    AnyValue,
-    Branches,
-    DataValue,
-    StackValues,
-    stringifyStackValues
-} from "./values/index.js"
+import { AnyValue, DataValue, stringifyStackValues } from "./values/index.js"
 import { BiMap } from "./BiMap.js"
 
 /**
+ * @typedef {import("./values/index.js").BranchesI} BranchesI
  * @typedef {import("./values/index.js").NonErrorValue} NonErrorValue
+ * @typedef {import("./values/index.js").StackValuesI} StackValuesI
  * @typedef {import("./values/index.js").Value} Value
  */
 
@@ -62,7 +58,8 @@ export class ValueGenerator {
 
     /**
      * @param {string} key
-     * @param {Branches} branches
+     * @param {BranchesI} branches
+     * @returns {DataValue}
      */
     genData(key, branches) {
         const id = this.groups.Data.add(key)
@@ -90,7 +87,7 @@ export class ValueGenerator {
     }
 
     /**
-     * @param {StackValues} values
+     * @param {StackValuesI} values
      * @param {number} blockRecursionTag
      * @returns {number}
      */
@@ -113,6 +110,7 @@ export class ValueGenerator {
 /**
  * @param {Value} fn
  * @param {NonErrorValue[]} args
+ * @returns {string}
  */
 export function makeCallKey(fn, args) {
     return `${fn.toString()}(${args.map((a) => a.toString()).join(", ")})`

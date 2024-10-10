@@ -1,14 +1,14 @@
 import { TokenSite } from "@helios-lang/compiler-utils"
 import { None } from "@helios-lang/type-utils"
 import { UplcConst } from "@helios-lang/uplc"
-import { Scope } from "./Scope.js"
-import { Variable } from "./Variable.js"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
  * @typedef {import("@helios-lang/uplc").UplcValue} UplcValue
  * @typedef {import("./Expr.js").Expr} Expr
  * @typedef {import("./Expr.js").NotifyCopy} NotifyCopy
+ * @typedef {import("./Scope.js").ScopeI} ScopeI
+ * @typedef {import("./Variable.js").VariableI} VariableI
  */
 
 /**
@@ -45,11 +45,11 @@ export class LiteralExpr {
     }
 
     /**
-     * @param {NotifyCopy} notifyCopy
-     * @param {Map<Variable, Variable>} varMap
+     * @param {NotifyCopy} _notifyCopy
+     * @param {Map<VariableI, VariableI>} _varMap
      * @returns {LiteralExpr}
      */
-    copy(notifyCopy, varMap) {
+    copy(_notifyCopy, _varMap) {
         return this
     }
 
@@ -63,9 +63,9 @@ export class LiteralExpr {
 
     /**
      * Linking doesn't do anything for literals
-     * @param {Scope} scope
+     * @param {ScopeI} _scope
      */
-    resolveNames(scope) {}
+    resolveNames(_scope) {}
 
     /**
      * @returns {UplcConst}

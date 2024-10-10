@@ -1,6 +1,5 @@
-import { Branches } from "./Branches.js"
-
 /**
+ * @typedef {import("./Branches.js").BranchesI} BranchesI
  * @typedef {import("./ValueI.js").ValueI} ValueI
  */
 
@@ -30,34 +29,34 @@ export class BuiltinValue {
     }
 
     /**
-     * @param {Set<number>} s
+     * @param {Set<number>} _s
      */
-    collectFuncTags(s) {}
+    collectFuncTags(_s) {}
 
     collectFuncValues() {}
 
     /**
-     * @param {number} tag
-     * @param {number} depth
+     * @param {number} _tag
+     * @param {number} _depth
      * @returns {boolean}
      */
-    containsFunc(tag, depth) {
+    containsFunc(_tag, _depth) {
         return false
     }
 
     /**
-     * @param {boolean} anyAsDataOnly
+     * @param {boolean} _anyAsDataOnly
      * @returns {boolean}
      */
-    isCallable(anyAsDataOnly) {
+    isCallable(_anyAsDataOnly) {
         return true
     }
 
     /**
-     * @param {boolean} anyAsFuncOnly
+     * @param {boolean} _anyAsFuncOnly
      * @returns {boolean}
      */
-    isDataLike(anyAsFuncOnly) {
+    isDataLike(_anyAsFuncOnly) {
         return false
     }
 
@@ -92,10 +91,10 @@ export class BuiltinValue {
     }
 
     /**
-     * @param {Branches} branches
+     * @param {BranchesI} _branches
      * @returns {BuiltinValue}
      */
-    withBranches(branches) {
+    withBranches(_branches) {
         return this
     }
 }

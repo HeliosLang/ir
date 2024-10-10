@@ -1,9 +1,10 @@
-import { Scope } from "./Scope.js"
-import { Variable } from "./Variable.js"
+export {}
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
  * @typedef {import("@helios-lang/uplc").UplcTerm} UplcTerm
+ * @typedef {import("./Scope.js").ScopeI} ScopeI
+ * @typedef {import("./Variable.js").VariableI} VariableI
  */
 
 /**
@@ -34,9 +35,9 @@ import { Variable } from "./Variable.js"
  * @typedef {{
  *   site: Site
  *   flatSize: number
- *   resolveNames(scope: Scope): void
+ *   resolveNames(scope: ScopeI): void
  *   isEqual(other: Expr): boolean
- *   copy(notifyCopy: NotifyCopy, varMap: Map<Variable, Variable>): Expr
+ *   copy(notifyCopy: NotifyCopy, varMap: Map<VariableI, VariableI>): Expr
  *   toUplc(): UplcTerm
  * }} Expr
  */

@@ -1,6 +1,5 @@
-import { Branches } from "./Branches.js"
-
 /**
+ * @typedef {import("./Branches.js").BranchesI} BranchesI
  * @typedef {import("./ValueI.js").ValueI} ValueI
  */
 
@@ -17,13 +16,13 @@ export class DataValue {
     /**
      * TODO: can we do this elsewhere? (this field polutes the evaluation process)
      * @readonly
-     * @type {Branches}
+     * @type {BranchesI}
      */
     branches
 
     /**
      * @param {number} id
-     * @param {Branches} branches
+     * @param {BranchesI} branches
      */
     constructor(id, branches) {
         this.id = id
@@ -31,34 +30,34 @@ export class DataValue {
     }
 
     /**
-     * @param {Set<number>} s
+     * @param {Set<number>} _s
      */
-    collectFuncTags(s) {}
+    collectFuncTags(_s) {}
 
     collectFuncValues() {}
 
     /**
-     * @param {number} tag
-     * @param {number} depth
+     * @param {number} _tag
+     * @param {number} _depth
      * @returns {boolean}
      */
-    containsFunc(tag, depth) {
+    containsFunc(_tag, _depth) {
         return false
     }
 
     /**
-     * @param {boolean} anyAsDataOnly
+     * @param {boolean} _anyAsDataOnly
      * @returns {boolean}
      */
-    isCallable(anyAsDataOnly) {
+    isCallable(_anyAsDataOnly) {
         return false
     }
 
     /**
-     * @param {boolean} anyAsFuncOnly
+     * @param {boolean} _anyAsFuncOnly
      * @returns {boolean}
      */
-    isDataLike(anyAsFuncOnly) {
+    isDataLike(_anyAsFuncOnly) {
         return true
     }
 
@@ -97,7 +96,7 @@ export class DataValue {
     }
 
     /**
-     * @param {Branches} branches
+     * @param {BranchesI} branches
      * @returns {DataValue}
      */
     withBranches(branches) {

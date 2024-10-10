@@ -1,16 +1,16 @@
 import { None, isNone } from "@helios-lang/type-utils"
-import { Branches } from "./Branches.js"
-import { StackValues } from "./StackValues.js"
 
 /**
  * @typedef {import("./Branch.js").Branch} Branch
+ * @typedef {import("./Branches.js").BranchesI} BranchesI
+ * @typedef {import("./StackValues.js").StackValuesI} StackValuesI
  * @typedef {import("./Value.js").NonErrorValue} NonErrorValue
  * @typedef {import("./ValueI.js").ValueI} ValueI
  */
 
 /**
  * @typedef {{
- *   branches: Branches
+ *   branches: BranchesI
  *   recursive?: boolean
  * }} StackProps
  */
@@ -21,13 +21,13 @@ import { StackValues } from "./StackValues.js"
 export class Stack {
     /**
      * @readonly
-     * @type {StackValues}
+     * @type {StackValuesI}
      */
     values
 
     /**
      * @readonly
-     * @type {Branches}
+     * @type {BranchesI}
      */
     branches
 
@@ -39,8 +39,8 @@ export class Stack {
     _isLiteral
 
     /**
-     * @param {StackValues} values
-     * @param {Branches} branches
+     * @param {StackValuesI} values
+     * @param {BranchesI} branches
      */
     constructor(values, branches) {
         this.values = values
@@ -94,7 +94,7 @@ export class Stack {
     }
 
     /**
-     * @param {Branches} branches
+     * @param {BranchesI} branches
      * @returns {Stack}
      */
     withBranches(branches) {

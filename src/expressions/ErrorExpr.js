@@ -1,13 +1,13 @@
 import { TokenSite } from "@helios-lang/compiler-utils"
 import { None } from "@helios-lang/type-utils"
 import { UplcError } from "@helios-lang/uplc"
-import { Scope } from "./Scope.js"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
  * @typedef {import("@helios-lang/uplc").UplcTerm} UplcTerm
  * @typedef {import("./Expr.js").Expr} Expr
  * @typedef {import("./Expr.js").NotifyCopy} NotifyCopy
+ * @typedef {import("./Scope.js").ScopeI} ScopeI
  */
 
 /**
@@ -37,9 +37,9 @@ export class ErrorExpr {
     }
 
     /**
-     * @param {Scope} scope
+     * @param {ScopeI} _scope
      */
-    resolveNames(scope) {}
+    resolveNames(_scope) {}
 
     /**
      * @param {ErrorExpr} other

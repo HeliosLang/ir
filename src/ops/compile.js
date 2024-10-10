@@ -83,7 +83,7 @@ function giveVariablesUniqueNames(expr) {
     // mutate names in-place
     loop(expr, {
         funcExpr: (funcExpr) => {
-            funcExpr.args.forEach((a, i) => {
+            funcExpr.args.forEach((a) => {
                 const name = a.name.value
 
                 if (varNames.has(name)) {

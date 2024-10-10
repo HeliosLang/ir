@@ -149,7 +149,7 @@ export class SourceMappedString {
      */
     toString(tab = "    ", pretty = false) {
         if (pretty) {
-            const [src, _] = this.toStringWithSourceMap()
+            const [src, _] = this.toStringWithSourceMap(tab)
 
             return new Source(src).pretty()
         } else {

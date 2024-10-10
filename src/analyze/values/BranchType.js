@@ -6,11 +6,12 @@ export {}
 
 /**
  * @param {BranchType} type
+ * @returns {"Ite" | "Cl" | "Cd"}
  */
 export function branchTypeToPrefix(type) {
-    return {
+    return /** @type {const} */ ({
         ifThenElse: "Ite",
         chooseList: "Cl",
         chooseData: "Cd"
-    }[type]
+    })[type]
 }

@@ -1,6 +1,5 @@
-import { Branches } from "./Branches.js"
-
 /**
+ * @typedef {import("./Branches.js").BranchesI} BranchesI
  * @typedef {import("./ValueI.js").ValueI} ValueI
  */
 
@@ -32,18 +31,18 @@ export class AnyValue {
     }
 
     /**
-     * @param {Set<number>} s
+     * @param {Set<number>} _s
      */
-    collectFuncTags(s) {}
+    collectFuncTags(_s) {}
 
     collectFuncValues() {}
 
     /**
-     * @param {number} tag
-     * @param {number} depth
+     * @param {number} _tag
+     * @param {number} _depth
      * @returns {boolean}
      */
-    containsFunc(tag, depth) {
+    containsFunc(_tag, _depth) {
         return false
     }
 
@@ -94,10 +93,10 @@ export class AnyValue {
     }
 
     /**
-     * @param {Branches} branches
+     * @param {BranchesI} _branches
      * @returns {AnyValue}
      */
-    withBranches(branches) {
+    withBranches(_branches) {
         return this
     }
 }

@@ -15,7 +15,6 @@ import {
     LiteralExpr,
     NameExpr,
     ParamExpr,
-    Variable,
     isIdentityFunc
 } from "../expressions/index.js"
 import { Factorizer } from "./Factorizer.js"
@@ -23,6 +22,8 @@ import { loop, assertNoDuplicateExprs } from "./loop.js"
 
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr
+ * @typedef {import("../expressions/index.js").NameExprI} NameExprI
+ * @typedef {import("../expressions/index.js").VariableI} VariableI
  */
 
 /**
@@ -123,7 +124,7 @@ export class Optimizer {
     #root
 
     /**
-     * @type {Map<Variable, Expr>}
+     * @type {Map<VariableI, Expr>}
      */
     #inlining
 
@@ -143,6 +144,7 @@ export class Optimizer {
     /**
      * @param {Expr} root
      * @param {OptimizerOptions} options
+     * @param {number} commonSubExprCount
      */
     constructor(
         root,
@@ -202,7 +204,7 @@ export class Optimizer {
      * @private
      * @param {Analysis} analysis
      * @param {FuncExpr} old
-     * @param {Variable[]} args
+     * @param {VariableI[]} args
      * @param {Expr} body
      * @returns {FuncExpr}
      */
@@ -406,7 +408,7 @@ export class Optimizer {
      * @private
      * @param {Analysis} analysis
      * @param {FuncExpr} start
-     * @param {NameExpr} nameExpr
+     * @param {NameExprI} nameExpr
      * @returns {boolean}
      */
     isEvaluatedMoreThanOnce(analysis, start, nameExpr) {
@@ -453,7 +455,7 @@ export class Optimizer {
 
     /**
      * @private
-     * @param {Variable} v
+     * @param {VariableI} v
      * @param {Expr} expr
      */
     inline(v, expr) {
@@ -463,7 +465,7 @@ export class Optimizer {
     /**
      * @private
      * @param {Analysis} analysis
-     * @param {NameExpr} expr
+     * @param {NameExprI} expr
      * @returns {Expr}
      */
     optimizeNameExpr(analysis, expr) {
@@ -1134,6 +1136,7 @@ export class Optimizer {
      * @private
      * @param {Analysis} analysis
      * @param {Expr} expr
+     * @returns {Expr}
      */
     optimizeInternal(analysis, expr) {
         const newExpr = (() => {

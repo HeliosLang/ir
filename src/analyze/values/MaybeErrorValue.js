@@ -1,7 +1,7 @@
 import { FuncValue } from "./FuncValue.js"
-import { Branches } from "./Branches.js"
 
 /**
+ * @typedef {import("./Branches.js").BranchesI} BranchesI
  * @typedef {import("./ValueI.js").ValueI} ValueI
  * @typedef {import("./Value.js").NonErrorValue} NonErrorValue
  */
@@ -90,7 +90,7 @@ export class MaybeErrorValue {
     }
 
     /**
-     * @param {Branches} branches
+     * @param {BranchesI} branches
      * @returns {MaybeErrorValue}
      */
     withBranches(branches) {

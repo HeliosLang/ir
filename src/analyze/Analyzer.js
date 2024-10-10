@@ -1,5 +1,5 @@
 import { expectSome } from "@helios-lang/type-utils"
-import { CallExpr, FuncExpr, Variable } from "../expressions/index.js"
+import { CallExpr, FuncExpr } from "../expressions/index.js"
 import { loop } from "../ops/index.js"
 import { Analysis } from "./Analysis.js"
 import { AnyValue, collectFuncTags } from "./values/index.js"
@@ -7,6 +7,7 @@ import { Evaluator, generateFuncTagsAndVariableIds } from "./Evaluator.js"
 
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr
+ * @typedef {import("../expressions/index.js").VariableI} VariableI
  * @typedef {import("./values/index.js").NonErrorValue} NonErrorValue
  * @typedef {import("./values/index.js").Value} Value
  */
@@ -60,7 +61,7 @@ export class Analyzer {
         const funcCallExprs = new Map()
 
         /**
-         * @type {Map<Variable, NonErrorValue[]>}
+         * @type {Map<VariableI, NonErrorValue[]>}
          */
         const variableValues = new Map()
 
@@ -76,9 +77,9 @@ export class Analyzer {
 
         /**
          * @param {number | FuncExpr} exprOrTag
-         * @param {number} incr
+         * @param {number} _incr
          */
-        const incrCallCount = (exprOrTag, incr) => {
+        const incrCallCount = (exprOrTag, _incr) => {
             const expr =
                 typeof exprOrTag == "number"
                     ? expectSome(funcExprs.getValueByKey(exprOrTag))
@@ -111,7 +112,7 @@ export class Analyzer {
             funcExprs,
             variables,
             debug: this._options.debug,
-            onCallAny: (args, owner) => {
+            onCallAny: (args, _owner) => {
                 const s = collectFuncTags(...args)
 
                 /**

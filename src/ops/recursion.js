@@ -199,19 +199,6 @@ function groupDefsByDeps(defs) {
 }
 
 /**
- * @param {DefGroup[]} groups
- */
-function dumpGroups(groups) {
-    groups.forEach((g, i) => {
-        console.log(
-            `group ${i}:`,
-            g.defs.map((def) => def.name.name.value),
-            Array.from(g.allDeps)
-        )
-    })
-}
-
-/**
  * @param {DefGroup} group
  * @param {Site} site
  * @returns {Variable[]} - unique variables every time this function is called

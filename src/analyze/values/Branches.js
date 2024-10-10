@@ -6,12 +6,33 @@ import { branchesAreEqual } from "./Branch.js"
 
 /**
  * @typedef {{
- *   root: Branches
+ *   root: BranchesI
  *   entries: number[]
  * }} BranchesGroup
  */
 
+/**
+ * @typedef {{
+ *   branches: Branch[]
+ *   length: number
+ *   addBranch(branch: Branch): BranchesI
+ *   prependBranch(branch: Branch): BranchesI
+ *   hasRoot(root: BranchesI): boolean
+ *   isEmpty(): boolean
+ *   isEqual(other: BranchesI): boolean
+ * }} BranchesI
+ */
+
+/**
+ * @implements {BranchesI}
+ */
 export class Branches {
+    /**
+     * @readonly
+     * @type {Branch[]}
+     */
+    branches
+
     /**
      *
      * @param {Branch[]} branches
@@ -25,7 +46,7 @@ export class Branches {
     }
 
     /**
-     * @param {Branches[]} branches
+     * @param {BranchesI[]} branches
      * @returns {BranchesGroup[]}
      */
     static group(branches) {
@@ -69,7 +90,7 @@ export class Branches {
 
     /**
      * @param {Branch} branch
-     * @returns {Branches}
+     * @returns {BranchesI}
      */
     addBranch(branch) {
         return new Branches(this.branches.concat([branch]))
@@ -77,15 +98,14 @@ export class Branches {
 
     /**
      * @param {Branch} branch
-     * @returns {Branches}
+     * @returns {BranchesI}
      */
     prependBranch(branch) {
         return new Branches([branch].concat(this.branches))
     }
 
     /**
-     *
-     * @param {Branches} root
+     * @param {BranchesI} root
      * @returns {boolean}
      */
     hasRoot(root) {
@@ -103,7 +123,7 @@ export class Branches {
     }
 
     /**
-     * @param {Branches} other
+     * @param {BranchesI} other
      * @returns {boolean}
      */
     isEqual(other) {

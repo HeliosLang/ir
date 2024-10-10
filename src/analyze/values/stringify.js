@@ -8,9 +8,9 @@ import { ErrorValue } from "./ErrorValue.js"
 import { FuncValue } from "./FuncValue.js"
 import { LiteralValue } from "./LiteralValue.js"
 import { MaybeErrorValue } from "./MaybeErrorValue.js"
-import { StackValues } from "./StackValues.js"
 
 /**
+ * @typedef {import("./StackValues.js").StackValuesI} StackValuesI
  * @typedef {import("./Value.js").Value} Value
  */
 
@@ -21,13 +21,14 @@ import { StackValues } from "./StackValues.js"
 /**
  * @param {Value} fn
  * @param {Value[]} args
+ * @returns {string}
  */
 export function stringifyCall(fn, args) {
     return `${fn.toString()}(${args.map((a) => a.toString()).join(", ")})`
 }
 
 /**
- * @param {StackValues} values
+ * @param {StackValuesI} values
  * @param {BlockRecursionProps} blockRecursion - not optional because it is almost always needed when stringifying stacks
  * @returns {string}
  */
@@ -187,7 +188,7 @@ export function stringifyValue(
                 frames.push({
                     owner: value,
                     values: [first].concat(
-                        value.cases.map((c, i) => {
+                        value.cases.map((c) => {
                             return { value: c, depth: depth }
                         })
                     ),
@@ -247,7 +248,7 @@ export function stringifyValue(
                         values: [first].concat(
                             value.stack.values.values
                                 .slice(1)
-                                .map(([id, v]) => ({
+                                .map(([_id, v]) => ({
                                     value: v,
                                     depth: newDepth
                                 }))

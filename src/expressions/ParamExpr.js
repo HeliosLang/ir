@@ -1,11 +1,10 @@
-import { Scope } from "./Scope.js"
-import { Variable } from "./Variable.js"
-
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
  * @typedef {import("@helios-lang/uplc").UplcTerm} UplcTerm
  * @typedef {import("./Expr.js").Expr} Expr
  * @typedef {import("./Expr.js").NotifyCopy} NotifyCopy
+ * @typedef {import("./Scope.js").ScopeI} ScopeI
+ * @typedef {import("./Variable.js").VariableI} VariableI
  */
 
 /**
@@ -49,7 +48,7 @@ export class ParamExpr {
     }
 
     /**
-     * @param {Scope} scope
+     * @param {ScopeI} scope
      */
     resolveNames(scope) {
         this.expr.resolveNames(scope)
@@ -69,8 +68,8 @@ export class ParamExpr {
 
     /**
      *
-     * @param {import("./Expr.js").NotifyCopy} notifyCopy
-     * @param {Map<Variable, Variable>} varMap
+     * @param {NotifyCopy} notifyCopy
+     * @param {Map<VariableI, VariableI>} varMap
      * @returns {ParamExpr}
      */
     copy(notifyCopy, varMap) {

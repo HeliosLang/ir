@@ -1,13 +1,28 @@
-import { CompilerError, Word } from "@helios-lang/compiler-utils"
-import { Variable } from "./Variable.js"
+import { CompilerError } from "@helios-lang/compiler-utils"
+
+/**
+ * @typedef {import("@helios-lang/compiler-utils").WordI} WordI
+ * @typedef {import("./Variable.js").VariableI} VariableI
+ */
 
 /**
  * Setting the dummy variable allows resolving names before injecting the recursive dependencies
  * Setting variable==None and notifyFuncExpr allows a Scope to be used for functions that don't have any arguments but still would like to know about all the variables being referenced in their scope
  * @typedef {{
- *   dummyVariable?: Variable
- *   notifyFuncExpr?: (v: Variable) => void
+ *   dummyVariable?: VariableI
+ *   notifyFuncExpr?: (v: VariableI) => void
  * }} ScopeOptions
+ */
+
+/**
+ * TODO: cleanup getInternal() and notifyFuncExprInternal so that it makes more sense to someone implementing this interface
+ * @typedef {{
+ *   parent: Option<ScopeI>
+ *   variable: Option<VariableI>
+ *   get(name: WordI | VariableI): [number, VariableI]
+ *   notifyFuncExprInternal(variable: VariableI): void
+ *   getInternal(name: WordI | VariableI, index: number): [number, VariableI]
+ * }} ScopeI
  */
 
 /**
@@ -17,24 +32,26 @@ import { Variable } from "./Variable.js"
 export class Scope {
     /**
      * @readonly
-     * @type {Option<Scope>}
+     * @type {Option<ScopeI>}
      */
     parent
 
     /**
      * Variable name (can be null if no usable variable defined at this level)
      * @readonly
-     * @type {Option<Variable>}
+     * @type {Option<VariableI>}
      */
     variable
 
     /**
+     * @readonly
      * @type {ScopeOptions}
      */
+    options
 
     /**
-     * @param {Option<Scope>} parent
-     * @param {Option<Variable>} variable
+     * @param {Option<ScopeI>} parent
+     * @param {Option<VariableI>} variable
      * @param {ScopeOptions} options
      */
     constructor(parent, variable, options = {}) {
@@ -45,9 +62,10 @@ export class Scope {
 
     /**
      * Calculates the Debruijn index of a named value. Internal method
-     * @param {Word | Variable} name
+     * @internal
+     * @param {WordI | VariableI} name
      * @param {number} index
-     * @returns {[number, Variable]}
+     * @returns {[number, VariableI]}
      */
     getInternal(name, index) {
         if (this.variable && this.variable.isEqual(name)) {
@@ -71,8 +89,8 @@ export class Scope {
 
     /**
      * Calculates the Debruijn index.
-     * @param {Word | Variable} name
-     * @returns {[number, Variable]}
+     * @param {WordI | VariableI} name
+     * @returns {[number, VariableI]}
      */
     get(name) {
         // one-based
@@ -84,8 +102,8 @@ export class Scope {
     }
 
     /**
-     * @private
-     * @param {Variable} variable
+     * @internal
+     * @param {VariableI} variable
      */
     notifyFuncExprInternal(variable) {
         if (this.options.notifyFuncExpr) {

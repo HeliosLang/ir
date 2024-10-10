@@ -24,7 +24,7 @@ describe(mutate.name, () => {
         const expr = new ErrorExpr(site)
 
         const newExpr = mutate(expr, {
-            errorExpr: (errorExpr) => {
+            errorExpr: (_errorExpr) => {
                 return new CallExpr(
                     site,
                     new NameExpr(new Word("error", site)),

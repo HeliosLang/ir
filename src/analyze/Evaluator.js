@@ -8,8 +8,7 @@ import {
     LiteralExpr,
     NameExpr,
     ParamExpr,
-    Scope,
-    Variable
+    Scope
 } from "../expressions/index.js"
 import { format } from "../format/index.js"
 import { loop } from "../ops/loop.js"
@@ -45,6 +44,7 @@ import {
 /**
  * @typedef {import("@helios-lang/uplc").UplcData} UplcData
  * @typedef {import("../expressions/index.js").Expr} Expr
+ * @typedef {import("../expressions/index.js").VariableI} VariableI
  * @typedef {import("./values/index.js").NonErrorValue} NonErrorValue
  * @typedef {import("./values/index.js").Value} Value
  */
@@ -53,12 +53,12 @@ import {
  * Each FuncExpr and Variable must given a unique integer tag/id
  * @typedef {{
  *   funcExprs: BiMap<FuncExpr>
- *   variables: BiMap<Variable>
+ *   variables: BiMap<VariableI>
  *   debug?: boolean
  *   onCallAny?: (args: NonErrorValue[], owner: Option<CallExpr>) => void
  *   onCallFunc?: (expr: FuncExpr, owner: Option<CallExpr>) => void
  *   onEvalExpr?: (expr: Expr, value: Value) => void
- *   onPassArg?: (variable: Variable, value: NonErrorValue) => void
+ *   onPassArg?: (variable: VariableI, value: NonErrorValue) => void
  * }} EvaluatorProps
  */
 
@@ -291,7 +291,7 @@ export class Evaluator {
 
     /**
      * @private
-     * @param {Variable} v
+     * @param {VariableI} v
      * @returns {number}
      */
     getVarId(v) {
@@ -942,7 +942,7 @@ export class Evaluator {
 
 /**
  * @param {Expr} root
- * @returns {[BiMap<FuncExpr>, BiMap<Variable>]}
+ * @returns {[BiMap<FuncExpr>, BiMap<VariableI>]}
  */
 export function generateFuncTagsAndVariableIds(root) {
     /**
@@ -951,7 +951,7 @@ export function generateFuncTagsAndVariableIds(root) {
     const funcExprs = new BiMap()
 
     /**
-     * @type {BiMap<Variable>}
+     * @type {BiMap<VariableI>}
      */
     const variables = new BiMap()
 

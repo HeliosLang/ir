@@ -1,4 +1,8 @@
-import { Branches } from "./Branches.js"
+export {}
+
+/**
+ * @typedef {import("./Branches.js").BranchesI} BranchesI
+ */
 
 /**
  * `collectFuncTags` and `containsFunc` are redundant since switching to non-recursive algorithms, but are kept for easier debugging
@@ -10,6 +14,6 @@ import { Branches } from "./Branches.js"
  *   isEqual(other: ValueI): boolean
  *   isLiteral(): boolean
  *   toString(): string
- *   withBranches(braches: Branches): ValueI
+ *   withBranches(braches: BranchesI): ValueI
  * }} ValueI
  */

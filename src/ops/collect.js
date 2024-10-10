@@ -1,18 +1,19 @@
 import { expectSome } from "@helios-lang/type-utils"
-import { NameExpr, Variable } from "../expressions/index.js"
 import { loop } from "./loop.js"
 
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr
+ * @typedef {import("../expressions/index.js").NameExprI} NameExprI
+ * @typedef {import("../expressions/index.js").VariableI} VariableI
  */
 
 /**
  * @param {Expr} expr
- * @returns {Set<Variable>}
+ * @returns {Set<VariableI>}
  */
 export function collectDeclaredVariables(expr) {
     /**
-     * @type {Set<Variable>}
+     * @type {Set<VariableI>}
      */
     const s = new Set()
 
@@ -27,16 +28,16 @@ export function collectDeclaredVariables(expr) {
 
 /**
  * @param {Expr} expr
- * @returns {Set<Variable>}
+ * @returns {Set<VariableI>}
  */
 export function collectUsedVariables(expr) {
     /**
-     * @type {Set<Variable>}
+     * @type {Set<VariableI>}
      */
     const s = new Set()
 
     /**
-     * @type {Set<Variable>}
+     * @type {Set<VariableI>}
      */
     const not = new Set()
 
@@ -57,16 +58,16 @@ export function collectUsedVariables(expr) {
 /**
  *
  * @param {Expr} expr
- * @returns {[number, Variable][]}
+ * @returns {[number, VariableI][]}
  */
 export function collectUsedVariablesWithDepth(expr) {
     /**
-     * @type {[number, Variable][]}
+     * @type {[number, VariableI][]}
      */
     const s = []
 
     /**
-     * @type {Set<Variable>}
+     * @type {Set<VariableI>}
      */
     const not = new Set()
 
@@ -88,11 +89,11 @@ export function collectUsedVariablesWithDepth(expr) {
 
 /**
  * @param {Expr} expr - names must already be resolved
- * @returns {Map<Variable, Set<NameExpr>>}
+ * @returns {Map<VariableI, Set<NameExprI>>}
  */
 export function collectVariableNameExprs(expr) {
     /**
-     * @type {Map<Variable, Set<NameExpr>>}
+     * @type {Map<VariableI, Set<NameExprI>>}
      */
     const m = new Map()
 

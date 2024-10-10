@@ -25,6 +25,7 @@ import { ParamExpr } from "../expressions/ParamExpr.js"
  *   paramExpr?: (expr: ParamExpr, oldExpr: ParamExpr) => Expr
  *   flattenDefs?: boolean
  * }} callbacks
+ * @returns {Expr}
  */
 export function mutate(root, callbacks) {
     /**

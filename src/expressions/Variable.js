@@ -1,24 +1,34 @@
-import { Word } from "@helios-lang/compiler-utils"
-
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
  * @typedef {import("@helios-lang/compiler-utils").Token} Token
+ * @typedef {import("@helios-lang/compiler-utils").WordI} WordI
+ */
+
+/**
+ * @typedef {{
+ *   name: WordI
+ *   site: Site
+ *   copy(newVars: Map<VariableI, VariableI>): VariableI
+ *   isEqual(other: WordI | VariableI): boolean
+ *   toString(preferAlias?: boolean): string
+ * }} VariableI
  */
 
 /**
  * Represents a function argument
+ * @implements {VariableI}
  */
 export class Variable {
     /**
      * Mutation of `name` is used to change the name to a globally unique name
      * (mutation of this field is much easier and faster than creating a new Variable instance)
      * @readwrite
-     * @type {Word}
+     * @type {WordI}
      */
     name
 
     /**
-     * @param {Word} name
+     * @param {WordI} name
      */
     constructor(name) {
         this.name = name
@@ -32,8 +42,8 @@ export class Variable {
     }
 
     /**
-     * @param {Map<Variable, Variable>} newVars
-     * @returns {Variable}
+     * @param {Map<VariableI, VariableI>} newVars
+     * @returns {VariableI}
      */
     copy(newVars) {
         const newVar = new Variable(this.name)
@@ -44,13 +54,15 @@ export class Variable {
     }
 
     /**
-     * @param {Word | Variable} other
+     * @param {WordI | VariableI} other
      * @returns {boolean}
      */
     isEqual(other) {
-        return other instanceof Word
-            ? this.name.isEqual(other)
-            : this.name.isEqual(other.name)
+        if ("kind" in other) {
+            return this.name.isEqual(other)
+        } else {
+            return this.name.isEqual(other.name)
+        }
     }
 
     /**

@@ -1,14 +1,14 @@
 import { TokenSite } from "@helios-lang/compiler-utils"
 import { None } from "@helios-lang/type-utils"
 import { UplcBuiltin, UplcForce } from "@helios-lang/uplc"
-import { Scope } from "./Scope.js"
-import { Variable } from "./Variable.js"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
  * @typedef {import("@helios-lang/uplc").UplcTerm} UplcTerm
  * @typedef {import("./Expr.js").Expr} Expr
  * @typedef {import("./Expr.js").NotifyCopy} NotifyCopy
+ * @typedef {import("./Scope.js").ScopeI} ScopeI
+ * @typedef {import("./Variable.js").VariableI} VariableI
  */
 
 /**
@@ -67,11 +67,11 @@ export class BuiltinExpr {
 
     /**
      * Used when inlining
-     * @param {NotifyCopy} notifyCopy
-     * @param {Map<Variable, Variable>} varMap
+     * @param {NotifyCopy} _notifyCopy
+     * @param {Map<VariableI, VariableI>} _varMap
      * @returns {BuiltinExpr}
      */
-    copy(notifyCopy, varMap) {
+    copy(_notifyCopy, _varMap) {
         return this
     }
 
@@ -90,9 +90,9 @@ export class BuiltinExpr {
     }
 
     /**
-     * @param {Scope} scope
+     * @param {ScopeI} _scope
      */
-    resolveNames(scope) {}
+    resolveNames(_scope) {}
 
     /**
      * @returns {UplcTerm}

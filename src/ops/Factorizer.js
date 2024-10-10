@@ -13,6 +13,7 @@ import { mutate } from "./mutate.js"
 /**
  * @typedef {import("../analyze/index.js").Branch} Branch
  * @typedef {import("../analyze/index.js").BranchesGroup} BranchesGroup
+ * @typedef {import("../analyze/index.js").BranchesI} BranchesI
  * @typedef {import("../expressions/index.js").Expr} Expr
  */
 
@@ -162,7 +163,7 @@ export class Factorizer {
 
         Array.from(callExprs.entries())
             .sort((a, b) => a[0] - b[0])
-            .forEach(([key, callExprs]) => {
+            .forEach(([_key, callExprs]) => {
                 const callExprsArray = Array.from(callExprs)
 
                 const dataValues = callExprsArray.map((ce) => {
@@ -265,7 +266,7 @@ export class Factorizer {
         }
 
         // because each CallExpr returns the same runtime value, they can be replaced by the variable pointing to the common value
-        callExprs.forEach((ce, i) => {
+        callExprs.forEach((ce) => {
             this._substitutions.set(
                 ce,
                 new NameExpr(processed.injectedName, processed.injectedVar)
@@ -354,7 +355,7 @@ export class Factorizer {
         }
 
         // because each CallExpr returns the same runtime value, they can be replaced by the variable pointing to the common value
-        Array.from(groupCallExprs).forEach((ce, i) => {
+        Array.from(groupCallExprs).forEach((ce) => {
             this._substitutions.set(
                 ce,
                 new NameExpr(processed.injectedName, processed.injectedVar)

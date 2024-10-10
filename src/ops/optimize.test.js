@@ -1,5 +1,5 @@
 import { strictEqual } from "node:assert"
-import { describe, it, test } from "node:test"
+import { describe, it } from "node:test"
 import { removeWhitespace } from "@helios-lang/codec-utils"
 import { format } from "../format/index.js"
 import { parse } from "../parse/index.js"

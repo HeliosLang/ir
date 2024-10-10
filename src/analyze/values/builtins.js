@@ -310,10 +310,10 @@ function evalNonLiteralDataBuiltin(builtin, args, stack, ctx) {
      * @type {{[name: string]: (args: DataLikeValue[]) => (DataLikeValue | ErrorValue)}}
      */
     const callbacks = {
-        addInteger: ([a, b]) => {
+        addInteger: ([_a, _b]) => {
             return defaultResult()
         },
-        subtractInteger: ([a, b]) => {
+        subtractInteger: ([_a, _b]) => {
             return defaultResult()
         },
         multiplyInteger: ([a, b]) => {
@@ -348,7 +348,7 @@ function evalNonLiteralDataBuiltin(builtin, args, stack, ctx) {
                 return new MaybeErrorValue(defaultResult())
             }
         },
-        modInteger: ([a, b]) => {
+        modInteger: ([_a, b]) => {
             if (b instanceof LiteralValue) {
                 if (b.int == 1n) {
                     return new LiteralValue(new UplcInt(0n, true))
@@ -376,7 +376,7 @@ function evalNonLiteralDataBuiltin(builtin, args, stack, ctx) {
                 return new MaybeErrorValue(defaultResult())
             }
         },
-        remainderInteger: ([a, b]) => {
+        remainderInteger: ([_a, b]) => {
             if (b instanceof LiteralValue) {
                 if (b.int == 1n) {
                     return new LiteralValue(new UplcInt(0n, true))
@@ -389,29 +389,29 @@ function evalNonLiteralDataBuiltin(builtin, args, stack, ctx) {
                 return new MaybeErrorValue(defaultResult())
             }
         },
-        equalsInteger: ([a, b]) => {
+        equalsInteger: ([_a, _b]) => {
             return defaultResult()
         },
-        lessThanInteger: ([a, b]) => {
+        lessThanInteger: ([_a, _b]) => {
             return defaultResult()
         },
-        lessThanEqualsInteger: ([a, b]) => {
+        lessThanEqualsInteger: ([_a, _b]) => {
             return defaultResult()
         },
-        appendByteString: ([a, b]) => {
+        appendByteString: ([_a, _b]) => {
             return defaultResult()
         },
-        consByteString: ([a, b]) => {
+        consByteString: ([_a, _b]) => {
             return defaultResult()
         },
-        sliceByteString: ([a, b, c]) => {
+        sliceByteString: ([_a, b, _c]) => {
             if (b instanceof LiteralValue && b.int <= 0n) {
                 return new LiteralValue(new UplcByteArray([]))
             } else {
                 return defaultResult()
             }
         },
-        lengthOfByteString: ([a]) => {
+        lengthOfByteString: ([_a]) => {
             return defaultResult()
         },
         indexByteString: ([a, b]) => {
@@ -423,37 +423,37 @@ function evalNonLiteralDataBuiltin(builtin, args, stack, ctx) {
                 return new MaybeErrorValue(defaultResult())
             }
         },
-        equalsByteString: ([a, b]) => {
+        equalsByteString: ([_a, _b]) => {
             return defaultResult()
         },
-        lessThanByteString: ([a, b]) => {
+        lessThanByteString: ([_a, _b]) => {
             return defaultResult()
         },
-        lessThanEqualsByteString: ([a, b]) => {
+        lessThanEqualsByteString: ([_a, _b]) => {
             return defaultResult()
         },
-        appendString: ([a, b]) => {
+        appendString: ([_a, _b]) => {
             return defaultResult()
         },
-        equalsString: ([a, b]) => {
+        equalsString: ([_a, _b]) => {
             return defaultResult()
         },
-        encodeUtf8: ([a]) => {
+        encodeUtf8: ([_a]) => {
             return defaultResult()
         },
-        decodeUtf8: ([a]) => {
+        decodeUtf8: ([_a]) => {
             return new MaybeErrorValue(defaultResult())
         },
-        sha2_256: ([a]) => {
+        sha2_256: ([_a]) => {
             return defaultResult()
         },
-        sha3_256: ([a]) => {
+        sha3_256: ([_a]) => {
             return defaultResult()
         },
-        blake2b_256: ([a]) => {
+        blake2b_256: ([_a]) => {
             return defaultResult()
         },
-        verifyEd25519Signature: ([a, b, c]) => {
+        verifyEd25519Signature: ([a, _b, c]) => {
             if (a instanceof LiteralValue && a.bytes.length != 32) {
                 return new ErrorValue()
             } else if (c instanceof LiteralValue && c.bytes.length != 64) {
@@ -462,70 +462,70 @@ function evalNonLiteralDataBuiltin(builtin, args, stack, ctx) {
                 return new MaybeErrorValue(defaultResult())
             }
         },
-        trace: ([a, b]) => {
+        trace: ([_a, b]) => {
             return b
         },
-        fstPair: ([a]) => {
+        fstPair: ([_a]) => {
             return defaultResult()
         },
-        sndPair: ([a]) => {
+        sndPair: ([_a]) => {
             return defaultResult()
         },
-        mkCons: ([a, b]) => {
+        mkCons: ([_a, _b]) => {
             return defaultResult()
         },
-        headList: ([a]) => {
+        headList: ([_a]) => {
             return new MaybeErrorValue(defaultResult())
         },
-        tailList: ([a]) => {
+        tailList: ([_a]) => {
             return new MaybeErrorValue(defaultResult())
         },
-        nullList: ([a]) => {
+        nullList: ([_a]) => {
             return defaultResult()
         },
-        constrData: ([a, b]) => {
+        constrData: ([_a, _b]) => {
             return defaultResult()
         },
-        mapData: ([a]) => {
+        mapData: ([_a]) => {
             return defaultResult()
         },
-        listData: ([a]) => {
+        listData: ([_a]) => {
             return defaultResult()
         },
-        iData: ([a]) => {
+        iData: ([_a]) => {
             return defaultResult()
         },
-        bData: ([a]) => {
+        bData: ([_a]) => {
             return defaultResult()
         },
-        unConstrData: ([a]) => {
+        unConstrData: ([_a]) => {
             return new MaybeErrorValue(defaultResult())
         },
-        unMapData: ([a]) => {
+        unMapData: ([_a]) => {
             return new MaybeErrorValue(defaultResult())
         },
-        unListData: ([a]) => {
+        unListData: ([_a]) => {
             return new MaybeErrorValue(defaultResult())
         },
-        unIData: ([a]) => {
+        unIData: ([_a]) => {
             return new MaybeErrorValue(defaultResult())
         },
-        unBData: ([a]) => {
+        unBData: ([_a]) => {
             return new MaybeErrorValue(defaultResult())
         },
-        equalsData: ([a, b]) => {
+        equalsData: ([_a, _b]) => {
             return defaultResult()
         },
-        mkPairData: ([a, b]) => {
+        mkPairData: ([_a, _b]) => {
             return defaultResult()
         },
-        mkNilData: ([a]) => {
+        mkNilData: ([_a]) => {
             return defaultResult()
         },
-        mkNilPairData: ([a]) => {
+        mkNilPairData: ([_a]) => {
             return defaultResult()
         },
-        serialiseData: ([a]) => {
+        serialiseData: ([_a]) => {
             return defaultResult()
         }
     }

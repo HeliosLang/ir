@@ -3,13 +3,14 @@ import { None } from "@helios-lang/type-utils"
 import { UplcDelay, UplcLambda } from "@helios-lang/uplc"
 import { NameExpr } from "./NameExpr.js"
 import { Scope } from "./Scope.js"
-import { Variable } from "./Variable.js"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
  * @typedef {import("@helios-lang/uplc").UplcTerm} UplcTerm
  * @typedef {import("./Expr.js").Expr} Expr
  * @typedef {import("./Expr.js").NotifyCopy} NotifyCopy
+ * @typedef {import("./Scope.js").ScopeI} ScopeI
+ * @typedef {import("./Variable.js").VariableI} VariableI
  */
 
 /**
@@ -26,7 +27,7 @@ export class FuncExpr {
     /**
      * Mutation is more convenient and much faster when applying some optimizations.
      * @readwrite
-     * @type {Variable[]}
+     * @type {VariableI[]}
      */
     args
 
@@ -40,13 +41,13 @@ export class FuncExpr {
     /**
      * Variables referenced anywhere in the body
      * @readonly
-     * @type {Set<Variable>}
+     * @type {Set<VariableI>}
      */
     bodyVars
 
     /**
      * @param {Site} site
-     * @param {Variable[]} args
+     * @param {VariableI[]} args
      * @param {Expr} body
      */
     constructor(site, args, body) {
@@ -66,7 +67,7 @@ export class FuncExpr {
 
     /**
      * @param {NotifyCopy} notifyCopy
-     * @param {Map<Variable, Variable>} varMap
+     * @param {Map<VariableI, VariableI>} varMap
      * @returns {FuncExpr}
      */
     copy(notifyCopy, varMap) {
@@ -117,7 +118,7 @@ export class FuncExpr {
     }
 
     /**
-     * @param {Scope} scope
+     * @param {ScopeI} scope
      */
     resolveNames(scope) {
         // in the zero-arg case no Debruijn indices need to be added because we use Delay/Force

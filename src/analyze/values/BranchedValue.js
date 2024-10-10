@@ -1,12 +1,12 @@
 import { CallExpr } from "../../expressions/index.js"
 import { branchTypeToPrefix } from "./BranchType.js"
-import { Branches } from "./Branches.js"
 import { DataValue } from "./DataValue.js"
 import { FuncValue } from "./FuncValue.js"
 
 /**
  * @typedef {import("../../expressions/index.js").Expr} Expr
  * @typedef {import("./Branch.js").Branch} Branch
+ * @typedef {import("./Branches.js").BranchesI} BranchesI
  * @typedef {import("./BranchType.js").BranchType} BranchType
  * @typedef {import("./ValueI.js").ValueI} ValueI
  * @typedef {import("./Value.js").AnyDataValue} AnyDataValue
@@ -171,7 +171,7 @@ export class BranchedValue {
     }
 
     /**
-     * @param {Branches} branches
+     * @param {BranchesI} branches
      * @returns {BranchedValue}
      */
     withBranches(branches) {

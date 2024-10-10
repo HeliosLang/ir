@@ -1,8 +1,8 @@
 import { FuncValue } from "./FuncValue.js"
-import { StackValues } from "./StackValues.js"
 import { initValuePath, loopValues, pathToKey } from "./loop.js"
 
 /**
+ * @typedef {import("./StackValues.js").StackValuesI} StackValuesI
  * @typedef {import("./Value.js").Value} Value
  */
 
@@ -83,8 +83,8 @@ export function collectFuncValuesIgnoreStacks(...values) {
 }
 
 /**
- * @param {StackValues} values
- * @param {Option<StackValues>} prevValues
+ * @param {StackValuesI} values
+ * @param {Option<StackValuesI>} prevValues
  * @returns {[Set<string>, boolean]}
  */
 export function collectNonConst(values, prevValues) {
@@ -136,7 +136,7 @@ export function collectNonConst(values, prevValues) {
 
     const s = new Set(
         Array.from(m.entries())
-            .filter(([k, v]) => v === null)
+            .filter(([_k, v]) => v === null)
             .map(([k]) => k)
     )
     return [s, allLiteral]

@@ -1,5 +1,5 @@
 import { None, expectSome, isNone } from "@helios-lang/type-utils"
-import { CallExpr, FuncExpr, NameExpr, Variable } from "../expressions/index.js"
+import { CallExpr, FuncExpr } from "../expressions/index.js"
 import { containsCallExprs, collectVariableNameExprs } from "../ops/index.js"
 import {
     DataValue,
@@ -14,6 +14,8 @@ import {
 
 /**
  * @typedef {import("../expressions/index.js").Expr} Expr
+ * @typedef {import("../expressions/index.js").NameExprI} NameExprI
+ * @typedef {import("../expressions/index.js").VariableI} VariableI
  * @typedef {import("./values/index.js").Value} Value
  */
 
@@ -25,7 +27,7 @@ import {
  *   funcDefinitions: FuncExpr[]
  *   funcExprTags: Map<FuncExpr, number>
  *   rootExpr: Expr
- *   variableValues: Map<Variable, Value[]>
+ *   variableValues: Map<VariableI, Value[]>
  * }} AnalysisProps
  */
 
@@ -64,13 +66,13 @@ export class Analysis {
     rootExpr
 
     /**
-     * @type {Map<Variable, Set<NameExpr>>}
+     * @type {Map<VariableI, Set<NameExprI>>}
      */
     variableReferences
 
     /**
      * Keep track of all values passed through IRVariables
-     * @type {Map<Variable, Value[]>}
+     * @type {Map<VariableI, Value[]>}
      */
     variableValues
 
@@ -180,7 +182,7 @@ export class Analysis {
         )
         // only keep the entries with 2 or more CallExprs
         callExprs = new Map(
-            Array.from(callExprs.entries()).filter(([key, value]) => {
+            Array.from(callExprs.entries()).filter(([_key, value]) => {
                 return value.size > 1
             })
         )
@@ -197,7 +199,7 @@ export class Analysis {
     }
 
     /**
-     * @param {Variable} v
+     * @param {VariableI} v
      * @returns {number}
      */
     countVariableReferences(v) {
@@ -318,15 +320,15 @@ export class Analysis {
     }
 
     /**
-     * @param {Variable} v
-     * @returns {NameExpr[]}
+     * @param {VariableI} v
+     * @returns {NameExprI[]}
      */
     getVariableReferences(v) {
         return Array.from(this.variableReferences.get(v) ?? [])
     }
 
     /**
-     * @param {Variable} v
+     * @param {VariableI} v
      * @returns {Option<Value[]>}
      */
     getVariableValues(v) {

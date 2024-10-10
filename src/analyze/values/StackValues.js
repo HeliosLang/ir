@@ -6,6 +6,22 @@
  * @typedef {[number, NonErrorValue][]} StackValuesArray
  */
 
+/**
+ * @typedef {{
+ *   values: StackValuesArray
+ *   collectFuncTags(s: Set<number>): void
+ *   containsFunc(tag: number, depth: number): boolean
+ *   extend(items: StackValuesArray, keep: Set<number>): StackValuesI
+ *   filter(keep: Set<number>): StackValuesI
+ *   getValue(v: number): NonErrorValue
+ *   isLiteral(): boolean
+ *   toString(altValueKeys?: Map<number, string>): string
+ * }} StackValuesI
+ */
+
+/**
+ * @implements {StackValuesI}
+ */
 export class StackValues {
     /**
      * @type {StackValuesArray}
@@ -46,7 +62,7 @@ export class StackValues {
     /**
      * @param {StackValuesArray} items
      * @param {Set<number>} keep
-     * @returns {StackValues}
+     * @returns {StackValuesI}
      */
     extend(items, keep) {
         const values = this.values.concat(items).filter(([id]) => keep.has(id))
@@ -56,7 +72,7 @@ export class StackValues {
 
     /**
      * @param {Set<number>} keep
-     * @returns {StackValues}
+     * @returns {StackValuesI}
      */
     filter(keep) {
         const values = this.values.filter(([id]) => keep.has(id))

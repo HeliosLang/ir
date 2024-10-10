@@ -11,4 +11,6 @@ export { Variable } from "./Variable.js"
 /**
  * @typedef {import("./Expr.js").Expr} Expr
  * @typedef {import("./Expr.js").NotifyCopy} NotifyCopy
+ * @typedef {import("./NameExpr.js").NameExprI} NameExprI
+ * @typedef {import("./Variable.js").VariableI} VariableI
  */

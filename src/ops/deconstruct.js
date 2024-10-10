@@ -1,19 +1,20 @@
-import { CallExpr, FuncExpr, Variable } from "../expressions/index.js"
+import { CallExpr, FuncExpr } from "../expressions/index.js"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
  * @typedef {import("../expressions/index.js").Expr} Expr
+ * @typedef {import("../expressions/index.js").VariableI} VariableI
  */
 
 /**
  * @typedef {{
- *   name: Variable
+ *   name: VariableI
  *   callSite: Site
  *   funcSite: Site
  *   value: Expr
- *   directDeps: Set<Variable>
- *   allDeps: Set<Variable>
- *   recursiveDeps: Variable[]
+ *   directDeps: Set<VariableI>
+ *   allDeps: Set<VariableI>
+ *   recursiveDeps: VariableI[]
  * }} DeconstructedDef
  */
 

@@ -40,8 +40,10 @@ export {
 /**
  * @typedef {import("./Branch.js").Branch} Branch
  * @typedef {import("./Branches.js").BranchesGroup} BranchesGroup
+ * @typedef {import("./Branches.js").BranchesI} BranchesI
  * @typedef {import("./BranchType.js").BranchType} BranchType
  * @typedef {import("./EvalContext.js").EvalContext} EvalContext
+ * @typedef {import("./StackValues.js").StackValuesI} StackValuesI
  * @typedef {import("./Value.js").NonErrorValue} NonErrorValue
  * @typedef {import("./Value.js").Value} Value
  */

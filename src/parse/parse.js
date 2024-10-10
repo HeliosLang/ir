@@ -2,7 +2,6 @@ import {
     Source,
     TokenReader,
     Tokenizer,
-    Word,
     anyWord,
     boollit,
     byteslit,
@@ -33,12 +32,13 @@ import {
     ParamExpr,
     Variable
 } from "../expressions/index.js"
-import { SourceMappedString } from "./SourceMappedString.js"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Token} Token
  * @typedef {import("@helios-lang/compiler-utils").TokenReaderI} TokenReaderI
+ * @typedef {import("@helios-lang/compiler-utils").WordI} WordI
  * @typedef {import("../expressions/index.js").Expr} Expr
+ * @typedef {import("./SourceMappedString.js").SourceMappedStringI} SourceMappedStringI
  */
 
 /**
@@ -80,7 +80,7 @@ export const DEFAULT_PARSE_OPTIONS = {
 }
 
 /**
- * @param {string | SourceMappedString} ir
+ * @param {string | SourceMappedStringI} ir
  * @param {ParseOptions} options
  * @returns {Expr}
  */
@@ -109,7 +109,7 @@ export function parse(ir, options = DEFAULT_PARSE_OPTIONS) {
 
 /**
  * TODO: should this take into account the prefix?
- * @param {Word} w
+ * @param {WordI} w
  * @returns {boolean}
  */
 function isReserved(w) {
@@ -263,7 +263,7 @@ function parseInternal(r, options) {
                 group("(", { length: 0 })
             ))
         ) {
-            const [w, parens] = m
+            const [w, _parens] = m
 
             if (expr) {
                 r.errors.syntax(w.site, "unexpected expression")

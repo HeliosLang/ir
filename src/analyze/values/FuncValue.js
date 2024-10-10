@@ -1,7 +1,8 @@
-import { Branches } from "./Branches.js"
 import { Stack } from "./Stack.js"
+
 /**
  * @typedef {import("./Branch.js").Branch} Branch
+ * @typedef {import("./Branches.js").BranchesI} BranchesI
  * @typedef {import("./ValueI.js").ValueI} ValueI
  * @typedef {import("./Value.js").DataLikeValue} DataLikeValue
  * @typedef {import("./Value.js").NonErrorValue} NonErrorValue
@@ -54,7 +55,7 @@ export class FuncValue {
     }
 
     /**
-     * @param {Branches} branches
+     * @param {BranchesI} branches
      * @returns {FuncValue}
      */
     withBranches(branches) {
@@ -93,18 +94,18 @@ export class FuncValue {
     }
 
     /**
-     * @param {boolean} anyAsDataOnly
+     * @param {boolean} _anyAsDataOnly
      * @returns {boolean}
      */
-    isCallable(anyAsDataOnly) {
+    isCallable(_anyAsDataOnly) {
         return true
     }
 
     /**
-     * @param {boolean} anyAsFuncOnly
+     * @param {boolean} _anyAsFuncOnly
      * @returns {boolean}
      */
-    isDataLike(anyAsFuncOnly) {
+    isDataLike(_anyAsFuncOnly) {
         return false
     }
 
