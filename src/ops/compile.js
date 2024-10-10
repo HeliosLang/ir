@@ -13,6 +13,7 @@ import { optimize } from "./optimize.js"
 import { injectRecursiveDeps } from "./recursion.js"
 
 /**
+ * @typedef {import("@helios-lang/uplc").UplcProgramV2I} UplcProgramV2I
  * @typedef {import("../expressions/index.js").Expr} Expr
  * @typedef {import("../parse/index.js").ParseOptions} ParseOptions
  * @typedef {import("./optimize.js").OptimizeOptions} OptimizeOptions
@@ -22,7 +23,7 @@ import { injectRecursiveDeps } from "./recursion.js"
  * @typedef {{
  *   optimize?: boolean
  *   parseOptions?: ParseOptions
- *   alt?: UplcProgramV2
+ *   alt?: UplcProgramV2I
  *   optimizeOptions?: OptimizeOptions
  * }} CompileOptions
  */
@@ -30,7 +31,7 @@ import { injectRecursiveDeps } from "./recursion.js"
 /**
  * @param {string | SourceMappedString | Expr} rawExpr
  * @param {CompileOptions} options
- * @returns {UplcProgramV2}
+ * @returns {UplcProgramV2I}
  */
 export function compile(rawExpr, options = {}) {
     const expr = prepare(rawExpr, options)
