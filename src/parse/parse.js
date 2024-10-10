@@ -37,6 +37,7 @@ import { SourceMappedString } from "./SourceMappedString.js"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Token} Token
+ * @typedef {import("@helios-lang/compiler-utils").TokenReaderI} TokenReaderI
  * @typedef {import("../expressions/index.js").Expr} Expr
  */
 
@@ -117,7 +118,7 @@ function isReserved(w) {
 
 /**
  *
- * @param {TokenReader} r
+ * @param {TokenReaderI} r
  * @param {ParseOptions} options
  * @returns {Expr}
  */

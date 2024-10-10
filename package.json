@@ -8,6 +8,7 @@
     "scripts": {
         "build": "pnpm run prettify && pnpm run build:types && pnpm run test:suite",
         "build:types": "tsc -p jsconfig.json --noEmit false --emitDeclarationOnly",
+        "lint": "eslint .",
         "lockfile:sync": "pnpm install --ignore-workspace",
         "prepack": "pnpm run build",
         "prettify": "prettier . --write",
@@ -39,13 +40,17 @@
     },
     "devDependencies": {
         "@types/node": "^20.14.8",
+        "@types/punycode": "^2.1.4",
+        "@typescript-eslint/eslint-plugin": "^8.8.1",
+        "eslint": "^9.12.0",
+        "eslint-plugin-jsdoc": "^50.3.1",
         "prettier": "^3.3.3",
         "typescript": "^5.6.2"
     },
     "dependencies": {
-        "@helios-lang/codec-utils": "^0.2.0",
-        "@helios-lang/compiler-utils": "^0.1.63",
+        "@helios-lang/codec-utils": "^0.2.1",
+        "@helios-lang/compiler-utils": "^0.2.0",
         "@helios-lang/type-utils": "^0.1.25",
-        "@helios-lang/uplc": "^0.5.2"
+        "@helios-lang/uplc": "^0.6.0"
     }
 }

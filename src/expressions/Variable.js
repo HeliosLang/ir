@@ -7,7 +7,6 @@ import { Word } from "@helios-lang/compiler-utils"
 
 /**
  * Represents a function argument
- * @implements {Token}
  */
 export class Variable {
     /**

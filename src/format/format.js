@@ -116,7 +116,7 @@ function formatUplcData(d, options) {
 }
 
 /**
- * @param {import("@helios-lang/uplc").UplcValue} v
+ * @param {UplcValue} v
  * @param {FormatOptions} options
  * @returns {string}
  */
