@@ -6,10 +6,27 @@ import { None } from "@helios-lang/type-utils"
  * @typedef {import("@helios-lang/compiler-utils").SourceMap} SourceMap
  */
 
+/**
+ * @typedef {{
+ *   content: string | SourceMappedStringI[]
+ *   site: Option<Site>
+ *   flatten(): SourceMappedStringI[]
+ *   includes(str: string): boolean
+ *   join(sep: string): SourceMappedStringI
+ *   replace(re: RegExp, newStr: string): SourceMappedStringI
+ *   search(re: RegExp, callback: (match: string) => void): void
+ *   toString(tab?: string, pretty?: boolean): string
+ *   toStringWithSourceMap(tab?: string): [string, SourceMap]
+ * }} SourceMappedStringI
+ */
+
+/**
+ * @type {SourceMappedStringI}
+ */
 export class SourceMappedString {
     /**
      * @readonly
-     * @type {string | SourceMappedString[]}
+     * @type {string | SourceMappedStringI[]}
      */
     content
 
@@ -20,7 +37,7 @@ export class SourceMappedString {
     site
 
     /**
-     * @param {string | SourceMappedString[]} content
+     * @param {string | SourceMappedStringI[]} content
      * @param {Option<Site>} site
      */
     constructor(content, site = None) {
@@ -31,14 +48,14 @@ export class SourceMappedString {
     /**
      * Returns a list containing SourceMappedString instances that themselves only contain strings
      * @internal
-     * @returns {SourceMappedString[]}
+     * @returns {SourceMappedStringI[]}
      */
     flatten() {
         if (typeof this.content == "string") {
             return [this]
         } else {
             /**
-             * @type {SourceMappedString[]}
+             * @type {SourceMappedStringI[]}
              */
             let result = []
 
@@ -66,14 +83,14 @@ export class SourceMappedString {
      * Intersperse nested IR content with a separator
      * @internal
      * @param {string} sep
-     * @returns {SourceMappedString}
+     * @returns {SourceMappedStringI}
      */
     join(sep) {
         if (typeof this.content == "string") {
             return this
         } else {
             /**
-             * @type {SourceMappedString[]}
+             * @type {SourceMappedStringI[]}
              */
             const result = []
 
@@ -92,7 +109,7 @@ export class SourceMappedString {
     /**
      * @param {RegExp} re
      * @param {string} newStr
-     * @returns {SourceMappedString}
+     * @returns {SourceMappedStringI}
      */
     replace(re, newStr) {
         if (typeof this.content == "string") {
@@ -108,7 +125,6 @@ export class SourceMappedString {
     }
 
     /**
-     *
      * @param {RegExp} re
      * @param {(match: string) => void} callback
      */
@@ -127,6 +143,7 @@ export class SourceMappedString {
     }
 
     /**
+     * @param {string} tab
      * @param {boolean} pretty
      * @returns {string}
      */
@@ -189,8 +206,8 @@ export class SourceMappedString {
  * Shorthand for `new SourceMappedString()`, which can also be used with template string literals
  * This is used very frequently by the code generation of the higher-level language
  * @param {string | TemplateStringsArray | SourceMappedString[]} content
- * @param {...(Site | string | SourceMappedString | SourceMappedString[] | null | number)} args
- * @returns {SourceMappedString}
+ * @param {...(Site | string | SourceMappedStringI | SourceMappedStringI[] | null | number)} args
+ * @returns {SourceMappedStringI}
  */
 export function $(content, ...args) {
     if (typeof content == "string") {
@@ -204,6 +221,7 @@ export function $(content, ...args) {
                 typeof site == "number" ||
                 site === null ||
                 site instanceof SourceMappedString ||
+                "content" in site ||
                 Array.isArray(site)
             ) {
                 throw new Error("unexpected second argument")
@@ -217,7 +235,7 @@ export function $(content, ...args) {
         const raw = content.raw.slice()
 
         /**
-         * @type {SourceMappedString[]}
+         * @type {SourceMappedStringI[]}
          */
         const items = []
 
@@ -249,6 +267,13 @@ export function $(content, ...args) {
                     items.push(new SourceMappedString(s))
                     s = ""
                 }
+            } else if ("content" in a) {
+                if (s != "") {
+                    items.push(new SourceMappedString(s))
+                    s = ""
+                }
+
+                items.push(a)
             } else {
                 throw new Error(
                     "unexpected second argument (Site not allowable as template argument due to ambiguity of placement)"
@@ -267,7 +292,7 @@ export function $(content, ...args) {
         return new SourceMappedString(items)
     } else if (Array.isArray(content)) {
         /**
-         * @type {SourceMappedString[]}
+         * @type {SourceMappedStringI[]}
          */
         const items = []
 
@@ -285,6 +310,7 @@ export function $(content, ...args) {
                 typeof site == "number" ||
                 site === null ||
                 site instanceof SourceMappedString ||
+                "content" in site ||
                 Array.isArray(site)
             ) {
                 throw new Error("unexpected second argument")
