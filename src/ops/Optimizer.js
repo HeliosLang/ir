@@ -1046,6 +1046,7 @@ export class Optimizer {
                     analysis.countVariableReferences(v) == 1 &&
                     !analysis.expectsError(a)
                 ) {
+                    // TODO: the error-free restriction is too strict, can we use information about the branches to still inject error-expressions in some cases?
                     const nameExpr = analysis.getVariableReferences(v)[0]
 
                     if (

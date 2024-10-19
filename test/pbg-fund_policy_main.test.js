@@ -4,6 +4,10 @@ import { isLeft, isRight } from "@helios-lang/type-utils"
 import { UplcDataValue, UplcProgramV2, decodeUplcData } from "@helios-lang/uplc"
 import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
 
+/**
+ * @typedef {import("@helios-lang/uplc").UplcProgramV2I} UplcProgramV2I
+ */
+
 test("PBG::fund_policy::main", () => {
     const src = `(__DATUM_OR_REDEEMER, __REDEEMER_OR_CONTEXT) -> {
     main = (__MIXED, __CONTEXT) -> {
@@ -5293,7 +5297,7 @@ __core__ifThenElse(
     ].map((cbor) => new UplcDataValue(decodeUplcData(cbor)))
 
     /**
-     * @param {UplcProgramV2} program
+     * @param {UplcProgramV2I} program
      */
     const evalProgram = (program) => {
         const res = program.eval(args)
