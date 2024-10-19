@@ -9,7 +9,8 @@ import {
     MaybeErrorValue,
     BuiltinValue,
     AnyValue,
-    ErrorValue
+    ErrorValue,
+    LiteralValue
 } from "./values/index.js"
 
 /**
@@ -445,20 +446,33 @@ export class Analysis {
             return false
         }
 
+        const firstTag = this.getFuncExprTag(first)
+
         return callExprs.every((ce) => {
             if (ce.func instanceof CallExpr) {
+                // these are flattened values
                 const v = this.getExprValue(ce.func.func)
 
                 if (!v || v.length == 0) {
                     return false
                 } else if (v.length == 1 && v[0] instanceof FuncValue) {
-                    return v[0].definitionTag == this.getFuncExprTag(first)
+                    return v[0].definitionTag == firstTag
                 } else {
-                    return v.every(
-                        (vv) =>
-                            !(vv instanceof FuncValue) ||
-                            vv.definitionTag == this.getFuncExprTag(first)
-                    )
+                    return v.every((vv) => {
+                        // we allow data-like values, because calling them will throw errors at runtime anyway
+                        if (
+                            vv instanceof DataValue ||
+                            vv instanceof LiteralValue ||
+                            vv instanceof ErrorValue
+                        ) {
+                            return true
+                        } else if (vv instanceof FuncValue) {
+                            return vv.definitionTag == firstTag
+                        } else {
+                            // other value-kinds might be callable, so to be safe we can't allowing flattening such calls
+                            return false
+                        }
+                    })
                 }
             } else {
                 return false

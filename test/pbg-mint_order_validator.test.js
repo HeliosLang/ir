@@ -4938,15 +4938,11 @@ test("PBG::fund_policy::main", () => {
         const res = program.eval(args)
 
         if (isRight(res.result)) {
-            console.log("result", res.logs)
             return "result: " + res.result.right.toString()
         } else if (isLeft(res.result)) {
-            console.log("error", res.logs)
             return "error"
         }
     }
-
-    
 
     strictEqual(evalProgram(uplcProgram0), evalProgram(uplcProgram1))
 })

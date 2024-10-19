@@ -17,6 +17,7 @@ import {
     ParamExpr,
     isIdentityFunc
 } from "../expressions/index.js"
+import { format } from "../format/index.js"
 import { Factorizer } from "./Factorizer.js"
 import { loop, assertNoDuplicateExprs } from "./loop.js"
 
@@ -311,10 +312,9 @@ export class Optimizer {
     }
 
     /**
-
-  * @private
-  * @param {Analysis} analysis
-  */
+     * @private
+     * @param {Analysis} analysis
+     */
     flattenNestedFuncExprs(analysis) {
         const funcExprs = this.collectFuncExprs()
 
@@ -329,7 +329,7 @@ export class Optimizer {
             }
 
             let last = expr
-            let args = expr.args.slice()
+            let args = [expr.args.slice()]
             let depth = 1
 
             while (
@@ -339,7 +339,7 @@ export class Optimizer {
             ) {
                 depth += 1
                 last = last.body
-                args = args.concat(last.args.slice())
+                args.push(last.args.slice())
                 done.add(last)
             }
 
@@ -363,7 +363,15 @@ export class Optimizer {
                 let allArgs = []
 
                 for (let i = 0; i < depth; i++) {
-                    allArgs.push(inner.args.slice())
+                    const innerArgs = inner.args.slice()
+
+                    if (innerArgs.length != args[depth - 1 - i].length) {
+                        throw new Error(
+                            `something went wrong when flattening:\n (fn: ${format(expr)}, nested: ${format(last)})`
+                        )
+                    }
+
+                    allArgs.push(innerArgs)
 
                     if (i < depth - 1) {
                         if (!(inner.func instanceof CallExpr)) {
@@ -374,11 +382,13 @@ export class Optimizer {
                     }
                 }
 
+                const newArgs = allArgs.reverse().flat()
+
                 callExpr.func = inner.func
-                callExpr.args = allArgs.reverse().flat()
+                callExpr.args = newArgs
             })
 
-            expr.args = args
+            expr.args = args.flat()
             expr.body = last.body
         })
     }

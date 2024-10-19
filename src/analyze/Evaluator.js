@@ -862,7 +862,9 @@ export class Evaluator {
         const callExprOwner = owner instanceof CallExpr ? owner : None
 
         if (args.length != fnDef.args.length) {
-            throw new Error("invalid number of arguments")
+            throw new Error(
+                `invalid number of arguments, expected ${fnDef.args.length}, got ${args.length}`
+            )
         }
 
         if (this.props.onCallFunc) {
