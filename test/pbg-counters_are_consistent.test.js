@@ -1,8 +1,12 @@
 import { strictEqual } from "node:assert"
 import { test } from "node:test"
 import { isLeft, isRight } from "@helios-lang/type-utils"
-import { UplcDataValue, UplcProgramV2, decodeUplcData } from "@helios-lang/uplc"
+import { UplcDataValue, decodeUplcData } from "@helios-lang/uplc"
 import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
+
+/**
+ * @typedef {import("@helios-lang/uplc").UplcProgramV2I} UplcProgramV2I
+ */
 
 test("PBG::Vault::counters_are_consistent()", () => {
     const src = `(__CONTEXT) -> {
@@ -867,7 +871,7 @@ test("PBG::Vault::counters_are_consistent()", () => {
     ].map((cbor) => new UplcDataValue(decodeUplcData(cbor)))
 
     /**
-     * @param {UplcProgramV2} program
+     * @param {UplcProgramV2I} program
      */
     const evalProgram = (program) => {
         const res = program.eval(args)
