@@ -24,7 +24,7 @@ import {
 /**
  * @param {StackValues} values
  * @param {ValueGenerator} valueGenerator
- * @param {Option<StackValues>} prevValues
+ * @param {StackValues | undefined} prevValues
  * @returns {StackValues}
  */
 export function makeRecursiveDataOpaque(values, valueGenerator, prevValues) {

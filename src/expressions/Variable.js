@@ -1,15 +1,15 @@
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
  * @typedef {import("@helios-lang/compiler-utils").Token} Token
- * @typedef {import("@helios-lang/compiler-utils").WordI} WordI
+ * @typedef {import("@helios-lang/compiler-utils").Word} Word
  */
 
 /**
  * @typedef {{
- *   name: WordI
+ *   name: Word
  *   site: Site
  *   copy(newVars: Map<VariableI, VariableI>): VariableI
- *   isEqual(other: WordI | VariableI): boolean
+ *   isEqual(other: Word | VariableI): boolean
  *   toString(preferAlias?: boolean): string
  * }} VariableI
  */
@@ -23,12 +23,12 @@ export class Variable {
      * Mutation of `name` is used to change the name to a globally unique name
      * (mutation of this field is much easier and faster than creating a new Variable instance)
      * @readwrite
-     * @type {WordI}
+     * @type {Word}
      */
     name
 
     /**
-     * @param {WordI} name
+     * @param {Word} name
      */
     constructor(name) {
         this.name = name
@@ -54,7 +54,7 @@ export class Variable {
     }
 
     /**
-     * @param {WordI | VariableI} other
+     * @param {Word | VariableI} other
      * @returns {boolean}
      */
     isEqual(other) {
@@ -66,14 +66,14 @@ export class Variable {
     }
 
     /**
-     * @param {boolean} preferAlias
+     * @param {boolean} preferDescription
      * @returns {string}
      */
-    toString(preferAlias = false) {
-        const alias = this.name.site.alias
+    toString(preferDescription = false) {
+        const description = this.name.site.description
 
-        if (alias && preferAlias) {
-            return alias
+        if (description && preferDescription) {
+            return description
         } else {
             return this.name.toString()
         }

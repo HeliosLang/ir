@@ -1,7 +1,7 @@
 import { strictEqual, throws } from "node:assert"
 import { describe, it } from "node:test"
 import { bytesToHex, equalsBytes, hexToBytes } from "@helios-lang/codec-utils"
-import { IntData } from "@helios-lang/uplc"
+import { makeIntData } from "@helios-lang/uplc"
 import {
     BuiltinExpr,
     CallExpr,
@@ -88,7 +88,7 @@ describe(parse.name, () => {
         })
     })
 
-    const testData = new IntData(0)
+    const testData = makeIntData(0)
     const testDataSrc = `##${bytesToHex(testData.toCbor())}`
 
     it("parses #(IntData) as LiteralExpr", () => {

@@ -1,5 +1,3 @@
-import { isNone } from "@helios-lang/type-utils"
-
 /**
  * A Bidirectional or Bijective map, mapping an instance of any type to a unique integer
  * Doesn't support removal
@@ -30,7 +28,7 @@ export class BiMap {
     add(value) {
         let key = this.valueKeys.get(value)
 
-        if (isNone(key)) {
+        if (key === undefined) {
             key = this.keyValues.length
             this.keyValues.push(value)
             this.valueKeys.set(value, key)
@@ -41,7 +39,7 @@ export class BiMap {
 
     /**
      * @param {T} value
-     * @returns {Option<number>}
+     * @returns {number | undefined}
      */
     getKeyByValue(value) {
         return this.valueKeys.get(value)
@@ -49,7 +47,7 @@ export class BiMap {
 
     /**
      * @param {number} key
-     * @returns {Option<T>}
+     * @returns {T | undefined}
      */
     getValueByKey(key) {
         return this.keyValues[key]

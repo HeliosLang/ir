@@ -1,7 +1,7 @@
 import {
-    Source,
-    TokenReader,
-    Tokenizer,
+    makeSource,
+    makeTokenReader,
+    makeTokenizer,
     anyWord,
     boollit,
     byteslit,
@@ -11,14 +11,13 @@ import {
     symbol,
     word
 } from "@helios-lang/compiler-utils"
-import { None } from "@helios-lang/type-utils"
 import {
-    UplcBool,
-    UplcByteArray,
-    UplcDataValue,
-    UplcInt,
-    UplcString,
-    UplcUnit,
+    makeUplcBool,
+    makeUplcByteArray,
+    makeUplcDataValue,
+    makeUplcInt,
+    makeUplcString,
+    UNIT_VALUE,
     builtinsV2,
     decodeUplcData
 } from "@helios-lang/uplc"
@@ -35,8 +34,8 @@ import {
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Token} Token
- * @typedef {import("@helios-lang/compiler-utils").TokenReaderI} TokenReaderI
- * @typedef {import("@helios-lang/compiler-utils").WordI} WordI
+ * @typedef {import("@helios-lang/compiler-utils").TokenReader} TokenReader
+ * @typedef {import("@helios-lang/compiler-utils").Word} Word
  * @typedef {import("../expressions/index.js").Expr} Expr
  * @typedef {import("./SourceMappedString.js").SourceMappedStringI} SourceMappedStringI
  */
@@ -88,9 +87,9 @@ export function parse(ir, options = DEFAULT_PARSE_OPTIONS) {
     let [raw, sourceMap] =
         typeof ir == "string" ? [ir, undefined] : ir.toStringWithSourceMap()
 
-    const src = new Source(raw)
+    const src = makeSource(raw)
 
-    const tokenizer = new Tokenizer(src, {
+    const tokenizer = makeTokenizer(src, {
         sourceMap,
         extraValidFirstLetters: "[@$]",
         tokenizeReal: false,
@@ -100,7 +99,7 @@ export function parse(ir, options = DEFAULT_PARSE_OPTIONS) {
 
     const ts = tokenizer.tokenize()
 
-    const reader = new TokenReader(ts, tokenizer.errors)
+    const reader = makeTokenReader({ tokens: ts, errors: tokenizer.errors })
 
     const expr = parseInternal(reader, options)
 
@@ -109,7 +108,7 @@ export function parse(ir, options = DEFAULT_PARSE_OPTIONS) {
 
 /**
  * TODO: should this take into account the prefix?
- * @param {WordI} w
+ * @param {Word} w
  * @returns {boolean}
  */
 function isReserved(w) {
@@ -118,15 +117,15 @@ function isReserved(w) {
 
 /**
  *
- * @param {TokenReaderI} r
+ * @param {TokenReader} r
  * @param {ParseOptions} options
  * @returns {Expr}
  */
 function parseInternal(r, options) {
     /**
-     * @type {Option<Expr>}
+     * @type {Expr | undefined}
      */
-    let expr = None
+    let expr = undefined
 
     let m
 
@@ -195,7 +194,7 @@ function parseInternal(r, options) {
                 if (m.fields.length == 1) {
                     expr = parseInternal(m.fields[0], options)
                 } else if (m.fields.length == 0) {
-                    expr = new LiteralExpr(new UplcUnit(), m.site)
+                    expr = new LiteralExpr(UNIT_VALUE, m.site)
                 } else {
                     r.errors.syntax(
                         m.site,
@@ -217,19 +216,19 @@ function parseInternal(r, options) {
                 r.errors.syntax(minus.site, "unexpected expression")
             }
 
-            expr = new LiteralExpr(new UplcInt(-x.value), minus.site)
+            expr = new LiteralExpr(makeUplcInt(-x.value), minus.site)
         } else if ((m = r.matches(boollit()))) {
             if (expr) {
                 r.errors.syntax(m.site, "unexpected expression")
             }
 
-            expr = new LiteralExpr(new UplcBool(m.value), m.site)
+            expr = new LiteralExpr(makeUplcBool(m.value), m.site)
         } else if ((m = r.matches(intlit()))) {
             if (expr) {
                 r.errors.syntax(m.site, "unexpected expression")
             }
 
-            expr = new LiteralExpr(new UplcInt(m.value), m.site)
+            expr = new LiteralExpr(makeUplcInt(m.value), m.site)
         } else if ((m = r.matches(byteslit(), byteslit()))) {
             const [a, b] = m
 
@@ -242,7 +241,7 @@ function parseInternal(r, options) {
             }
 
             expr = new LiteralExpr(
-                new UplcDataValue(decodeUplcData(b.value)),
+                makeUplcDataValue(decodeUplcData(b.value)),
                 a.site
             )
         } else if ((m = r.matches(byteslit()))) {
@@ -250,13 +249,13 @@ function parseInternal(r, options) {
                 r.errors.syntax(m.site, "unexpected expression")
             }
 
-            expr = new LiteralExpr(new UplcByteArray(m.value), m.site)
+            expr = new LiteralExpr(makeUplcByteArray(m.value), m.site)
         } else if ((m = r.matches(strlit()))) {
             if (expr) {
                 r.errors.syntax(m.site, "unexpected expression")
             }
 
-            expr = new LiteralExpr(new UplcString(m.value), m.site)
+            expr = new LiteralExpr(makeUplcString(m.value), m.site)
         } else if (
             (m = r.matches(
                 word(options.errorPrefix + "error"),

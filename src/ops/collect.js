@@ -1,4 +1,4 @@
-import { expectSome } from "@helios-lang/type-utils"
+import { expectDefined } from "@helios-lang/type-utils"
 import { loop } from "./loop.js"
 
 /**
@@ -73,7 +73,7 @@ export function collectUsedVariablesWithDepth(expr) {
 
     loop(expr, {
         nameExpr: (nameExpr) => {
-            const idx = expectSome(nameExpr.index)
+            const idx = expectDefined(nameExpr.index)
 
             if (!s.some((entry) => entry[1] == nameExpr.variable)) {
                 s.push([idx, nameExpr.variable])

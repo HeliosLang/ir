@@ -1,6 +1,5 @@
 import { strictEqual } from "node:assert"
 import { describe, it } from "node:test"
-import { None } from "@helios-lang/type-utils"
 import { parse } from "../parse/index.js"
 import { FuncExpr } from "./FuncExpr.js"
 import { Scope } from "./Scope.js"
@@ -15,7 +14,7 @@ describe(FuncExpr.name, () => {
             throw new Error("unexpected")
         }
 
-        expr.resolveNames(new Scope(None, None))
+        expr.resolveNames(new Scope(undefined, undefined))
 
         strictEqual(expr.bodyVars.size, 3)
     })

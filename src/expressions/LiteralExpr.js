@@ -1,10 +1,9 @@
-import { TokenSite } from "@helios-lang/compiler-utils"
-import { None } from "@helios-lang/type-utils"
-import { UplcConst } from "@helios-lang/uplc"
+import { isDummySite } from "@helios-lang/compiler-utils"
+import { makeUplcConst } from "@helios-lang/uplc"
 
 /**
- * @typedef {import("@helios-lang/compiler-utils").Site} Site
- * @typedef {import("@helios-lang/uplc").UplcValue} UplcValue
+ * @import { Site } from "@helios-lang/compiler-utils"
+ * @import { UplcConst, UplcValue } from "@helios-lang/uplc"
  * @typedef {import("./Expr.js").Expr} Expr
  * @typedef {import("./Expr.js").NotifyCopy} NotifyCopy
  * @typedef {import("./Scope.js").ScopeI} ScopeI
@@ -41,7 +40,7 @@ export class LiteralExpr {
      * @type {number}
      */
     get flatSize() {
-        return new UplcConst(this.value).flatSize
+        return makeUplcConst({ value: this.value }).flatSize
     }
 
     /**
@@ -71,8 +70,8 @@ export class LiteralExpr {
      * @returns {UplcConst}
      */
     toUplc() {
-        const s = TokenSite.isDummy(this.site) ? None : this.site
+        const s = isDummySite(this.site) ? undefined : this.site
 
-        return new UplcConst(this.value, s)
+        return makeUplcConst({ value: this.value, site: s })
     }
 }

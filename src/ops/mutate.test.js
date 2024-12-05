@@ -1,6 +1,6 @@
 import { strictEqual } from "node:assert"
 import { describe, it } from "node:test"
-import { Word } from "@helios-lang/compiler-utils"
+import { makeDummySite, makeWord } from "@helios-lang/compiler-utils"
 import { CallExpr, ErrorExpr, NameExpr } from "../expressions/index.js"
 import { format } from "../format/index.js"
 import { parse, DEFAULT_PARSE_OPTIONS } from "../parse/index.js"
@@ -13,11 +13,7 @@ import { mutate } from "./mutate.js"
 /**
  * @type {Site}
  */
-const site = {
-    file: "",
-    line: 0,
-    column: 0
-}
+const site = makeDummySite()
 
 describe(mutate.name, () => {
     it(`converts error() to CallExpr(error, [])`, () => {
@@ -27,7 +23,7 @@ describe(mutate.name, () => {
             errorExpr: (_errorExpr) => {
                 return new CallExpr(
                     site,
-                    new NameExpr(new Word("error", site)),
+                    new NameExpr(makeWord({ value: "error", site })),
                     []
                 )
             }
@@ -49,11 +45,13 @@ describe(mutate.name, () => {
             nameExpr: (nameExpr) => {
                 switch (nameExpr.name) {
                     case "addInteger":
-                        return new NameExpr(new Word("subtractInteger", site))
+                        return new NameExpr(
+                            makeWord({ value: "subtractInteger", site })
+                        )
                     case "a":
-                        return new NameExpr(new Word("c", site))
+                        return new NameExpr(makeWord({ value: "c", site }))
                     case "b":
-                        return new NameExpr(new Word("d", site))
+                        return new NameExpr(makeWord({ value: "d", site }))
                     default:
                         return nameExpr
                 }

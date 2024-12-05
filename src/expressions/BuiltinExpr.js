@@ -1,6 +1,5 @@
-import { TokenSite } from "@helios-lang/compiler-utils"
-import { None } from "@helios-lang/type-utils"
-import { UplcBuiltin, UplcForce } from "@helios-lang/uplc"
+import { isDummySite } from "@helios-lang/compiler-utils"
+import { makeUplcBuiltin, makeUplcForce } from "@helios-lang/uplc"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
@@ -98,15 +97,15 @@ export class BuiltinExpr {
      * @returns {UplcTerm}
      */
     toUplc() {
-        const s = TokenSite.isDummy(this.site) ? None : this.site
+        const s = isDummySite(this.site) ? undefined : this.site
 
         /**
          * @type {UplcTerm}
          */
-        let term = new UplcBuiltin(this.id, this.name, s)
+        let term = makeUplcBuiltin({ id: this.id, name: this.name, site: s })
 
         for (let i = 0; i < this.nForce; i++) {
-            term = new UplcForce(term, s)
+            term = makeUplcForce({ arg: term, site: s })
         }
 
         return term

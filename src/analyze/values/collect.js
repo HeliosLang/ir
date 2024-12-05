@@ -84,7 +84,7 @@ export function collectFuncValuesIgnoreStacks(...values) {
 
 /**
  * @param {StackValuesI} values
- * @param {Option<StackValuesI>} prevValues
+ * @param {StackValuesI | undefined} prevValues
  * @returns {[Set<string>, boolean]}
  */
 export function collectNonConst(values, prevValues) {

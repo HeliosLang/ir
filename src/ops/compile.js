@@ -1,6 +1,5 @@
-import { Word } from "@helios-lang/compiler-utils"
-import { None } from "@helios-lang/type-utils"
-import { UplcProgramV2 } from "@helios-lang/uplc"
+import { makeWord } from "@helios-lang/compiler-utils"
+import { makeUplcProgramV2 } from "@helios-lang/uplc"
 import { Scope } from "../expressions/index.js"
 import { format } from "../format/index.js"
 import { parse, DEFAULT_PARSE_OPTIONS } from "../parse/index.js"
@@ -9,7 +8,8 @@ import { optimize } from "./optimize.js"
 import { injectRecursiveDeps } from "./recursion.js"
 
 /**
- * @typedef {import("@helios-lang/uplc").UplcProgramV2I} UplcProgramV2I
+ * @import { Word } from "@helios-lang/compiler-utils"
+ * @typedef {import("@helios-lang/uplc").UplcProgramV2} UplcProgramV2
  * @typedef {import("../expressions/index.js").Expr} Expr
  * @typedef {import("../parse/index.js").ParseOptions} ParseOptions
  * @typedef {import("../parse/index.js").SourceMappedStringI} SourceMappedStringI
@@ -20,7 +20,7 @@ import { injectRecursiveDeps } from "./recursion.js"
  * @typedef {{
  *   optimize?: boolean
  *   parseOptions?: ParseOptions
- *   alt?: UplcProgramV2I
+ *   alt?: UplcProgramV2
  *   optimizeOptions?: OptimizeOptions
  * }} CompileOptions
  */
@@ -28,14 +28,14 @@ import { injectRecursiveDeps } from "./recursion.js"
 /**
  * @param {string | SourceMappedStringI | Expr} rawExpr
  * @param {CompileOptions} options
- * @returns {UplcProgramV2I}
+ * @returns {UplcProgramV2}
  */
 export function compile(rawExpr, options = {}) {
     const expr = prepare(rawExpr, options)
 
     const uplc = expr.toUplc()
 
-    return new UplcProgramV2(uplc, {
+    return makeUplcProgramV2(uplc, {
         alt: options.alt,
         ir: () =>
             format(expr, {
@@ -59,14 +59,14 @@ export function prepare(rawExpr, options = {}) {
 
     expr = injectRecursiveDeps(expr)
 
-    expr.resolveNames(new Scope(None, None))
+    expr.resolveNames(new Scope(undefined, undefined))
 
     giveVariablesUniqueNames(expr)
 
     if (options.optimize) {
         expr = optimize(expr, options.optimizeOptions ?? {})
 
-        expr.resolveNames(new Scope(None, None))
+        expr.resolveNames(new Scope(undefined, undefined))
     }
 
     return expr
@@ -97,7 +97,10 @@ function giveVariablesUniqueNames(expr) {
                         nameWithSuffix = `${name}${suffix}`
                     }
 
-                    a.name = new Word(nameWithSuffix, a.name.site)
+                    a.name = makeWord({
+                        value: nameWithSuffix,
+                        site: a.name.site
+                    })
                     varNames.add(nameWithSuffix)
                 } else {
                     varNames.add(name)

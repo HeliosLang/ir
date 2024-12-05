@@ -1,4 +1,3 @@
-import { isNone } from "@helios-lang/type-utils"
 import { format } from "../format/format.js"
 import { Optimizer, DEFAULT_OPTIMIZER_OPTIONS } from "./Optimizer.js"
 
@@ -28,7 +27,10 @@ export function optimize(expr, options = DEFAULT_OPTIMIZER_OPTIONS) {
     let oldState = format(expr, formatOptions)
     let commonSubExprCount = 0
 
-    while (dirty && (isNone(options.maxIters) || iter < options.maxIters)) {
+    while (
+        dirty &&
+        (options.maxIters === undefined || iter < options.maxIters)
+    ) {
         dirty = false
 
         /**

@@ -1,4 +1,4 @@
-import { None, expectSome, isNone } from "@helios-lang/type-utils"
+import { expectDefined } from "@helios-lang/type-utils"
 import { CallExpr, FuncExpr } from "../expressions/index.js"
 import { containsCallExprs, collectVariableNameExprs } from "../ops/index.js"
 import {
@@ -210,7 +210,7 @@ export class Analysis {
     /**
      * @param {Expr} expr
      * @param {boolean} raw
-     * @returns {Option<Value[]>}
+     * @returns {Value[] | undefined}
      */
     getExprValue(expr, raw = false) {
         const values = this.exprValues.get(expr)
@@ -222,13 +222,13 @@ export class Analysis {
                 return uniqueFlattenedValues(values)
             }
         } else {
-            return None
+            return undefined
         }
     }
 
     /**
      * @param {Expr} expr
-     * @returns {Option<DataValue>}
+     * @returns {DataValue | undefined}
      */
     getSingleExprDataValue(expr) {
         const dv = this.getExprValue(expr)
@@ -241,16 +241,16 @@ export class Analysis {
             if (dvv instanceof DataValue) {
                 return dvv
             } else {
-                return None
+                return undefined
             }
         } else {
-            return None
+            return undefined
         }
     }
 
     /**
      * @param {Expr} expr
-     * @returns {Option<FuncValue>}
+     * @returns {FuncValue | undefined}
      */
     getSingleExprFuncValue(expr) {
         const dv = this.getExprValue(expr)
@@ -263,10 +263,10 @@ export class Analysis {
             if (dvv instanceof FuncValue) {
                 return dvv
             } else {
-                return None
+                return undefined
             }
         } else {
-            return None
+            return undefined
         }
     }
 
@@ -283,7 +283,7 @@ export class Analysis {
      * @returns {FuncExpr}
      */
     getFuncDefinition(tag) {
-        return expectSome(this.funcDefinitions[tag])
+        return expectDefined(this.funcDefinitions[tag])
     }
 
     /**
@@ -293,7 +293,7 @@ export class Analysis {
     getFuncExprTag(expr) {
         const tag = this.funcExprTags.get(expr)
 
-        if (isNone(tag)) {
+        if (tag === undefined) {
             throw new Error("tag not generated")
         }
 
@@ -330,7 +330,7 @@ export class Analysis {
 
     /**
      * @param {VariableI} v
-     * @returns {Option<Value[]>}
+     * @returns {Value[] | undefined}
      */
     getVariableValues(v) {
         const values = this.variableValues.get(v)
@@ -338,7 +338,7 @@ export class Analysis {
         if (values) {
             return uniqueFlattenedValues(values)
         } else {
-            return None
+            return undefined
         }
     }
 

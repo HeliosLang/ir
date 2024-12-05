@@ -1,10 +1,9 @@
-import { TokenSite, Word } from "@helios-lang/compiler-utils"
-import { None } from "@helios-lang/type-utils"
-import { UplcVar } from "@helios-lang/uplc"
+import { isDummySite, makeWord } from "@helios-lang/compiler-utils"
+import { makeUplcVar } from "@helios-lang/uplc"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
- * @typedef {import("@helios-lang/compiler-utils").WordI} WordI
+ * @typedef {import("@helios-lang/compiler-utils").Word} Word
  * @typedef {import("@helios-lang/uplc").UplcTerm} UplcTerm
  * @typedef {import("./Expr.js").Expr} Expr
  * @typedef {import("./Expr.js").NotifyCopy} NotifyCopy
@@ -14,7 +13,7 @@ import { UplcVar } from "@helios-lang/uplc"
 
 /**
  * @typedef {Expr & {
- *   index: Option<number>
+ *   index: number | undefined
  *   name: string
  *   variable: VariableI
  *   isVariable(ref: VariableI): boolean
@@ -34,36 +33,36 @@ export class NameExpr {
 
     /**
      * Cached debruijn index
-     * @type {Option<number>}
+     * @type {number | undefined}
      */
     index
 
     /**
      * @private
      * @readwrite
-     * @type {WordI}
+     * @type {Word}
      */
     _name
 
     /**
      * Cached variable
      * @private
-     * @type {Option<VariableI>}
+     * @type {VariableI | undefined}
      */
     _variable
 
     /**
-     * @param {WordI} name
-     * @param {Option<VariableI>} variable
+     * @param {Word} name
+     * @param {VariableI | undefined} variable
      */
-    constructor(name, variable = null) {
+    constructor(name, variable = undefined) {
         this.site = name.site
 
         if (name.toString() == "_" || name.toString().startsWith("undefined")) {
             throw new Error("unexpected")
         }
 
-        this.index = null
+        this.index = undefined
         this._name = name
         this._variable = variable
     }
@@ -79,7 +78,7 @@ export class NameExpr {
      * @param {string} n
      */
     set name(n) {
-        this._name = new Word(n, this._name.site)
+        this._name = makeWord({ value: n, site: this._name.site })
     }
 
     /**
@@ -163,19 +162,19 @@ export class NameExpr {
      * @returns {UplcTerm}
      */
     toUplc() {
-        const s = TokenSite.isDummy(this.site) ? None : this.site
+        const s = isDummySite(this.site) ? undefined : this.site
 
-        // prefer the alias if it is available (only used for debugging anyway, not for name resolution)
+        // prefer the description if it is available (only used for debugging anyway, not for name resolution)
         let name = this.name
-        if (this._variable && this._variable.name.site.alias) {
-            name = this._variable.name.site.alias
+        if (this._variable && this._variable.name.site.description) {
+            name = this._variable.name.site.description
         }
 
         if (!this.index) {
             // use a dummy index (for program size calculation)
-            return new UplcVar(0, name, s)
+            return makeUplcVar({ index: 0, name, site: s })
         } else {
-            return new UplcVar(this.index, name, s)
+            return makeUplcVar({ index: this.index, name, site: s })
         }
     }
 }

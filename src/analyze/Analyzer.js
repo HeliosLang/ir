@@ -1,4 +1,4 @@
-import { expectSome } from "@helios-lang/type-utils"
+import { expectDefined } from "@helios-lang/type-utils"
 import { CallExpr, FuncExpr } from "../expressions/index.js"
 import { loop } from "../ops/index.js"
 import { Analysis } from "./Analysis.js"
@@ -82,7 +82,7 @@ export class Analyzer {
         const incrCallCount = (exprOrTag, _incr) => {
             const expr =
                 typeof exprOrTag == "number"
-                    ? expectSome(funcExprs.getValueByKey(exprOrTag))
+                    ? expectDefined(funcExprs.getValueByKey(exprOrTag))
                     : exprOrTag
 
             const prev = callCount.get(expr)
@@ -129,11 +129,11 @@ export class Analyzer {
                     }
 
                     // also add AnyValue | ErrorValue to each internal expression of these functions
-                    loop(expectSome(funcExprs.getValueByKey(tag)).body, {
+                    loop(expectDefined(funcExprs.getValueByKey(tag)).body, {
                         nameExpr: onEvalExprInsideAny,
                         callExpr: onEvalExprInsideAny,
                         funcExpr: (expr) => {
-                            const tag = expectSome(
+                            const tag = expectDefined(
                                 funcExprs.getKeyByValue(expr)
                             )
 

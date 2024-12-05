@@ -1,6 +1,5 @@
-import { TokenSite } from "@helios-lang/compiler-utils"
-import { None } from "@helios-lang/type-utils"
-import { UplcDelay, UplcLambda } from "@helios-lang/uplc"
+import { isDummySite } from "@helios-lang/compiler-utils"
+import { makeUplcDelay, makeUplcLambda } from "@helios-lang/uplc"
 import { NameExpr } from "./NameExpr.js"
 import { Scope } from "./Scope.js"
 
@@ -137,7 +136,7 @@ export class FuncExpr {
         })
 
         if (this.args.length == 0) {
-            scope = new Scope(scope, None, {
+            scope = new Scope(scope, undefined, {
                 notifyFuncExpr: (v) => this.bodyVars.add(v)
             })
         }
@@ -153,15 +152,19 @@ export class FuncExpr {
 
         const nArgs = this.args.length
 
-        const s = TokenSite.isDummy(this.site) ? None : this.site
+        const s = isDummySite(this.site) ? undefined : this.site
 
         if (nArgs == 0) {
             // a zero-arg func is turned into a UplcDelay term
-            term = new UplcDelay(term, s)
+            term = makeUplcDelay({ arg: term, site: s })
         } else {
             for (let i = nArgs - 1; i >= 0; i--) {
                 // TODO: only give the site if i == 0?
-                term = new UplcLambda(term, this.args[i].toString(true), s)
+                term = makeUplcLambda({
+                    body: term,
+                    argName: this.args[i].toString(true),
+                    site: s
+                })
             }
         }
 

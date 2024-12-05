@@ -1,7 +1,7 @@
 import { strictEqual } from "node:assert"
 import { describe, it } from "node:test"
 import { isLeft, isRight, isString } from "@helios-lang/type-utils"
-import { UplcInt } from "@helios-lang/uplc"
+import { makeUplcInt } from "@helios-lang/uplc"
 import { compile } from "../ops/index.js"
 import { CallExpr } from "./CallExpr.js"
 
@@ -9,7 +9,7 @@ describe(CallExpr.name, () => {
     it("evaluates '(a) -> {a()}' as error", () => {
         const program = compile("(a) -> {a()}", { optimize: false }) // optimize: true would fail due to trying to call data
 
-        const res = program.eval([new UplcInt(0)])
+        const res = program.eval([makeUplcInt(0)])
 
         strictEqual(isLeft(res.result), true)
     })

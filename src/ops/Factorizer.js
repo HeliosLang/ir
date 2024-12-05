@@ -1,5 +1,5 @@
-import { Word } from "@helios-lang/compiler-utils"
-import { None, expectSome } from "@helios-lang/type-utils"
+import { makeWord } from "@helios-lang/compiler-utils"
+import { expectDefined } from "@helios-lang/type-utils"
 import { Analysis, Branches, DataValue } from "../analyze/index.js"
 import { CallExpr, FuncExpr, NameExpr, Variable } from "../expressions/index.js"
 import { format } from "../format/index.js"
@@ -11,6 +11,7 @@ import { containsCallExprs, loop } from "./loop.js"
 import { mutate } from "./mutate.js"
 
 /**
+ * @import { Word } from "@helios-lang/compiler-utils"
  * @typedef {import("../analyze/index.js").Branch} Branch
  * @typedef {import("../analyze/index.js").BranchesGroup} BranchesGroup
  * @typedef {import("../analyze/index.js").BranchesI} BranchesI
@@ -167,7 +168,9 @@ export class Factorizer {
                 const callExprsArray = Array.from(callExprs)
 
                 const dataValues = callExprsArray.map((ce) => {
-                    return expectSome(this.analysis.getSingleExprDataValue(ce))
+                    return expectDefined(
+                        this.analysis.getSingleExprDataValue(ce)
+                    )
                 })
 
                 if (dataValues.some((dv) => dv.branches.isEmpty())) {
@@ -184,29 +187,29 @@ export class Factorizer {
     /**
      * Returns none if the callExprs depend on different variables, making substitution/injection very difficult
      * @param {CallExpr[]} callExprs
-     * @param {Option<Expr>} parentExpr - if parentExpr isn't None, all callExprs are checked to be contained within the parentExpr,
+     * @param {Expr | undefined} parentExpr - if parentExpr isn't None, all callExprs are checked to be contained within the parentExpr,
      *   if not a None result is returned.
      *   This is important because common branches only indicate the execution path is the same,
      *   but due to lazy values (eg.  callbacks) this can give a completely picture than the actual AST
-     * @returns {Option<{
+     * @returns {{
      *   deepest: Variable
      *   allVars: Variable[]
      *   injectedVar: Variable
      *   injectedName: Word
      *   firstCallExpr: CallExpr
-     * }>}
+     * } | undefined}
      */
-    processCommonCallExprs(callExprs, parentExpr = None) {
+    processCommonCallExprs(callExprs, parentExpr = undefined) {
         if (parentExpr && !containsCallExprs(parentExpr, callExprs)) {
-            return None
+            return undefined
         }
 
         const injectedId = this.commonCount
         this.commonCount++
 
-        const injectedName = new Word(
-            `${this.commonSubExprPrefix}${injectedId}`
-        )
+        const injectedName = makeWord({
+            value: `${this.commonSubExprPrefix}${injectedId}`
+        })
         const injectedVar = new Variable(injectedName)
         const firstCallExpr = callExprs[0] //
         const variables = collectUsedVariablesWithDepth(firstCallExpr)
@@ -227,7 +230,7 @@ export class Factorizer {
             })
         ) {
             this.commonCount--
-            return None
+            return undefined
         }
 
         return {

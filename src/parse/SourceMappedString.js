@@ -1,5 +1,4 @@
-import { Source } from "@helios-lang/compiler-utils"
-import { None } from "@helios-lang/type-utils"
+import { makeSource } from "@helios-lang/compiler-utils"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
@@ -9,7 +8,7 @@ import { None } from "@helios-lang/type-utils"
 /**
  * @typedef {{
  *   content: string | SourceMappedStringI[]
- *   site: Option<Site>
+ *   site: Site | undefined
  *   flatten(): SourceMappedStringI[]
  *   includes(str: string): boolean
  *   join(sep: string): SourceMappedStringI
@@ -32,15 +31,15 @@ export class SourceMappedString {
 
     /**
      * @readonly
-     * @type {Option<Site>}
+     * @type {Site | undefined}
      */
     site
 
     /**
      * @param {string | SourceMappedStringI[]} content
-     * @param {Option<Site>} site
+     * @param {Site | undefined} site
      */
-    constructor(content, site = None) {
+    constructor(content, site = undefined) {
         this.content = content
         this.site = site
     }
@@ -151,7 +150,7 @@ export class SourceMappedString {
         if (pretty) {
             const [src, _] = this.toStringWithSourceMap(tab)
 
-            return new Source(src).pretty()
+            return makeSource(src).pretty()
         } else {
             return this.flatten()
                 .map((p) => (typeof p.content == "string" ? p.content : ""))

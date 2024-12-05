@@ -1,5 +1,4 @@
-import { Word } from "@helios-lang/compiler-utils"
-import { None } from "@helios-lang/type-utils"
+import { makeWord } from "@helios-lang/compiler-utils"
 import {
     CallExpr,
     FuncExpr,
@@ -38,8 +37,8 @@ import { resetVariables } from "./reset.js"
  * @returns {Expr}
  */
 export function injectRecursiveDeps(root) {
-    const dummyVariable = new Variable(new Word(".dummy"))
-    const scope = new Scope(None, None, { dummyVariable })
+    const dummyVariable = new Variable(makeWord({ value: ".dummy" }))
+    const scope = new Scope(undefined, undefined, { dummyVariable })
 
     root.resolveNames(scope)
 
@@ -210,7 +209,7 @@ function getGroupRecursiveDeps(group, site) {
         return group.defs
             .map((def) => def.name.name.value)
             .sort()
-            .map((dep) => new Variable(new Word(dep, site)))
+            .map((dep) => new Variable(makeWord({ value: dep, site })))
     }
 }
 
@@ -294,7 +293,7 @@ function injectMutualDependencies(defs, final, dummyVariable) {
 
     /**
      * @param {NameExpr} name
-     * @returns {Option<Variable[]>}
+     * @returns {Variable[] | undefined}
      */
     function getDeps(name) {
         const d =
@@ -303,7 +302,7 @@ function injectMutualDependencies(defs, final, dummyVariable) {
                 : defsMap.get(name.variable)
 
         if (!d) {
-            return None
+            return undefined
         }
 
         return d.recursiveDeps
@@ -333,13 +332,16 @@ function injectMutualDependencies(defs, final, dummyVariable) {
                     return new CallExpr(
                         site,
                         new NameExpr(
-                            new Word(nameExpr.name, nameExpr.site),
+                            makeWord({
+                                value: nameExpr.name,
+                                site: nameExpr.site
+                            }),
                             ownDep
                         ),
                         deps.map(
                             (dep) =>
                                 new NameExpr(
-                                    new Word(dep.name.value, site),
+                                    makeWord({ value: dep.name.value, site }),
                                     dep
                                 )
                         )

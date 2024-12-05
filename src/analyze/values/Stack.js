@@ -1,5 +1,3 @@
-import { None, isNone } from "@helios-lang/type-utils"
-
 /**
  * @typedef {import("./Branch.js").Branch} Branch
  * @typedef {import("./Branches.js").BranchesI} BranchesI
@@ -34,7 +32,7 @@ export class Stack {
     /**
      * Lazily calculated
      * @private
-     * @type {Option<boolean>}
+     * @type {boolean | undefined}
      */
     _isLiteral
 
@@ -45,7 +43,7 @@ export class Stack {
     constructor(values, branches) {
         this.values = values
         this.branches = branches
-        this._isLiteral = None
+        this._isLiteral = undefined
     }
 
     /**
@@ -86,7 +84,7 @@ export class Stack {
      * @returns {boolean}
      */
     isLiteral() {
-        if (isNone(this._isLiteral)) {
+        if (this._isLiteral === undefined) {
             this._isLiteral = this.values.isLiteral()
         }
 

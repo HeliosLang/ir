@@ -1,11 +1,11 @@
 import { strictEqual } from "node:assert"
 import { test } from "node:test"
 import { isLeft, isRight } from "@helios-lang/type-utils"
-import { UplcDataValue, UplcProgramV2, decodeUplcData } from "@helios-lang/uplc"
+import { makeUplcDataValue, decodeUplcData } from "@helios-lang/uplc"
 import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
 
 /**
- * @typedef {import("@helios-lang/uplc").UplcProgramV2I} UplcProgramV2I
+ * @typedef {import("@helios-lang/uplc").UplcProgramV2} UplcProgramV2
  */
 
 test("PBG::fund_policy::main", () => {
@@ -5294,10 +5294,10 @@ __core__ifThenElse(
         "40",
         "d87a9f00ff",
         "d8799fd8799f9fd8799fd8799fd8799f58200000000000000000000000000000000000000000000000000000000000000000ff00ffd8799fd8799fd87a9f581c133a4e7c8cf52a01e284b1aab5d4fa1060ed953dad931759e053d39affd87a80ffa240a1401a001e8480581c659553fcfb8afdcb1aa141d781a629e9bc06b8014102095b469aad05a146737570706c7901d87b9f9f001a3b9aca0000001b000000174876e800009f00001b0000000757b12c009f186401ffffffffd87a80ffffd8799fd8799fd8799f58200101010101010101010101010101010101010101010101010101010101010101ff00ffd8799fd8799fd8799f581c00000000000000000000000000000000000000000000000000000000ffd87a80ffa140a1401a001e8480d87980d87a80ffffff8080a0a140a1400080a0d8799fd8799fd87980d87a80ffd8799fd87b80d87a80ffff80a0a0d8799f5820ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffd87a9fd8799fd8799f58200101010101010101010101010101010101010101010101010101010101010101ff00ffffff"
-    ].map((cbor) => new UplcDataValue(decodeUplcData(cbor)))
+    ].map((cbor) => makeUplcDataValue(decodeUplcData(cbor)))
 
     /**
-     * @param {UplcProgramV2I} program
+     * @param {UplcProgramV2} program
      */
     const evalProgram = (program) => {
         const res = program.eval(args)

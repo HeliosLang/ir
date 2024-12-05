@@ -1,7 +1,7 @@
 import { strictEqual } from "node:assert"
 import { describe, it } from "node:test"
 import { isRight, isString } from "@helios-lang/type-utils"
-import { UplcInt } from "@helios-lang/uplc"
+import { makeUplcInt } from "@helios-lang/uplc"
 import { compile } from "../ops/index.js"
 import { NameExpr } from "./NameExpr.js"
 
@@ -37,7 +37,7 @@ describe(NameExpr.name, () => {
     it("evaluates '(a) -> {a}' correctly", () => {
         const program = compile("(a)->{a}")
 
-        const res = program.eval([new UplcInt(0n)])
+        const res = program.eval([makeUplcInt(0n)])
 
         strictEqual(
             isRight(res.result) &&

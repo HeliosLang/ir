@@ -1,6 +1,5 @@
-import { TokenSite } from "@helios-lang/compiler-utils"
-import { None } from "@helios-lang/type-utils"
-import { UplcCall, UplcForce } from "@helios-lang/uplc"
+import { isDummySite } from "@helios-lang/compiler-utils"
+import { makeUplcCall, makeUplcForce } from "@helios-lang/uplc"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
@@ -113,19 +112,23 @@ export class CallExpr {
     toUplc() {
         let term = this.func.toUplc()
 
-        const s = TokenSite.isDummy(this.site) ? None : this.site
+        const s = isDummySite(this.site) ? undefined : this.site
 
         const nArgs = this.args.length
 
         if (nArgs == 0) {
             // assuming underlying zero-arg function has been converted into a UplcDelay term
-            term = new UplcForce(term, s)
+            term = makeUplcForce({ arg: term, site: s })
         } else {
             for (let i = 0; i < nArgs; i++) {
                 const argExpr = this.args[i]
                 const isLast = i == nArgs - 1
 
-                term = new UplcCall(term, argExpr.toUplc(), isLast ? s : None)
+                term = makeUplcCall({
+                    fn: term,
+                    args: [argExpr.toUplc()],
+                    site: isLast ? s : undefined
+                })
             }
         }
 

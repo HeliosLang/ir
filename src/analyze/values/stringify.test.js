@@ -1,6 +1,6 @@
 import { strictEqual } from "node:assert"
 import { describe, it } from "node:test"
-import { UplcInt } from "@helios-lang/uplc"
+import { makeUplcInt } from "@helios-lang/uplc"
 import { AnyValue } from "./AnyValue.js"
 import { BranchedValue } from "./BranchedValue.js"
 import { Branches } from "./Branches.js"
@@ -133,7 +133,7 @@ describe(stringifyValue.name, () => {
                                         new StackValues([
                                             [
                                                 0,
-                                                new LiteralValue(new UplcInt(0))
+                                                new LiteralValue(makeUplcInt(0))
                                             ]
                                         ]),
                                         Branches.empty()
@@ -181,7 +181,7 @@ describe(stringifyValue.name, () => {
                                         new StackValues([
                                             [
                                                 0,
-                                                new LiteralValue(new UplcInt(0))
+                                                new LiteralValue(makeUplcInt(0))
                                             ],
                                             [
                                                 3,

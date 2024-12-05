@@ -1,5 +1,5 @@
 import { removeWhitespace } from "@helios-lang/codec-utils"
-import { None, expectSome } from "@helios-lang/type-utils"
+import { expectDefined } from "@helios-lang/type-utils"
 import {
     BuiltinExpr,
     CallExpr,
@@ -55,8 +55,8 @@ import {
  *   funcExprs: BiMap<FuncExpr>
  *   variables: BiMap<VariableI>
  *   debug?: boolean
- *   onCallAny?: (args: NonErrorValue[], owner: Option<CallExpr>) => void
- *   onCallFunc?: (expr: FuncExpr, owner: Option<CallExpr>) => void
+ *   onCallAny?: (args: NonErrorValue[], owner: CallExpr | undefined) => void
+ *   onCallFunc?: (expr: FuncExpr, owner: CallExpr | undefined) => void
  *   onEvalExpr?: (expr: Expr, value: Value) => void
  *   onPassArg?: (variable: VariableI, value: NonErrorValue) => void
  * }} EvaluatorProps
@@ -81,7 +81,7 @@ import {
  * @typedef {{
  *   collect: number
  *   combine: ValueCombiner
- *   owner: Option<CallExpr>
+ *   owner: CallExpr | undefined
  * }} ComputeCollect
  */
 
@@ -159,7 +159,7 @@ export class Evaluator {
      * @param {Expr} expr
      */
     eval(expr) {
-        expr.resolveNames(new Scope(None, None))
+        expr.resolveNames(new Scope(undefined, undefined))
 
         const v = this.evalRootExpr(expr)
 
@@ -261,7 +261,7 @@ export class Evaluator {
     getFuncDef(fn) {
         const tag = fn.definitionTag
 
-        return expectSome(
+        return expectDefined(
             this.props.funcExprs.getValueByKey(tag),
             `invalid func tag '${tag}'`
         )
@@ -283,7 +283,7 @@ export class Evaluator {
      * @returns {number}
      */
     getFuncTag(expr) {
-        return expectSome(
+        return expectDefined(
             this.props.funcExprs.getKeyByValue(expr),
             `no tag found for FuncExpr`
         )
@@ -295,7 +295,7 @@ export class Evaluator {
      * @returns {number}
      */
     getVarId(v) {
-        return expectSome(
+        return expectDefined(
             this.props.variables.getKeyByValue(v),
             `variable id not found`
         )
@@ -304,7 +304,7 @@ export class Evaluator {
     /**
      * @private
      * @param {string} key
-     * @returns {Option<Value>}
+     * @returns {Value | undefined}
      */
     getCachedValue(key) {
         return this.cachedValues.get(key)
@@ -355,7 +355,7 @@ export class Evaluator {
      * @private
      * @param {number} tag
      * @param {number} minDepth
-     * @returns {Option<StackValues>}
+     * @returns {StackValues | undefined}
      */
     getActiveStack(tag, minDepth = 0) {
         const stacks = this.activeStacks.get(tag)
@@ -366,10 +366,10 @@ export class Evaluator {
             if (n > 0 && n > minDepth) {
                 return stacks[n - 1]
             } else {
-                return None
+                return undefined
             }
         } else {
-            return None
+            return undefined
         }
     }
 
@@ -405,7 +405,7 @@ export class Evaluator {
      * @returns {Value}
      */
     popValue() {
-        return expectSome(
+        return expectDefined(
             this.reduce.pop(),
             "no more reduction values available"
         )
@@ -448,7 +448,7 @@ export class Evaluator {
      * @private
      * @param {number} n
      * @param {ValueCombiner} combine
-     * @param {Option<CallExpr>} owner
+     * @param {CallExpr | undefined} owner
      */
     pushCollect(n, combine, owner) {
         this.compute.push({
@@ -460,7 +460,7 @@ export class Evaluator {
 
     /**
      * @private
-     * @param {Option<CallExpr>} owner
+     * @param {CallExpr | undefined} owner
      */
     pushCollectMaybeError(owner) {
         this.pushCollect(
@@ -520,7 +520,7 @@ export class Evaluator {
     /**
      * @private
      * @param {Value} value
-     * @param {Option<Expr>} owner
+     * @param {Expr | undefined} owner
      */
     pushValue(value, owner) {
         if (owner && this.props.onEvalExpr) {
@@ -538,7 +538,7 @@ export class Evaluator {
 
     /**
      * @private
-     * @param {Option<Expr>} owner
+     * @param {Expr | undefined} owner
      */
     pushErrorValue(owner) {
         const v = new ErrorValue()
@@ -704,13 +704,13 @@ export class Evaluator {
             fn instanceof LiteralValue ||
             fn instanceof DataValue
         ) {
-            this.computeCallNonCallableValue(registerOwner ? owner : None)
+            this.computeCallNonCallableValue(registerOwner ? owner : undefined)
         } else if (fn instanceof MaybeErrorValue) {
             this.computeCallMaybeErrorValue(fn, args, stack, owner)
         } else if (fn instanceof BranchedValue) {
             this.computeCallBranchedValue(fn, args, stack, owner, registerOwner)
         } else if (fn instanceof AnyValue) {
-            this.computeCallAny(fn, args, registerOwner ? owner : None)
+            this.computeCallAny(fn, args, registerOwner ? owner : undefined)
         } else if (fn instanceof BuiltinValue) {
             this.computeCallBuiltinValue(fn, args, stack, owner, registerOwner)
         } else if (fn instanceof FuncValue) {
@@ -722,7 +722,7 @@ export class Evaluator {
 
     /**
      * @private
-     * @param {Option<CallExpr>} owner
+     * @param {CallExpr | undefined} owner
      */
     computeCallNonCallableValue(owner) {
         this.pushErrorValue(owner)
@@ -787,7 +787,7 @@ export class Evaluator {
                         !(res_ instanceof BranchedValue) &&
                         this.props.onCallAny
                     ) {
-                        this.props.onCallAny([res], None)
+                        this.props.onCallAny([res], undefined)
                     }
 
                     res = res_
@@ -799,7 +799,7 @@ export class Evaluator {
                     return res
                 }
             },
-            registerOwner ? owner : None
+            registerOwner ? owner : undefined
         )
 
         // case values already have correct branch due to BranchedValue creation during evaluation of builtin call
@@ -813,7 +813,7 @@ export class Evaluator {
      * @private
      * @param {AnyValue} fn
      * @param {NonErrorValue[]} args
-     * @param {Option<CallExpr>} owner
+     * @param {CallExpr | undefined} owner
      */
     computeCallAny(fn, args, owner) {
         if (this.props.onCallAny) {
@@ -844,7 +844,7 @@ export class Evaluator {
             this.valueGenerator
         )
 
-        this.pushValue(result, registerOwner ? owner : None)
+        this.pushValue(result, registerOwner ? owner : undefined)
     }
 
     /**
@@ -859,7 +859,7 @@ export class Evaluator {
         const cached = this.getCachedValue(key)
 
         const fnDef = this.getFuncDef(fn)
-        const callExprOwner = owner instanceof CallExpr ? owner : None
+        const callExprOwner = owner instanceof CallExpr ? owner : undefined
 
         if (args.length != fnDef.args.length) {
             throw new Error(
@@ -872,7 +872,7 @@ export class Evaluator {
         }
 
         if (cached) {
-            this.pushValue(cached, registerOwner ? owner : None)
+            this.pushValue(cached, registerOwner ? owner : undefined)
         } else {
             const varsToValues = fnDef.args.map((a, i) => {
                 const v = args[i]
@@ -895,7 +895,7 @@ export class Evaluator {
                     this.popActiveStack(fn.definitionTag)
                     return v
                 },
-                registerOwner ? callExprOwner : None
+                registerOwner ? callExprOwner : undefined
             )
 
             const bodyVarIds = this.getFuncBodyVarIds(fnDef)
@@ -918,7 +918,7 @@ export class Evaluator {
      * @private
      * @param {number} nValues
      * @param {ValueCombiner} combine
-     * @param {Option<CallExpr>} owner
+     * @param {CallExpr | undefined} owner
      */
     computeCollect(nValues, combine, owner) {
         // collect multiple Values from the reductionStack and put it back as a single Value

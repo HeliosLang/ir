@@ -1,5 +1,9 @@
-import { expectSome } from "@helios-lang/type-utils"
-import { UplcByteArray, UplcInt, builtinsV2Map } from "@helios-lang/uplc"
+import { expectDefined } from "@helios-lang/type-utils"
+import {
+    makeUplcByteArray,
+    makeUplcInt,
+    builtinsV2Map
+} from "@helios-lang/uplc"
 import { CallExpr } from "../../expressions/index.js"
 import { ValueGenerator } from "../ValueGenerator.js"
 import { AnyValue } from "./AnyValue.js"
@@ -274,7 +278,7 @@ function evalDataBuiltin(builtin, args, stack, ctx) {
  * @returns {LiteralValue | ErrorValue}
  */
 function evalLiteralDataBuiltin(name, args) {
-    const callback = expectSome(builtinsV2Map.get(name)).call
+    const callback = expectDefined(builtinsV2Map.get(name)).call
 
     let res
 
@@ -351,7 +355,9 @@ function evalNonLiteralDataBuiltin(builtin, args, stack, ctx) {
         modInteger: ([_a, b]) => {
             if (b instanceof LiteralValue) {
                 if (b.int == 1n) {
-                    return new LiteralValue(new UplcInt(0n, true))
+                    return new LiteralValue(
+                        makeUplcInt({ value: 0n, signed: true })
+                    )
                 } else if (b.int == 0n) {
                     return new ErrorValue()
                 } else {
@@ -379,7 +385,9 @@ function evalNonLiteralDataBuiltin(builtin, args, stack, ctx) {
         remainderInteger: ([_a, b]) => {
             if (b instanceof LiteralValue) {
                 if (b.int == 1n) {
-                    return new LiteralValue(new UplcInt(0n, true))
+                    return new LiteralValue(
+                        makeUplcInt({ value: 0n, signed: true })
+                    )
                 } else if (b.int == 0n) {
                     return new ErrorValue()
                 } else {
@@ -406,7 +414,7 @@ function evalNonLiteralDataBuiltin(builtin, args, stack, ctx) {
         },
         sliceByteString: ([_a, b, _c]) => {
             if (b instanceof LiteralValue && b.int <= 0n) {
-                return new LiteralValue(new UplcByteArray([]))
+                return new LiteralValue(makeUplcByteArray([]))
             } else {
                 return defaultResult()
             }

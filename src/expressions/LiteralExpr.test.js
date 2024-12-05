@@ -2,16 +2,18 @@ import { strictEqual } from "node:assert"
 import { describe, it } from "node:test"
 import { isRight, isString } from "@helios-lang/type-utils"
 import {
-    UplcBool,
-    UplcByteArray,
-    UplcInt,
-    UplcList,
-    UplcPair,
-    UplcString,
-    UplcType
+    makeUplcBool,
+    makeUplcByteArray,
+    makeUplcInt,
+    makeUplcList,
+    makeUplcPair,
+    makeUplcString,
+    makeUplcType,
+    DATA_TYPE
 } from "@helios-lang/uplc"
 import { compile } from "../ops/index.js"
 import { LiteralExpr } from "./LiteralExpr.js"
+import { makeDummySite } from "@helios-lang/compiler-utils"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
@@ -22,11 +24,7 @@ import { LiteralExpr } from "./LiteralExpr.js"
 /**
  * @type {Site}
  */
-const site = {
-    file: "",
-    line: 0,
-    column: 0
-}
+const site = makeDummySite()
 
 /**
  * TODO: move this function into the uplc package, so it can be easily imported by other test-suites
@@ -44,13 +42,13 @@ function expectValue(actual, expected) {
 
 describe(LiteralExpr.name, () => {
     it("evaluates 0 correctly (ast)", () => {
-        const program = compile(new LiteralExpr(new UplcInt(0), site), {
+        const program = compile(new LiteralExpr(makeUplcInt(0), site), {
             optimize: true
         })
 
         const res = program.eval(undefined)
 
-        expectValue(res, new UplcInt(0n))
+        expectValue(res, makeUplcInt(0n))
     })
 
     it("evaluates 0 correctly (parsed)", () => {
@@ -58,18 +56,18 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        expectValue(res, new UplcInt(0n))
+        expectValue(res, makeUplcInt(0n))
     })
 
     it("evaluates #abcd correctly (ast)", () => {
         const program = compile(
-            new LiteralExpr(new UplcByteArray("abcd"), site),
+            new LiteralExpr(makeUplcByteArray("abcd"), site),
             { optimize: true }
         )
 
         const res = program.eval(undefined)
 
-        expectValue(res, new UplcByteArray("abcd"))
+        expectValue(res, makeUplcByteArray("abcd"))
     })
 
     it("evaluates #abcd correctly (parsed)", () => {
@@ -77,17 +75,17 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        expectValue(res, new UplcByteArray("abcd"))
+        expectValue(res, makeUplcByteArray("abcd"))
     })
 
     it('evaluates "abcd" correctly (ast)', () => {
-        const program = compile(new LiteralExpr(new UplcString("abcd"), site), {
+        const program = compile(new LiteralExpr(makeUplcString("abcd"), site), {
             optimize: true
         })
 
         const res = program.eval(undefined)
 
-        expectValue(res, new UplcString("abcd"))
+        expectValue(res, makeUplcString("abcd"))
     })
 
     it('evaluates "abcd" correctly (parsed)', () => {
@@ -95,17 +93,17 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        expectValue(res, new UplcString("abcd"))
+        expectValue(res, makeUplcString("abcd"))
     })
 
     it("evaluates 'true' correctly (ast)", () => {
-        const program = compile(new LiteralExpr(new UplcBool(true), site), {
+        const program = compile(new LiteralExpr(makeUplcBool(true), site), {
             optimize: true
         })
 
         const res = program.eval(undefined)
 
-        expectValue(res, new UplcBool(true))
+        expectValue(res, makeUplcBool(true))
     })
 
     it("evaluates 'false' correctly (parsed)", () => {
@@ -113,24 +111,13 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        expectValue(res, new UplcBool(false))
+        expectValue(res, makeUplcBool(false))
     })
 
     it("evaluates empty list correctly (ast)", () => {
         const program = compile(
-            new LiteralExpr(new UplcList(UplcType.data(), []), site),
-            { optimize: true }
-        )
-
-        const res = program.eval(undefined)
-
-        expectValue(res, new UplcList(UplcType.data(), []))
-    })
-
-    it("evaluates pair of 0 and # correctly (ast)", () => {
-        const program = compile(
             new LiteralExpr(
-                new UplcPair(new UplcInt(0), new UplcByteArray([])),
+                makeUplcList({ itemType: DATA_TYPE, items: [] }),
                 site
             ),
             { optimize: true }
@@ -138,6 +125,29 @@ describe(LiteralExpr.name, () => {
 
         const res = program.eval(undefined)
 
-        expectValue(res, new UplcPair(new UplcInt(0n), new UplcByteArray([])))
+        expectValue(res, makeUplcList({ itemType: DATA_TYPE, items: [] }))
+    })
+
+    it("evaluates pair of 0 and # correctly (ast)", () => {
+        const program = compile(
+            new LiteralExpr(
+                makeUplcPair({
+                    first: makeUplcInt(0),
+                    second: makeUplcByteArray([])
+                }),
+                site
+            ),
+            { optimize: true }
+        )
+
+        const res = program.eval(undefined)
+
+        expectValue(
+            res,
+            makeUplcPair({
+                first: makeUplcInt(0n),
+                second: makeUplcByteArray([])
+            })
+        )
     })
 })

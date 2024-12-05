@@ -1,6 +1,5 @@
-import { TokenSite } from "@helios-lang/compiler-utils"
-import { None } from "@helios-lang/type-utils"
-import { UplcError } from "@helios-lang/uplc"
+import { isDummySite } from "@helios-lang/compiler-utils"
+import { makeUplcError } from "@helios-lang/uplc"
 
 /**
  * @typedef {import("@helios-lang/compiler-utils").Site} Site
@@ -65,8 +64,8 @@ export class ErrorExpr {
      * @returns {UplcTerm}
      */
     toUplc() {
-        const s = TokenSite.isDummy(this.site) ? None : this.site
+        const s = isDummySite(this.site) ? undefined : this.site
 
-        return new UplcError(s)
+        return makeUplcError({ site: s })
     }
 }

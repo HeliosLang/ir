@@ -1,7 +1,7 @@
-import { CompilerError } from "@helios-lang/compiler-utils"
+import { makeReferenceError } from "@helios-lang/compiler-utils"
 
 /**
- * @typedef {import("@helios-lang/compiler-utils").WordI} WordI
+ * @import { CompilerError, Word } from "@helios-lang/compiler-utils"
  * @typedef {import("./Variable.js").VariableI} VariableI
  */
 
@@ -17,11 +17,11 @@ import { CompilerError } from "@helios-lang/compiler-utils"
 /**
  * TODO: cleanup getInternal() and notifyFuncExprInternal so that it makes more sense to someone implementing this interface
  * @typedef {{
- *   parent: Option<ScopeI>
- *   variable: Option<VariableI>
- *   get(name: WordI | VariableI): [number, VariableI]
+ *   parent: ScopeI | undefined
+ *   variable: VariableI | undefined
+ *   get(name: Word | VariableI): [number, VariableI]
  *   notifyFuncExprInternal(variable: VariableI): void
- *   getInternal(name: WordI | VariableI, index: number): [number, VariableI]
+ *   getInternal(name: Word | VariableI, index: number): [number, VariableI]
  * }} ScopeI
  */
 
@@ -32,14 +32,14 @@ import { CompilerError } from "@helios-lang/compiler-utils"
 export class Scope {
     /**
      * @readonly
-     * @type {Option<ScopeI>}
+     * @type {ScopeI | undefined}
      */
     parent
 
     /**
      * Variable name (can be null if no usable variable defined at this level)
      * @readonly
-     * @type {Option<VariableI>}
+     * @type {VariableI | undefined}
      */
     variable
 
@@ -50,8 +50,8 @@ export class Scope {
     options
 
     /**
-     * @param {Option<ScopeI>} parent
-     * @param {Option<VariableI>} variable
+     * @param {ScopeI | undefined} parent
+     * @param {VariableI | undefined} variable
      * @param {ScopeOptions} options
      */
     constructor(parent, variable, options = {}) {
@@ -63,7 +63,7 @@ export class Scope {
     /**
      * Calculates the Debruijn index of a named value. Internal method
      * @internal
-     * @param {WordI | VariableI} name
+     * @param {Word | VariableI} name
      * @param {number} index
      * @returns {[number, VariableI]}
      */
@@ -74,7 +74,7 @@ export class Scope {
             if (this.options.dummyVariable) {
                 return [-1, this.options.dummyVariable]
             } else {
-                throw CompilerError.reference(
+                throw makeReferenceError(
                     name.site,
                     `variable ${name.toString()} not found`
                 )
@@ -89,7 +89,7 @@ export class Scope {
 
     /**
      * Calculates the Debruijn index.
-     * @param {WordI | VariableI} name
+     * @param {Word | VariableI} name
      * @returns {[number, VariableI]}
      */
     get(name) {

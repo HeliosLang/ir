@@ -1,4 +1,3 @@
-import { None } from "@helios-lang/type-utils"
 import { BiMap } from "../BiMap.js"
 import { AnyValue } from "./AnyValue.js"
 import { BranchedValue } from "./BranchedValue.js"
@@ -66,16 +65,16 @@ export function stringifyStackValues(values, blockRecursion) {
  * Non-recursive algorithm for speed
  * This is still the bottleneck though (both in terms of cpu and memory)
  * @param {Value} value
- * @param {Option<BlockRecursionProps>} blockRecursion
- * @param {Option<Map<Value, string>>} valueCache
- * @param {Option<BiMap<string>>} stackIds_
+ * @param {BlockRecursionProps} [blockRecursion]
+ * @param {Map<Value, string>} [valueCache]
+ * @param {BiMap<string>} [stackIds_]
  * @returns {string}
  */
 export function stringifyValue(
     value,
-    blockRecursion = None,
-    valueCache = None,
-    stackIds_ = None
+    blockRecursion = undefined,
+    valueCache = undefined,
+    stackIds_ = undefined
 ) {
     /**
      * @typedef {{

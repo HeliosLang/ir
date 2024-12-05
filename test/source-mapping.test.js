@@ -1,7 +1,7 @@
 import { match, strictEqual } from "node:assert"
 import { describe, it } from "node:test"
-import { expectLeft, expectSome } from "@helios-lang/type-utils"
-import { UplcRuntimeError, UplcBool } from "@helios-lang/uplc"
+import { expectLeft, expectDefined } from "@helios-lang/type-utils"
+import { UplcRuntimeError, makeUplcBool } from "@helios-lang/uplc"
 import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
 
 describe("Source mapping", () => {
@@ -26,12 +26,12 @@ describe("Source mapping", () => {
             }
         })
 
-        const resTrue = program.eval([new UplcBool(true)])
+        const resTrue = program.eval([makeUplcBool(true)])
         const siteTrue = resTrue.logs[0].site
         strictEqual(siteTrue?.line, 4)
         strictEqual(siteTrue?.column, 33)
 
-        const resFalse = program.eval([new UplcBool(false)])
+        const resFalse = program.eval([makeUplcBool(false)])
         const siteFalse = resFalse.logs[0].site
         strictEqual(siteFalse?.line, 7)
         strictEqual(siteFalse?.column, 33)
@@ -104,32 +104,29 @@ describe("Source mapping", () => {
             throw new UplcRuntimeError(err.error, err.callSites)
         } catch (err) {
             if (err instanceof Error) {
-                const stack = expectSome(err.stack)
+                const stack = expectDefined(err.stack)
 
                 // in Node the error message is part of the stack itself, so we ignore it for the sake of the test (checking the err.message field directly instead)
                 strictEqual(err.message, "my error")
 
                 const lines = stack.split("\n").slice(1)
 
-                strictEqual(lines[0].trim(), "at fn3 (helios:unknown:5:19)")
-                strictEqual(lines[1].trim(), "at fn2 (helios:unknown:8:20)")
-                strictEqual(lines[2].trim(), "at fn1 (helios:unknown:11:20)")
+                strictEqual(lines[0].trim(), "at fn3 (helios::5:19)")
+                strictEqual(lines[1].trim(), "at fn2 (helios::8:20)")
+                strictEqual(lines[2].trim(), "at fn1 (helios::11:20)")
                 strictEqual(
                     lines[3].trim(),
-                    "at <anonymous> (helios:unknown:13:16) [fn1=(delay (force fn2))]"
+                    "at <anonymous> (helios::13:16) [fn1=<fn>]"
                 )
                 strictEqual(
                     lines[4].trim(),
-                    "at <anonymous> (helios:unknown:10:17) [fn2=(delay (force fn3))]"
+                    "at <anonymous> (helios::10:17) [fn2=<fn>]"
                 )
                 strictEqual(
                     lines[5].trim(),
-                    'at <anonymous> (helios:unknown:7:17) [fn3=(delay (force [[(force (builtin 28)) (con string "my error")] (delay (error))]))]'
+                    "at <anonymous> (helios::7:17) [fn3=<fn>]"
                 )
-                strictEqual(
-                    lines[6].trim(),
-                    "at <anonymous> (helios:unknown:2:17)"
-                )
+                strictEqual(lines[6].trim(), "at <anonymous> (helios::2:17)")
                 match(lines[7], /source-mapping.test.js/)
             } else {
                 throw new Error(

@@ -1,5 +1,4 @@
-import { None } from "@helios-lang/type-utils"
-import { UplcUnit, builtinsV2 } from "@helios-lang/uplc"
+import { UNIT_VALUE, builtinsV2 } from "@helios-lang/uplc"
 import {
     Analysis,
     Analyzer,
@@ -260,7 +259,7 @@ export class Optimizer {
                         a instanceof FuncExpr &&
                         analysis.countFuncCalls(a) == 0
                     ) {
-                        return new LiteralExpr(new UplcUnit(), a.site)
+                        return new LiteralExpr(UNIT_VALUE, a.site)
                     } else {
                         return a
                     }
@@ -397,7 +396,7 @@ export class Optimizer {
      * @private
      * @param {Analysis} analysis
      * @param {Expr} expr
-     * @returns {Option<Expr>}
+     * @returns {Expr | undefined}
      */
     replaceByErrorOrLiteral(analysis, expr) {
         const v = analysis.getExprValue(expr)
@@ -411,7 +410,7 @@ export class Optimizer {
             }
         }
 
-        return None
+        return undefined
     }
 
     /**

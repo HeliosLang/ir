@@ -1,11 +1,15 @@
 import { strictEqual } from "node:assert"
 import { test } from "node:test"
 import { isLeft, isRight } from "@helios-lang/type-utils"
-import { UplcDataValue, UplcProgramV2, decodeUplcData } from "@helios-lang/uplc"
+import {
+    makeUplcDataValue,
+    makeUplcProgramV2,
+    decodeUplcData
+} from "@helios-lang/uplc"
 import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
 
 /**
- * @typedef {import("@helios-lang/uplc").UplcProgramV2I} UplcProgramV2I
+ * @typedef {import("@helios-lang/uplc").UplcProgramV2} UplcProgramV2
  */
 
 test("PBG::fund_policy::main", () => {
