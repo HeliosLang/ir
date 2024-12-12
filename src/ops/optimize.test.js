@@ -254,7 +254,7 @@ const testVector = [
                 b,
                 1,
                 0
-            ), [])
+            ), []data)
         }`
     },
     {
@@ -560,7 +560,7 @@ const testVector = [
                         1,
                         0
                     ), 
-                    []
+                    []data
                 )
             }(
                 a = unIData(arg0);
@@ -1014,7 +1014,7 @@ const testVector = [
         expectedOutput: `(arg0)->{
             (b)->{
                 constrData(
-                    ifThenElse(b,1,0),[])
+                    ifThenElse(b,1,0),[]data)
                 }(
                     vh=unBData(arg0);
                     x0=unConstrData(
@@ -1025,7 +1025,7 @@ const testVector = [
                                     1,
                                     mkCons(
                                         bData(vh),
-                                        []
+                                        []data
                                     )
                                 ),
                                 (
@@ -1193,7 +1193,7 @@ const testVector = [
             (b)->{
                 constrData(
                     ifThenElse(b,1,0),
-                    []
+                    []data
                 )
             }(
                 vh=unBData(arg0);
@@ -1205,7 +1205,7 @@ const testVector = [
                                 1,
                                 mkCons(
                                     bData(vh),
-                                    []
+                                    []data
                                 )
                             ),
                             (Constr1[])

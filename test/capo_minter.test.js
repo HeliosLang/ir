@@ -47,7 +47,6 @@ test("unoptimized and optimized CapoMinter behave the same", () => {
     )()
 }
 `
-    //console.log(unoptimizedIR)
 
     const uplcProgram0 = compile(unoptimizedIR, {
         optimize: false,
@@ -80,10 +79,8 @@ test("unoptimized and optimized CapoMinter behave the same", () => {
         const res = program.eval(args, { logOptions: makeBasicUplcLogger() })
 
         if (isRight(res.result)) {
-            console.log("result: ", res.result.right.toString())
             return "result: " + res.result.right.toString()
         } else if (isLeft(res.result)) {
-            console.log("error: ", res.result.left.error)
             return "error: " + res.result.left.error
         }
     }

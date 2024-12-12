@@ -134,7 +134,7 @@ describe(prepare.name, () => {
                     b_4,
                     1,
                     0
-                ), [])
+                ), []data)
             }((a, b) -> {
                 (__common0) -> {
                     (b_2) -> {
@@ -160,7 +160,7 @@ describe(prepare.name, () => {
                                             mkCons(iData(i_2), recurse_4(recurse_4, addInteger(i_2, 1)))
                                         },
                                         () -> {
-                                            []
+                                            []data
                                         }
                                     )()
                                 }), (item) -> {
