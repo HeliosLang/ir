@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@helios-lang/codec-utils':
-        specifier: ^0.3.2
-        version: 0.3.2
+        specifier: ^0.3.4
+        version: 0.3.4
       '@helios-lang/compiler-utils':
         specifier: ^0.5.4
         version: 0.5.4
@@ -85,9 +85,6 @@ packages:
 
   '@helios-lang/cbor@0.3.0':
     resolution: {integrity: sha512-+HA54uJWIFV/EYaKTyS1EVw9GqpIYCtWDVwxDhSwWnL67KZTrieRt1/yjgj2FsmnRvZM8fUYfnkFnU/chS117A==}
-
-  '@helios-lang/codec-utils@0.3.2':
-    resolution: {integrity: sha512-C4lJSaoeI+E78w5BTMeZSkiYN9el6l1HX2XxMq5G/LkVgEQglv7UrWi01tDfayN1SIJg7j8Rvlj1wcwUoph/qA==}
 
   '@helios-lang/codec-utils@0.3.4':
     resolution: {integrity: sha512-YiYwBwkbRmu9/4tqHNGIk/haVb0+MLrwXZc+6/KMwGT5WKzypZSkDgH+aZEdHtdTmYhVyIj9ojBljAhMxi8ezg==}
@@ -664,8 +661,6 @@ snapshots:
   '@helios-lang/cbor@0.3.0':
     dependencies:
       '@helios-lang/codec-utils': 0.3.4
-
-  '@helios-lang/codec-utils@0.3.2': {}
 
   '@helios-lang/codec-utils@0.3.4': {}
 
