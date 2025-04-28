@@ -283,7 +283,10 @@ function evalLiteralDataBuiltin(name, args) {
     let res
 
     try {
-        res = callback(args, { print: () => {} })
+        res = callback(
+            args.map((a) => ({ kind: "const", value: a.value })),
+            { print: () => {} }
+        )
     } catch (e) {
         return new ErrorValue()
     }

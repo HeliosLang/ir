@@ -1,7 +1,7 @@
 import { match, strictEqual } from "node:assert"
 import { describe, it } from "node:test"
 import { expectLeft, expectDefined } from "@helios-lang/type-utils"
-import { UplcRuntimeError, makeUplcBool } from "@helios-lang/uplc"
+import { makeUplcRuntimeError, makeUplcBool } from "@helios-lang/uplc"
 import { DEFAULT_PARSE_OPTIONS, compile } from "../src/index.js"
 
 describe("Source mapping", () => {
@@ -101,7 +101,7 @@ describe("Source mapping", () => {
         strictEqual(res.logs.length, 0)
 
         try {
-            throw new UplcRuntimeError(err.error, err.callSites)
+            throw makeUplcRuntimeError(err.error, err.callSites)
         } catch (err) {
             if (err instanceof Error) {
                 const stack = expectDefined(err.stack)

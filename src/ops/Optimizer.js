@@ -646,13 +646,13 @@ export class Optimizer {
                 if (
                     a instanceof LiteralExpr &&
                     a.value.kind == "string" &&
-                    a.value.string == ""
+                    a.value.value == ""
                 ) {
                     return b
                 } else if (
                     b instanceof LiteralExpr &&
                     b.value.kind == "string" &&
-                    b.value.string == ""
+                    b.value.value == ""
                 ) {
                     return a
                 }
@@ -680,9 +680,9 @@ export class Optimizer {
                         throw new Error("unexpected")
                     }
 
-                    if (cond.value.bool && !analysis.expectsError(b)) {
+                    if (cond.value.value && !analysis.expectsError(b)) {
                         return a
-                    } else if (!cond.value.bool && !analysis.expectsError(a)) {
+                    } else if (!cond.value.value && !analysis.expectsError(a)) {
                         return b
                     }
                 } else if (!analysis.expectsError(cond) && a.isEqual(b)) {

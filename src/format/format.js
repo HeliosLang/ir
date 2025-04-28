@@ -111,7 +111,7 @@ function formatUplcData(d, options) {
         case "list":
             return `${options.builtinsPrefix ?? ""}listData(${formatUplcDataList(d.items, options)})`
         case "map":
-            return `${options.builtinsPrefix ?? ""}mapData(${formatUplcDataMap(d.list, options)})`
+            return `${options.builtinsPrefix ?? ""}mapData(${formatUplcDataMap(d.items, options)})`
     }
 }
 

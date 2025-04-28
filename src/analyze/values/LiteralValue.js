@@ -30,7 +30,7 @@ export class LiteralValue {
             throw new Error("unexpected")
         }
 
-        return this.value.bool
+        return this.value.value
     }
 
     /**
