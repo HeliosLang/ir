@@ -30,6 +30,13 @@ export class SourceMappedString {
     content
 
     /**
+     * @private
+     * @readonly
+     * @type {string | SourceMappedStringI[]}
+     */
+    contentWithoutQuotedSections
+
+    /**
      * @readonly
      * @type {Site | undefined}
      */
@@ -41,6 +48,8 @@ export class SourceMappedString {
      */
     constructor(content, site = undefined) {
         this.content = content
+        this.contentWithoutQuotedSections =
+            typeof content == "string" ? removeQuotedSections(content) : content
         this.site = site
     }
 
@@ -71,10 +80,12 @@ export class SourceMappedString {
      * @returns {boolean}
      */
     includes(str) {
-        if (typeof this.content == "string") {
-            return this.content.includes(str)
+        if (typeof this.contentWithoutQuotedSections == "string") {
+            return this.contentWithoutQuotedSections.includes(str)
         } else {
-            return this.content.some((ir) => ir.includes(str))
+            return this.contentWithoutQuotedSections.some((ir) =>
+                ir.includes(str)
+            )
         }
     }
 
@@ -106,6 +117,7 @@ export class SourceMappedString {
     }
 
     /**
+     * TODO: how to handle quoted sections?
      * @param {RegExp} re
      * @param {string} newStr
      * @returns {SourceMappedStringI}
@@ -128,8 +140,8 @@ export class SourceMappedString {
      * @param {(match: string) => void} callback
      */
     search(re, callback) {
-        if (typeof this.content == "string") {
-            const ms = this.content.match(re)
+        if (typeof this.contentWithoutQuotedSections == "string") {
+            const ms = this.contentWithoutQuotedSections.match(re)
 
             if (ms) {
                 for (let m of ms) {
@@ -137,7 +149,9 @@ export class SourceMappedString {
                 }
             }
         } else {
-            this.content.forEach((ir) => ir.search(re, callback))
+            this.contentWithoutQuotedSections.forEach((ir) =>
+                ir.search(re, callback)
+            )
         }
     }
 
@@ -322,4 +336,13 @@ export function $(content, ...args) {
     } else {
         throw new Error("unexpected first argument")
     }
+}
+
+/**
+ *
+ * @param {string} content
+ * @returns {string}
+ */
+function removeQuotedSections(content) {
+    return content.replace(/"[^"\\]*(?:\\.[^"\\]*)*"/g, "")
 }
